@@ -1,18 +1,19 @@
 from tqdm import tqdm
 from immec import *
 
-motordict = read_motordict('IMMEC/Motor_dictionaries/Cantoni.pkl')
+motordict = read_motordict('Cantoni.pkl')
 
 timestep = 1e-4
 stator_connection = 'wye'
 
-motor_model = MotorModel(motordict, timestep, stator_connection)
+motor_model = MotorModel(motordict, timestep, stator_connection, solver='newton')
+tuner = RelaxationTuner()
 data_logger = HistoryDataLogger(motor_model)
 
 t_end = 3.0  # Total simulation time
 steps_total = int(t_end // timestep)  # Total number of steps to simulate
 
-data_logger.pre_allocate(steps_total, quantities_to_preallocate='i_st')
+#data_logger.pre_allocate(steps_total)
 
 for n in tqdm(range(steps_total)):
     # I. Generate the input
@@ -39,11 +40,23 @@ for n in tqdm(range(steps_total)):
 
     # II. Log the motor model values, time, and inputs
 
-    data_logger.log(n * timestep, inputs, quantities_to_log='i_st')
+    data_logger.log(n * timestep, inputs)
 
     # III. Step the motor model
+    # A step is initialised as unsolved
+    tuner.solved = False
 
-    motor_model.step(inputs)
+    while not tuner.solved:
+        try:
+            # Apply the relaxation factor of the tuner to the motor model
+            motor_model.relaxation_factor = tuner.relaxation
+            # Attempt to step the motor model
+            motor_model.step(inputs)
+            # When succesful, increase the tuner relaxation factor
+            tuner.step()
+        # When unsuccesful, decrease the tuner relaxation factor
+        except NoConvergenceException:
+            tuner.jump()
 
 data_logger.postprocess()
 
