@@ -101,7 +101,7 @@ def get_immec_training_data(check_training_data=False, path_to_data_logger="IMME
                   0) * timestep  # those are caluculated using forward euler. Note that x_train*timestep instead of cumsum * timestep yield same results
     V = np.cumsum(data_logger['v_applied'], 0) * timestep
 
-    u_data = np.hstack((data_logger['v_applied'], I, V, data_logger['gamma_rot'],
+    u_data = np.hstack((data_logger['v_applied'], I, V, data_logger['gamma_rot']%(2*np.pi),
                         data_logger['omega_rot']))
     return x_train, u_data
 
@@ -132,8 +132,8 @@ def create_and_save_immec_data(timestep, t_end, path_to_motor, save_path, mode =
         v_b = 400 / np.sqrt(3) * np.sqrt(2) * np.sin(2 * np.pi * 50 * n * timestep - 2 * np.pi / 3)
         v_c = 400 / np.sqrt(3) * np.sqrt(2) * np.sin(2 * np.pi * 50 * n * timestep - 4 * np.pi / 3)
         v_abc = np.array([v_a, v_b, v_c])
-        print("no smooth runup")
-        # v_abc = smooth_runup(v_abc, n * timestep, 0.0, 1.5)
+
+        v_abc = smooth_runup(v_abc, n * timestep, 0.0, 1.5)
 
         # I.C Rotor eccentricity
         # In this demo, the rotor is placed in a centric position
