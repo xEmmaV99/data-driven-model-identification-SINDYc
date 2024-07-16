@@ -1,13 +1,9 @@
-from tqdm import tqdm
-from immec import *
-import matplotlib.pyplot as plt
-import numpy as np
-import pysindy as ps
+from source import *
 
 
 def generate_MCC_training_data(mode, timestep, t_end,path):
     motordict = read_motordict(path)
-    stator_connection = 'wye'
+    stator_connection = 'directPhase'
 
     motor_model = MotorModel(motordict, timestep, stator_connection, solver='newton')
     tuner = RelaxationTuner()
@@ -27,18 +23,18 @@ def generate_MCC_training_data(mode, timestep, t_end,path):
 
         # I.B Applied voltage
         # 400 V_RMS symmetrical line voltages are used
-        v_uw = 400 * np.sqrt(2) * np.sin(2 * np.pi * 50 * n * timestep)
-        v_vu = 400 * np.sqrt(2) * np.sin(2 * np.pi * 50 * n * timestep - 2 * np.pi / 3)
-        v_wv = 400 * np.sqrt(2) * np.sin(2 * np.pi * 50 * n * timestep - 4 * np.pi / 3)
-        v_line = np.array([v_uw, v_vu, v_wv])
-        v_line = smooth_runup(v_line, n * timestep, 0.0, 1.5)
+        v_a = 400 / np.sqrt(3) * np.sqrt(2) * np.sin(2 * np.pi * 50 * n * timestep)
+        v_b = 400 / np.sqrt(3) * np.sqrt(2) * np.sin(2 * np.pi * 50 * n * timestep - 2 * np.pi / 3)
+        v_c = 400 / np.sqrt(3) * np.sqrt(2) * np.sin(2 * np.pi * 50 * n * timestep - 4 * np.pi / 3)
+        v_abc = np.array([v_a, v_b, v_c])
+        v_abc = smooth_runup(v_abc, n * timestep, 0.0, 1.5)
 
         # I.C Rotor eccentricity
         # In this demo, the rotor is placed in a centric position
         ecc = np.zeros(2)
 
         # I.D The inputs are concatenated to a single vector
-        inputs = np.concatenate([v_line, [T_l], ecc])
+        inputs = np.concatenate([v_abc, [T_l], ecc])
 
         # II. Log the motor model values, time, and inputs
 
@@ -63,17 +59,25 @@ def generate_MCC_training_data(mode, timestep, t_end,path):
                 except NoConvergenceException:
                     tuner.jump()
 
-    data_logger.postprocess()
+    # get x train data
 
+    data_logger.postprocess()
+    x_train = reference_abc_to_dq0(data_logger.quantities['i_st'])
+
+    # get u data: potentials_st, i_st, omega_rot, gamma_rot, and the intergals.
+    I =
+    V =
+
+    u_data = np.hstack((data_logger.quantities['v_applied'],I,V, data_logger.quantities['gamma_rot'], data_logger.quantities['omega_rot']))
+
+    #data_logger.postprocess()
     #data_logger.plot('all') #don't plot 'everything'
 
+
     # use quantities to get desired information
-    #data_logger.quantities['potentials_st'];data_logger.quantities['i_st']; data_logger.quantities['omega_rot']; data_logger.quantities['gamma_rot']
+    #data_logger.quantities['v_applied'];data_logger.quantities['i_st']; data_logger.quantities['omega_rot']; data_logger.quantities['gamma_rot']
 
     #todo, format output probably reshape needed
-    x_train = data_logger.quantities['i_st']
-    u_train = 0
-
     #todo, implement sindy c !
     return x_train, u_train
 

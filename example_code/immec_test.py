@@ -1,7 +1,7 @@
 from tqdm import tqdm
 from immec import *
 
-motordict = read_motordict('Cantoni.pkl')
+motordict = read_motordict('../Cantoni.pkl')
 
 timestep = 1e-4
 stator_connection = 'wye'
