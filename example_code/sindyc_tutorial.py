@@ -33,5 +33,6 @@ x_train = solve_ivp(
 u_train = u_fun(t_train)
 # Instantiate and fit the SINDYc model
 model = ps.SINDy()
+#default, polynomial, default optimiser is  STLSQ()
 model.fit(x_train, u=u_train, t=dt)
 model.print()

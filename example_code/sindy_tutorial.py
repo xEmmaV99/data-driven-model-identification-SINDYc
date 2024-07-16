@@ -41,6 +41,7 @@ model = ps.SINDy(
 model.fit(x_train, t=dt)
 model.print()
 
+
 # Simulate and plot the results
 
 x_sim = model.simulate(x0_train, t_train)
