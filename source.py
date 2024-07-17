@@ -1,3 +1,4 @@
+import sklearn.utils
 from tqdm import tqdm
 from immec import *
 import matplotlib.pyplot as plt
@@ -24,11 +25,13 @@ def reference_dq0_to_abc(coord_array):
                                    [1 / np.sqrt(2), 1 / np.sqrt(2), 1 / np.sqrt(2)]]).T
     return np.dot(T, coord_array.T).T
 
+
 def show_data_keys(path_to_data_logger):
     with open(path_to_data_logger, 'rb') as file:
         data_logger = pkl.load(file)
     print(data_logger.keys())
     return
+
 
 def check_training_data(path_to_data_logger, keys_to_plot_list=None):
     if keys_to_plot_list is None:
@@ -42,24 +45,24 @@ def check_training_data(path_to_data_logger, keys_to_plot_list=None):
     return
 
 
-def get_immec_training_data(path_to_data_logger, timestep=1e-4, use_estimate_for_v=False, useOldData=False):
+def get_immec_training_data(path_to_data_logger, timestep=1e-4, use_estimate_for_v=False, motorinfo_path=None,
+                            useOldData=False):
     # useOldData TO BE REMOVED, for backward compatibility
     with open(path_to_data_logger, 'rb') as file:
         data_logger = pkl.load(file)
 
-    # get x train data
-    x_train = reference_abc_to_dq0(data_logger['i_st'])
+    # get x  data
+    x_data = reference_abc_to_dq0(data_logger['i_st'])
 
-    # todo v_applied is not in correct reference
     if use_estimate_for_v:
         v_stator = reference_abc_to_dq0(v_abc_estimate(data_logger))
     elif useOldData:
         v_stator = data_logger['v_applied']  # TO BE REMOVED ONLY WORKS ON OLD DATA WITH no wye circuit
     else:
-        v_stator = reference_abc_to_dq0(v_abc_exact(data_logger))
+        v_stator = reference_abc_to_dq0(v_abc_exact(data_logger, path_to_motor_info=motorinfo_path))
 
     # get u data: potentials_st, i_st, omega_rot, gamma_rot, and the intergals.
-    I = np.cumsum(x_train,
+    I = np.cumsum(x_data,
                   0) * timestep  # those are caluculated using forward euler. Note that x_train*timestep instead of cumsum * timestep yield same results
     V = np.cumsum(v_stator, 0) * timestep
     # CONSIDER USING RUNGE KUTTA METHOD FOR THIS - see ABU-SEIF ET AL.
@@ -67,8 +70,48 @@ def get_immec_training_data(path_to_data_logger, timestep=1e-4, use_estimate_for
     u_data = np.hstack((v_stator, I, V, data_logger['gamma_rot'] % (2 * np.pi),
                         data_logger['omega_rot']))
 
-    return x_train, u_data
+    # lastly, shuffle the data using sklearn.utils.shuffle to shuffle consistently
+    t = data_logger['time']
+    #x_data, u_data, t = sklearn.utils.shuffle(x_data,u_data,t)
 
+    shuffle = False
+    if shuffle:
+        train_idx = sklearn.utils.shuffle(np.arange(x_data.shape[0])) # 80% training
+        train_idx = np.sort(train_idx[:int(0.8*x_data.shape[0])])
+        x_train = x_data[train_idx,:]
+        u_train = u_data[train_idx,:]
+        x_valid = x_data[[True if k in train_idx  else False for k in range(len(x_data))],:]
+        u_valid = u_data[[True if k in train_idx  else False for k in range(len(x_data))],:]
+
+        t_train = t[train_idx,:]
+        t_valid = t[[True if k in train_idx  else False for k in range(len(x_data))],:]
+
+    else:
+        cutoff = int(.8* x_data.shape[0]);
+        x_train = x_data[:cutoff, :]
+        u_train = u_data[:cutoff, :]
+        x_valid = x_data[cutoff:, :]
+        u_valid = u_data[cutoff:, :]
+
+        t_train = t[:cutoff, :]
+        t_valid = t[cutoff:, :]
+    plt.figure()
+    plt.plot(t_train, x_train)
+    plt.plot(t_valid, x_valid, "k")
+    plt.show()
+    return x_train, u_train, t_train, x_valid, u_valid, t_valid
+
+def save_motor_data(motor_path, save_path):
+    motordict = read_motordict(motor_path)
+    motor_model = MotorModel(motordict, 1e-4, "wye", solver='newton')
+
+    dictionary = {}
+    dictionary['stator_leakage_inductance'] = motor_model.stator_leakage_inductance
+    dictionary['N_abc_T'] = motor_model.N_abc_T
+    dictionary['R_st'] = motor_model.R_st
+    with open(save_path + '/MOTORDATA.pkl', 'wb') as file:
+        pkl.dump(dictionary, file)
+    return
 
 def create_and_save_immec_data(timestep, t_end, path_to_motor, save_path, V=400, mode='linear'):
     # V should always be below 400, minimal V is 40 (means 5hz f)
@@ -134,17 +177,31 @@ def create_and_save_immec_data(timestep, t_end, path_to_motor, save_path, V=400,
                 except NoConvergenceException:
                     tuner.jump()
 
-        data_logger.save_history(save_path)
+        data_logger.save_history(save_path)  # debug here for data_logger.model.R_st
     return
 
 
-def v_abc_exact(data_logger):
-    data_logger.keys()
+def v_abc_exact(data_logger, path_to_motor_info):
+    print(data_logger.keys())
+
+    with open(path_to_motor_info, 'rb') as file:
+        motorinfo = pkl.load(file)
+
     # input the entire data_logger
+    R = motorinfo['R_st']
+    Nt = motorinfo['N_abc_T']  # model.N_abc
+    L_s = motorinfo['stator_leakage_inductance']  # model.stator_leakage_inductance
 
-    v_abc = None
+    dt = data_logger['time'][-1] - data_logger['time'][-2]
+    dphi = 1 / dt * np.diff(data_logger['flux_st_yoke'].T)  # forward euler, flux_st_yoke, this array is one shorter
+    di = 1 / dt * np.diff(data_logger['i_st'].T)  # forward euler, flux_st_yoke, this array is one shorter
 
-    return v_abc
+    dphi = np.append(dphi, dphi[:,-1:], axis = 1)
+    di = np.append(di, di[:,-1:], axis = 1)
+    print("We assume dphi is the same for the last value of v_abc (using approx)")
+    v_abc = np.dot(R, data_logger['i_st'].T) + np.dot(Nt, dphi) + L_s * di
+
+    return v_abc.T
 
 
 def v_abc_estimate(data_logger):
@@ -153,7 +210,7 @@ def v_abc_estimate(data_logger):
     T = np.array([[1, -1, 0],
                   [1, 2, 0],
                   [-2, -1, 0]])
-    return 1/3 * np.dot(T,data_logger['v_applied'].T).T
+    return 1 / 3 * np.dot(T, data_logger['v_applied'].T).T
 
 
 if __name__ == '__main__':
