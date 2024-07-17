@@ -74,20 +74,20 @@ def get_immec_training_data(path_to_data_logger, timestep=1e-4, use_estimate_for
     t = data_logger['time']
     #x_data, u_data, t = sklearn.utils.shuffle(x_data,u_data,t)
 
-    shuffle = False
+    shuffle = True #debug
     if shuffle:
         train_idx = sklearn.utils.shuffle(np.arange(x_data.shape[0])) # 80% training
-        train_idx = np.sort(train_idx[:int(0.8*x_data.shape[0])])
+        train_idx = np.sort(train_idx[:int(0.8*x_data.shape[0])]) # leave them unsorted
         x_train = x_data[train_idx,:]
         u_train = u_data[train_idx,:]
-        x_valid = x_data[[True if k in train_idx  else False for k in range(len(x_data))],:]
-        u_valid = u_data[[True if k in train_idx  else False for k in range(len(x_data))],:]
+        x_valid = x_data[[False if k in train_idx else True for k in range(len(x_data))],:]
+        u_valid = u_data[[False if k in train_idx else True for k in range(len(x_data))],:]
 
         t_train = t[train_idx,:]
-        t_valid = t[[True if k in train_idx  else False for k in range(len(x_data))],:]
+        t_valid = t[[False if k in train_idx else True for k in range(len(x_data))],:]
 
     else:
-        cutoff = int(.8* x_data.shape[0]);
+        cutoff = int(.95 *x_data.shape[0]);
         x_train = x_data[:cutoff, :]
         u_train = u_data[:cutoff, :]
         x_valid = x_data[cutoff:, :]
@@ -95,10 +95,12 @@ def get_immec_training_data(path_to_data_logger, timestep=1e-4, use_estimate_for
 
         t_train = t[:cutoff, :]
         t_valid = t[cutoff:, :]
-    '''plt.figure()
-    plt.plot(t_train, x_train)
-    plt.plot(t_valid, x_valid, "k")
-    plt.show()'''
+    plot = True #debug
+    if plot:
+        plt.figure()
+        plt.scatter(t_train, x_train[:,0])
+        plt.scatter(t_valid, x_valid[:,0])
+        plt.show()
     return x_train, u_train, t_train, x_valid, u_valid, t_valid
 
 def save_motor_data(motor_path, save_path):
