@@ -1,6 +1,6 @@
 from source import *
 dt = 1e-4
-t_end = 1.0
+t_end = 1.0     
 
 save_path = 'C:/Users/emmav/PycharmProjects/SINDY_project/data/data_files/IMMEC_history_40.0V_'+str(t_end)+'sec' #for conventional naming
 load_path = save_path + '.pkl'
@@ -21,13 +21,14 @@ library = ps.PolynomialLibrary(degree=
 
 model = ps.SINDy(optimizer=optimizer, feature_library=library)
 
-'''dt_array = np.diff(t_train, axis = 0)
+dt_array = np.diff(t_train, axis = 0)
 xdot = np.diff(x_train, axis=0)
-dt_array = dt_array[:, None]
+#dt_array = dt_array[:, None] #this doesnt work
 xdot = xdot / dt_array
-np.vstack((np.array([0,0,0]),xdot))'''
+np.vstack((np.array([0,0,0]),xdot)) #add extra 
 
-model.fit(x_train, u=u_train, t = dt) # t = dt? or timevec ?
+
+model.fit(x_train, u=u_train, t = t_train, x_dot = xdot) # t = dt? or timevec ?
 # todo eventueel xdot zelf berekenen en meegeven met fit
 model.print()
 # so: x = i, u0_2 = v, u3_5 = I, u6_8 = V, u_9 = theta, u_10 = omega

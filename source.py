@@ -95,10 +95,10 @@ def get_immec_training_data(path_to_data_logger, timestep=1e-4, use_estimate_for
 
         t_train = t[:cutoff, :]
         t_valid = t[cutoff:, :]
-    plt.figure()
+    '''plt.figure()
     plt.plot(t_train, x_train)
     plt.plot(t_valid, x_valid, "k")
-    plt.show()
+    plt.show()'''
     return x_train, u_train, t_train, x_valid, u_valid, t_valid
 
 def save_motor_data(motor_path, save_path):

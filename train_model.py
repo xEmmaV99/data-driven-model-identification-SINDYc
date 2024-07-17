@@ -1,6 +1,6 @@
 from source import *
 
-path_to_data_files = 'C:\Users\emmav\PycharmProjects\SINDY_project\data\data_files'
+path_to_data_files = 'C:/Users/emmav/PycharmProjects/SINDY_project/data/data_files'
 
 # specific data values
 V_range = np.linspace(40, 400, 10)
