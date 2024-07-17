@@ -25,11 +25,10 @@ dt_array = np.diff(t_train, axis = 0)
 xdot = np.diff(x_train, axis=0)
 #dt_array = dt_array[:, None] #this doesnt work
 xdot = xdot / dt_array
-np.vstack((np.array([0,0,0]),xdot)) #add extra 
-
+xdot = np.vstack((np.array([0,0,0]),xdot)) #add extra
 
 model.fit(x_train, u=u_train, t = t_train, x_dot = xdot) # t = dt? or timevec ?
-# todo eventueel xdot zelf berekenen en meegeven met fit
+# todo eventueel xdot zelf berekenen en meegeven met fit (kdenk dat dit oke is)
 model.print()
 # so: x = i, u0_2 = v, u3_5 = I, u6_8 = V, u_9 = theta, u_10 = omega
 
