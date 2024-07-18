@@ -21,7 +21,7 @@ def prepare_data(V_test_data = None, Torque = False):
     # all different files
 
     DATA = {'x': np.array([]), 'u': np.array([]), 'xdot': np.array([])}
-    TESTDATA = {'x': np.array([]), 'u': np.array([]), 'xdot': np.array([]), 't': np.array([]), 'V': V_test_data}
+    TESTDATA = {'x': np.array([]), 'u': np.array([]), 'xdot': np.array([]), 't': np.array([]), 'V': V_test_data, 'T_em': np.array([])}
 
     # for each datafile, fix the data (eg calculate xdot) and add to the DATA dictionary
     for V_value in V_range:
@@ -43,7 +43,7 @@ def prepare_data(V_test_data = None, Torque = False):
             v_stator = reference_abc_to_dq0(v_abc_exact(dataset, path_to_motor_info=path_to_motor_data))
 
         # remove last timestep from datafile
-        for key_to_crop in ['time', 'i_st', 'omega_rot', 'gamma_rot']:  # note that v_stator is already cropped
+        for key_to_crop in ['time', 'i_st', 'omega_rot', 'gamma_rot','T_em']:  # note that v_stator is already cropped
             dataset[key_to_crop] = dataset[key_to_crop][:-1]
 
         x_data = x_data[:-1, :]  # update x_data
@@ -62,16 +62,19 @@ def prepare_data(V_test_data = None, Torque = False):
             TESTDATA['u'] = u_data
             TESTDATA['xdot'] = xdots
             TESTDATA['t'] = t_data
+            TESTDATA['T_em'] = dataset["T_em"]
         else:
             if DATA['x'].shape[0] == 0:
                 DATA['x'] = x_data
                 DATA['u'] = u_data
                 DATA['xdot'] = xdots
+                DATA['T_em'] = dataset["T_em"]
             else:
                 DATA['x'] = np.vstack(
                     (DATA['x'], x_data))  # note that x_data is in dq0 reference frame while dataset['i_st'] is in abc
                 DATA['u'] = np.vstack((DATA['u'], u_data))
                 DATA['xdot'] = np.vstack((DATA['xdot'], xdots))
+                DATA['T_em'] = np.vstack((DATA['T_em'], dataset["T_em"]))
 
     # note that the test data will not be shuffled
     # shuffle the DATA entirely, but according to the same shuffle
@@ -79,18 +82,25 @@ def prepare_data(V_test_data = None, Torque = False):
     DATA['x'] = DATA['x'][shuffled_indices, :]
     DATA['u'] = DATA['u'][shuffled_indices, :]
     DATA['xdot'] = DATA['xdot'][shuffled_indices, :]
+    DATA['T_em'] = DATA['T_em'][shuffled_indices, :]
+
     # split the data into train and validation data
     p = 0.8  # percentage of data to be used for training
     cutidx = int(p * DATA['x'].shape[0])
+
     x_train = DATA['x'][:cutidx, :]
     u_train = DATA['u'][:cutidx, :]
     xdot_train = DATA['xdot'][:cutidx, :]
+    T_em_train = DATA['T_em'][:cutidx,:]
     x_val = DATA['x'][cutidx:, :]
     u_val = DATA['u'][cutidx:, :]
     xdot_val = DATA['xdot'][cutidx:, :]
+    T_em_val = DATA['T_em'][cutidx:, :]
 
     visualise_train_data = False
     if visualise_train_data:
         #todo think about it
         raise NotImplementedError('Visualisation of training data is not yet implemented')
+    if Torque:
+        return T_em_train, x_train, u_train, T_em_val, x_val, u_val, TESTDATA
     return xdot_train, x_train, u_train, xdot_val, x_val, u_val, TESTDATA

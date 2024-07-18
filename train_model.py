@@ -45,7 +45,7 @@ plt.title('Predicted vs computed derivatives on test set V = '+str(TESTDATA['V']
 # plt.ylim([x_dot_test_computed.min(), x_dot_test_computed.max()])
 #plt.show()
 
-time_simulation = True #really slow
+time_simulation = False #really slow
 if time_simulation:
     plt.figure()
     t_sim_idx = 5000
