@@ -3,13 +3,15 @@ import random
 from source import *
 
 
-def prepare_data():
+def prepare_data(V_test_data = None):
     path_to_data_files = 'C:/Users/emmav/PycharmProjects/SINDY_project/data/data_files'
     path_to_motor_data = 'C:/Users/emmav/PycharmProjects/SINDY_project/data/MOTORDATA.pkl'
 
     # specific data values
     V_range = np.linspace(40, 400, 10)
-    V_test_data = random.choice(V_range)
+    if V_test_data is None: # is used for some plots, should be removed later
+        V_test_data = random.choice(V_range)
+
     t_end = 1.0
     use_estimate_for_v = False  # if true, the v_abc_estimate function is used to estimate the stator voltage, else v_abc_exact is used
 

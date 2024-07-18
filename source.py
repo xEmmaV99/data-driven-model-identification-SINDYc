@@ -4,6 +4,7 @@ from immec import *
 import matplotlib.pyplot as plt
 import numpy as np
 import pysindy as ps
+import seaborn as sns
 
 
 def reference_abc_to_dq0(coord_array):
@@ -118,12 +119,12 @@ def save_motor_data(motor_path, save_path):
         pkl.dump(dictionary, file)
     return
 
-def create_and_save_immec_data(timestep, t_end, path_to_motor, save_path, V=400, mode='linear'):
+def create_and_save_immec_data(timestep, t_end, path_to_motor, save_path, V=400, mode='linear', solving_tolerance = 1e-4):
     # V should always be below 400, minimal V is 40 (means 5hz f)
     motordict = read_motordict(path_to_motor)
     stator_connection = 'wye'
 
-    motor_model = MotorModel(motordict, timestep, stator_connection, solver='newton')
+    motor_model = MotorModel(motordict, timestep, stator_connection, solver='newton', solving_tolerance=solving_tolerance)
     tuner = RelaxationTuner()
     data_logger = HistoryDataLogger(motor_model)
 
@@ -218,6 +219,41 @@ def calculate_xdot(x,t):
     dt = np.diff(t, axis=0)
     xdot = np.diff(x, axis=0)
     return xdot / dt
+
+
+def plot_coefs(coefs, featurenames = None):
+    # plot coefs of the model, based on the code provided by pysindy: https://pysindy.readthedocs.io/en/latest/examples/7_plasma_examples/example.html
+    input_features = [f"$\dot x_{k}$" for k in range(coefs.shape[0])]
+    if featurenames == None:
+        input_names = [f"$x_{k}$" for k in range(coefs.shape[1])]
+    else:
+        input_names  = featurenames
+    
+    with sns.axes_style(style="white", rc={"axes.facecolor": (0,0,0,0)}):
+        fig, ax = plt.subplots(1,1)
+        max_magnitude = np.max(np.abs(coefs))
+        heatmap_args = {
+            "xticklabels": input_features,
+            "yticklabels": input_names,
+            "center": 0.0,
+            #"cmap": "RdBu_r",
+            "cmap": sns.color_palette("vlag", n_colors=20),
+            "ax": ax,
+            "linewidths": 0.1,
+            "linecolor": "whitesmoke",
+        }
+
+        sns.heatmap(
+            coefs[:, :len(input_names)].T,
+            **heatmap_args
+        )
+
+        ax.tick_params(axis="y", rotation=0)
+    return
+    
+    
+    
+    
 
 
 if __name__ == '__main__':

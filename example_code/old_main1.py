@@ -12,12 +12,12 @@ from source import *
 
 dt = 1e-4
 t_end = 3
-motor_path = 'C:/Users/emmav/PycharmProjects/SINDY_project/Cantoni.pkl'
-save_path = 'C:/Users/emmav/PycharmProjects/SINDY_project/data/old_data/IMMEC_history_3sec.pkl.pkl'
+motor_path = '/Cantoni.pkl'
+save_path = '/data/old_data/IMMEC_history_short.pkl'
 
 # create_and_save_immec_data(mode='linear', timestep=dt, t_end=t_end, path_to_motor=motor_path, save_path= save_path)
 
-x_data, u_data = get_immec_training_data(timestep=dt, path_to_data_logger=save_path, useOldData=True)
+x_data, u_data, _,_,_,_ = get_immec_training_data(timestep=dt, path_to_data_logger=save_path, useOldData=True)
 
 train_cutoff = 1 #5000 is de helft
 x_train = x_data[0:-train_cutoff]
@@ -78,7 +78,7 @@ plt.show()
 
 
 
-simulate_in_time = False  # this takes really long to simulate!
+simulate_in_time = True  # this takes really long to simulate!
 if simulate_in_time:
     plt.figure()
     # how to check this? Simulate in time

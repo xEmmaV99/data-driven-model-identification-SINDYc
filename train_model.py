@@ -2,14 +2,16 @@ import matplotlib.pyplot as plt
 
 from source import *
 from prepare_data import *
+
+
 path_to_data_files = 'C:/Users/emmav/PycharmProjects/SINDY_project/data/data_files'
 
 # get the data
-xdot_train, x_train, u_train, xdot_val, x_val, u_val, TESTDATA = prepare_data()
+xdot_train, x_train, u_train, xdot_val, x_val, u_val, TESTDATA = prepare_data(V_test_data = 360)
 
 # Fit the model
 threshold = 0.0001 #todo CONSIDER THIS TO BE OPTIMISED
-optimizer = ps.SR3(thresholder="l0", threshold=threshold)
+optimizer = ps.SR3(thresholder="l1", threshold=threshold)
 
 library = ps.PolynomialLibrary(degree=2, include_interaction=True)
 
@@ -18,10 +20,11 @@ model = ps.SINDy(optimizer=optimizer, feature_library=library)
 model.fit(x_train, u=u_train, t=None, x_dot=xdot_train)
 
 model.print()
+plot_coefs(model.coefficients(), featurenames = model.get_feature_names())
+plt.figure()
 # so: x = i, u0_2 = v, u3_5 = I, u6_8 = V, u_9 = theta, u_10 = omega
 
 #todo: use validation data for optimising the threshold
-
 
 # generate the model on the testdata
 
@@ -40,9 +43,24 @@ plt.plot(t, xdot_test, 'k--')
 plt.legend(["$\partial_t{i_d}$", "$\partial_t{i_q}$", "$\partial_t{i_0}$", "computed"])
 plt.title('Predicted vs computed derivatives on test set V = '+str(TESTDATA['V']))
 # plt.ylim([x_dot_test_computed.min(), x_dot_test_computed.max()])
+#plt.show()
+
+time_simulation = True #really slow
+if time_simulation:
+    plt.figure()
+    t_sim_idx = 5000
+    print("starting simulation")
+    t_value = t[:t_sim_idx]
+    x_sim = model.simulate(x_test[0,:], u=u_test[:t_sim_idx,:], t=(t_value).reshape(t_value.shape[0]))
+    print("ended simulation")
+
+    plt.plot(t_value[:-1], x_sim)
+    plt.plot(t_value, x_test[:t_sim_idx,:], 'k--')
+    plt.legend(["$i_d$", "$i_q$", "$i_0$", "test data"])
+    plt.title('Simulated vs computed currents on test set V = '+str(TESTDATA['V']))
+    plt.xlabel("$t$")
+    plt.ylabel("$x$")
 plt.show()
-
-
 
 # todo torque
 # todo add non linear to immec model (and try to solve that with sindy)

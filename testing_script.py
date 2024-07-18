@@ -1,67 +1,49 @@
+import matplotlib.pyplot as plt
+import numpy as np
+
+from sklearn.metrics import mean_squared_error
+
 from source import *
+from prepare_data import *
 
-dt = 1e-4
-t_end = 1.0
 
-# I don't think this is desireabl since i sample from ONE simulation; validation inside one simulation.
+def error_value(model, x_val, u_val, xdot_val):  # The theshold = 0 is a minumum, less sparcity
+    sparsity = np.count_nonzero(model.coefficients()) / (model.coefficients().shape[0]*model.coefficients().shape[1]) #percentage of non-zero elements
 
-save_path = 'C:/Users/emmav/PycharmProjects/SINDY_project/data/data_files/IMMEC_history_400.0V_' + str(
-    t_end) + 'sec'  # for conventional naming
-load_path = save_path + '.pkl'
-info_path = 'C:/Users/emmav/PycharmProjects/SINDY_project/data/MOTORDATA.pkl'  # motordata
+    mse = mean_squared_error(model.predict(x_val, u_val), xdot_val) # this is shuffeled...
+    return mse, sparsity  # add penalty for sparsity
 
-x_train, u_train, t_train, x_valid, u_valid, t_valid = get_immec_training_data(path_to_data_logger=load_path,
-                                                                               use_estimate_for_v=True,
-                                                                               motorinfo_path=info_path)
+#todo simulating and comparing with x itself?
 
-# testing one model
+
+path_to_data_files = 'C:/Users/emmav/PycharmProjects/SINDY_project/data/data_files'
+
+# get the data
+xdot_train, x_train, u_train, xdot_val, x_val, u_val, TESTDATA = prepare_data()
+
 # Fit the model
-threshold = 0.0001
-optimizer = ps.SR3(thresholder="l0", threshold=threshold)
+library = ps.PolynomialLibrary(degree=2, include_interaction=True)
 
-# library = ps.FourierLibrary(n_frequencies=1) + ps.PolynomialLibrary(degree = 1)
-library = ps.PolynomialLibrary(degree=
-                               2, include_interaction=True)  # + ps.FourierLibrary()
+threshold_list = np.linspace(1e-5,0.1, 5)
 
-model = ps.SINDy(optimizer=optimizer, feature_library=library)
+coefs = []
+errorlist = []
+spar = []
+# rmse = mean_squared_error(x_train, np.zeros(x_train.shape), squared=False)
+for i, threshold in enumerate(threshold_list):
+    print(i)
+    opt = ps.SR3(thresholder="l1", threshold=threshold)
+    model = ps.SINDy(optimizer=opt)
+    model.fit(x_train, u=u_train, t=None, x_dot=xdot_train)
+    coefs.append(model.coefficients())
+    err, sp = error_value(model, x_val, u_val, xdot_val)
+    errorlist.append(err)
+    spar.append(sp)
 
-dt_array = np.diff(t_train, axis=0)
-xdot = np.diff(x_train, axis=0)
-# dt_array = dt_array[:, None] #this doesnt work
-xdot = xdot / dt_array
-# xdot = np.vstack((np.array([0, 0, 0]), xdot))  # add extra
-
-model.fit(x_train[:-1, :], u=u_train[:-1], t=None, x_dot=xdot)  # t = dt? or timevec ?
-
-model.print()
-# so: x = i, u0_2 = v, u3_5 = I, u6_8 = V, u_9 = theta, u_10 = omega
-
-# can we compare the derivatives
-# t_end_test = 1.0
-# t_test = np.arange(0, t_end_test, dt)
-# x0_test = x_train[0, :]  # THIS CAN BE CHOSEN, IT IS NOW [0,0,0]
-# t_test_span = (t_test[0], t_test[-1])
-
-# generate new model to test it on (to do)
-x_test = x_valid
-u_test = u_valid
-
-# Predict derivatives using the learned model
-x_dot_test_predicted = model.predict(x_test, u_test)
-
-## Compute derivatives with a finite difference method, for comparison
-# x_dot_test_computed = model.differentiate(x_test,t=dt)  # differentiates the x_test values, by the differentiation method of the model
-dt_array = np.diff(t_valid, axis=0)
-x_dot_test_computed = np.diff(x_valid, axis=0)
-x_dot_test_computed = x_dot_test_computed / dt_array
-# x_dot_test_computed = np.vstack((np.array([0, 0, 0]), x_dot_test_computed))  # add extra
-# replace en zelf doen iguess?
-# todo make differentiate funtion get_xdot(x,t)
-
-plt.xlabel("$t$")
-plt.ylabel("$\dot{x}$")
-plt.plot(t_valid[:-1], x_dot_test_predicted[:-1,:])
-plt.plot(t_valid[:-1], x_dot_test_computed, 'k--')
-plt.legend(["$\partial_t{i_d}$", "$\partial_t{i_q}$", "$\partial_t{i_0}$", "computed"])
-# plt.ylim([x_dot_test_computed.min(), x_dot_test_computed.max()])
+model.score()
+plt.scatter(threshold_list,errorlist)
 plt.show()
+
+# plot_pareto(coefs, sparse_regression_optimizer, model, threshold_list, x_val, u_val, xdot_val)
+# plt.show()
+# todo: use validation data for optimising the threshold
