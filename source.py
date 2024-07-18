@@ -48,6 +48,7 @@ def check_training_data(path_to_data_logger, keys_to_plot_list=None):
 def get_immec_training_data(path_to_data_logger, timestep=1e-4, use_estimate_for_v=False, motorinfo_path=None,
                             useOldData=False):
     # useOldData TO BE REMOVED, for backward compatibility
+    # works for ONE datafile
     with open(path_to_data_logger, 'rb') as file:
         data_logger = pkl.load(file)
 
@@ -76,8 +77,9 @@ def get_immec_training_data(path_to_data_logger, timestep=1e-4, use_estimate_for
 
     shuffle = True #debug
     if shuffle:
+        cutoff = int(.8 * x_data.shape[0])
         train_idx = sklearn.utils.shuffle(np.arange(x_data.shape[0])) # 80% training
-        train_idx = np.sort(train_idx[:int(0.8*x_data.shape[0])]) # leave them unsorted
+        train_idx = np.sort(train_idx[:cutoff]) # leave them unsorted
         x_train = x_data[train_idx,:]
         u_train = u_data[train_idx,:]
         x_valid = x_data[[False if k in train_idx else True for k in range(len(x_data))],:]
@@ -87,7 +89,7 @@ def get_immec_training_data(path_to_data_logger, timestep=1e-4, use_estimate_for
         t_valid = t[[False if k in train_idx else True for k in range(len(x_data))],:]
 
     else:
-        cutoff = int(.95 *x_data.shape[0]);
+        cutoff = int(.5 *x_data.shape[0]);
         x_train = x_data[:cutoff, :]
         u_train = u_data[:cutoff, :]
         x_valid = x_data[cutoff:, :]
@@ -98,8 +100,9 @@ def get_immec_training_data(path_to_data_logger, timestep=1e-4, use_estimate_for
     plot = True #debug
     if plot:
         plt.figure()
-        plt.scatter(t_train, x_train[:,0])
-        plt.scatter(t_valid, x_valid[:,0])
+        plt.scatter(t_train, x_train[:,0], marker= ".")
+        plt.scatter(t_valid, x_valid[:,0], marker=".")
+        plt.legend(["traindata","validationdata"])
         plt.show()
     return x_train, u_train, t_train, x_valid, u_valid, t_valid
 
@@ -184,8 +187,6 @@ def create_and_save_immec_data(timestep, t_end, path_to_motor, save_path, V=400,
 
 
 def v_abc_exact(data_logger, path_to_motor_info):
-    print(data_logger.keys())
-
     with open(path_to_motor_info, 'rb') as file:
         motorinfo = pkl.load(file)
 
@@ -198,10 +199,8 @@ def v_abc_exact(data_logger, path_to_motor_info):
     dphi = 1 / dt * np.diff(data_logger['flux_st_yoke'].T)  # forward euler, flux_st_yoke, this array is one shorter
     di = 1 / dt * np.diff(data_logger['i_st'].T)  # forward euler, flux_st_yoke, this array is one shorter
 
-    dphi = np.append(dphi, dphi[:,-1:], axis = 1)
-    di = np.append(di, di[:,-1:], axis = 1)
-    print("We assume dphi is the same for the last value of v_abc (using approx)")
-    v_abc = np.dot(R, data_logger['i_st'].T) + np.dot(Nt, dphi) + L_s * di
+    ist = data_logger['i_st'][:-1,:] # remove the last value of i_st
+    v_abc = np.dot(R, ist.T) + np.dot(Nt, dphi) + L_s * di
 
     return v_abc.T
 
@@ -213,6 +212,12 @@ def v_abc_estimate(data_logger):
                   [1, 2, 0],
                   [-2, -1, 0]])
     return 1 / 3 * np.dot(T, data_logger['v_applied'].T).T
+
+
+def calculate_xdot(x,t):
+    dt = np.diff(t, axis=0)
+    xdot = np.diff(x, axis=0)
+    return xdot / dt
 
 
 if __name__ == '__main__':

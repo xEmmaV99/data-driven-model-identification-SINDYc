@@ -24,8 +24,10 @@ if __name__ == "__main__":
         save_motor_data(motor_path, save_path)
 
     do_simulation(motor_path, save_path, V_applied=400 ,t_end=1e-3)
+    # generate data is without dot{x} because it is not implemented in immec.
     ''' # multiprocessing
-    V_ranges = np.linspace(40,400,10)
+    ### V_ranges = np.linspace(40,400,10)
+    V_ranges = np.random.randint(40,400,40) # randomly generated V values
     p = multiprocessing.Pool(processes=10)
 
     p.map(do_simulation, V_ranges)
