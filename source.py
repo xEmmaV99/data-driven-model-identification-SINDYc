@@ -124,7 +124,11 @@ def create_and_save_immec_data(timestep, t_end, path_to_motor, save_path, V=400,
     motordict = read_motordict(path_to_motor)
     stator_connection = 'wye'
 
-    motor_model = MotorModel(motordict, timestep, stator_connection, solver='newton', solving_tolerance=solving_tolerance)
+    if mode == 'linear':
+        motor_model = MotorModel(motordict, timestep, stator_connection)
+    else:
+        motor_model = MotorModel(motordict, timestep, stator_connection, solver='newton', solving_tolerance=solving_tolerance)
+
     tuner = RelaxationTuner()
     data_logger = HistoryDataLogger(motor_model)
 

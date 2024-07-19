@@ -94,3 +94,4 @@ def prepare_data(V_test_data = None, Torque = False):
         #todo think about it
         raise NotImplementedError('Visualisation of training data is not yet implemented')
     return xdot_train, x_train, u_train, xdot_val, x_val, u_val, TESTDATA
+

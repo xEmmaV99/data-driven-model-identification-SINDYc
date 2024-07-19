@@ -2,6 +2,14 @@ import matplotlib.pyplot as plt
 
 from source import *
 
+path = 'C:/Users/emmav/PycharmProjects/SINDY_project/data/IMMEC_history_soltol_-400.0V_1.0sec.pkl'
+with open(path, 'rb') as f:
+    dataset = pkl.load(f)
+
+plt.plot(dataset['omega_rot'])
+plt.show()
+
+'''
 path = '/data/data_files/IMMEC_history_80.0V_1.0sec.pkl'
 with open(path, 'rb') as f:
     dataset = pkl.load(f)
@@ -72,3 +80,4 @@ plt.title('Time derivative of the currents with tolerance 1e-5')
 plt.xlabel('time (s)')
 plt.ylabel('$\dot{x}$')
 plt.show()
+'''
