@@ -1,7 +1,12 @@
-from prepare_data import *
+import matplotlib.pyplot as plt
+import sklearn.linear_model
 
+from prepare_data import *
+from sklearn.metrics import mean_squared_error
+from sklearn.linear_model import Lasso
 cwd = os.getcwd()
 path_to_data_files = os.path.join(cwd, 'data/07-19')
+
 
 def simulate_currents():
     """
@@ -14,24 +19,54 @@ def simulate_currents():
                                                                                   path_to_test_file=path_to_test_file)
 
     # Fit the model
-    threshold = 1e-4  # todo CONSIDER THIS TO BE OPTIMISED
-    optimizer = ps.SR3(thresholder="l1", threshold=threshold)
+    number_of_models =1
+    if number_of_models == 1:
+        threshold =.4
+        #optimizer = ps.SR3(thresholder="l1", threshold=threshold)
+        optimizer = Lasso(alpha=threshold)
+        library = ps.PolynomialLibrary(degree=2, include_interaction=True)
+        model = ps.SINDy(optimizer=optimizer, feature_library=library)
+        model.fit(x_train, u=u_train, t=None, x_dot=xdot_train)
+        model.print()
+        #plot_coefs(model.coefficients(), featurenames=model.get_feature_names())
+        #plt.figure()
+    else:
+        # make models and calucalte RMSE and sparisty
+        #threshold_grid = np.logspace(-8, 1, number_of_models)
+        threshold_grid = np.linspace(1e-8, 1, number_of_models)
+        variable = {'threshold': threshold_grid,
+                    'MSE': np.zeros(number_of_models),
+                    'SPAR': np.zeros(number_of_models),
+                    'model': list(np.zeros(number_of_models))}
+        for i,threshold in enumerate(threshold_grid):
+            print(i)
+            #optimizer = ps.SR3(thresholder="l1", threshold=threshold)
+            optimizer = Lasso(alpha=threshold)
+            library = ps.PolynomialLibrary(degree=2, include_interaction=True)
+            model = ps.SINDy(optimizer=optimizer, feature_library=library)
+            model.fit(x_train, u=u_train, t=None, x_dot=xdot_train) #fit on training data
 
-    library = ps.PolynomialLibrary(degree=2, include_interaction=True)
+            variable['MSE'][i] = mean_squared_error(model.predict(x_val, u_val), xdot_val) # validate
+            variable['SPAR'][i] = np.count_nonzero(model.coefficients())  # number of non-zero elements
+            variable['model'][i] = model
 
-    model = ps.SINDy(optimizer=optimizer, feature_library=library)
+        rel_sparsity = variable['SPAR'] / np.max(variable['SPAR'])
 
-    model.fit(x_train, u=u_train, t=None, x_dot=xdot_train)
+        # plot the results
+        fig, ax1 = plt.subplots()
+        ax1.set_xlabel(r'Threshold $\lambda$')
+        ax1.set_ylabel('MSE', color='r')
+        ax1.plot(variable['threshold'], variable['MSE'], color='r')
+        ax2 = ax1.twinx()
 
-    model.print()
-    plot_coefs(model.coefficients(), featurenames=model.get_feature_names())
-    plt.figure()
-    # so: x = i, u0_2 = v, u3_5 = I, u6_8 = V, u_9 = theta, u_10 = omega
+        ax2.set_ylabel('Relative sparsity', color='b')
+        ax2.plot(variable['threshold'], rel_sparsity, color='b')
 
-    # todo: use validation data for optimising the threshold
+        fig.tight_layout()
+        plt.show()
 
-    # generate the model on the testdata
 
+    # CHECK THE BEST MODEL ON THE TESTDATA
     xdot_test = TESTDATA['xdot']
     x_test = TESTDATA['x']
     u_test = TESTDATA['u']
@@ -103,7 +138,7 @@ def simulate_torque():
     plt.show()
     return
 
-simulate_torque()
+simulate_currents()
 
 # todo add non linear to immec model (and try to solve that with sindy)
 # todo add static ecc
