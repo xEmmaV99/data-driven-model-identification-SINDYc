@@ -74,23 +74,23 @@ def get_immec_training_data(path_to_data_logger, timestep=1e-4, use_estimate_for
 
     # lastly, shuffle the data using sklearn.utils.shuffle to shuffle consistently
     t = data_logger['time']
-    #x_data, u_data, t = sklearn.utils.shuffle(x_data,u_data,t)
+    # x_data, u_data, t = sklearn.utils.shuffle(x_data,u_data,t)
 
-    shuffle = True #debug
+    shuffle = True  # debug
     if shuffle:
         cutoff = int(.8 * x_data.shape[0])
-        train_idx = sklearn.utils.shuffle(np.arange(x_data.shape[0])) # 80% training
-        train_idx = np.sort(train_idx[:cutoff]) # leave them unsorted
-        x_train = x_data[train_idx,:]
-        u_train = u_data[train_idx,:]
-        x_valid = x_data[[False if k in train_idx else True for k in range(len(x_data))],:]
-        u_valid = u_data[[False if k in train_idx else True for k in range(len(x_data))],:]
+        train_idx = sklearn.utils.shuffle(np.arange(x_data.shape[0]))  # 80% training
+        train_idx = np.sort(train_idx[:cutoff])  # leave them unsorted
+        x_train = x_data[train_idx, :]
+        u_train = u_data[train_idx, :]
+        x_valid = x_data[[False if k in train_idx else True for k in range(len(x_data))], :]
+        u_valid = u_data[[False if k in train_idx else True for k in range(len(x_data))], :]
 
-        t_train = t[train_idx,:]
-        t_valid = t[[False if k in train_idx else True for k in range(len(x_data))],:]
+        t_train = t[train_idx, :]
+        t_valid = t[[False if k in train_idx else True for k in range(len(x_data))], :]
 
     else:
-        cutoff = int(.5 *x_data.shape[0]);
+        cutoff = int(.5 * x_data.shape[0])
         x_train = x_data[:cutoff, :]
         u_train = u_data[:cutoff, :]
         x_valid = x_data[cutoff:, :]
@@ -98,16 +98,17 @@ def get_immec_training_data(path_to_data_logger, timestep=1e-4, use_estimate_for
 
         t_train = t[:cutoff, :]
         t_valid = t[cutoff:, :]
-    plot = True #debug
+    plot = True  # debug
     if plot:
         plt.figure()
-        plt.scatter(t_train, x_train[:,0], marker= ".")
-        plt.scatter(t_valid, x_valid[:,0], marker=".")
-        plt.legend(["traindata","validationdata"])
+        plt.scatter(t_train, x_train[:, 0], marker=".")
+        plt.scatter(t_valid, x_valid[:, 0], marker=".")
+        plt.legend(["traindata", "validationdata"])
         plt.show()
     return x_train, u_train, t_train, x_valid, u_valid, t_valid
 
-def save_motor_data(motor_path, save_path):
+
+def save_motor_data(motor_path, save_path, extra_dict=None):
     motordict = read_motordict(motor_path)
     motor_model = MotorModel(motordict, 1e-4, "wye", solver='newton')
 
@@ -115,11 +116,16 @@ def save_motor_data(motor_path, save_path):
     dictionary['stator_leakage_inductance'] = motor_model.stator_leakage_inductance
     dictionary['N_abc_T'] = motor_model.N_abc_T
     dictionary['R_st'] = motor_model.R_st
-    with open(save_path + '/MOTORDATA.pkl', 'wb') as file:
+
+    for key in extra_dict.keys():  # add extra things
+        dictionary[key] = extra_dict[key]
+
+    with open(save_path + '/SIMULATION_DATA.pkl', 'wb') as file:
         pkl.dump(dictionary, file)
     return
 
-def create_and_save_immec_data(timestep, t_end, path_to_motor, save_path, V=400, mode='linear', solving_tolerance = 1e-4):
+
+def create_and_save_immec_data(timestep, t_end, path_to_motor, save_path, V=400, mode='linear', solving_tolerance=1e-4):
     # V should always be below 400, minimal V is 40 (means 5hz f)
     motordict = read_motordict(path_to_motor)
     stator_connection = 'wye'
@@ -127,7 +133,8 @@ def create_and_save_immec_data(timestep, t_end, path_to_motor, save_path, V=400,
     if mode == 'linear':
         motor_model = MotorModel(motordict, timestep, stator_connection)
     else:
-        motor_model = MotorModel(motordict, timestep, stator_connection, solver='newton', solving_tolerance=solving_tolerance)
+        motor_model = MotorModel(motordict, timestep, stator_connection, solver='newton',
+                                 solving_tolerance=solving_tolerance)
 
     tuner = RelaxationTuner()
     data_logger = HistoryDataLogger(motor_model)
@@ -187,6 +194,7 @@ def create_and_save_immec_data(timestep, t_end, path_to_motor, save_path, V=400,
                 except NoConvergenceException:
                     tuner.jump()
 
+        # data_logger.log(0, np.array([V]), quantities_to_log= "V_max")
         data_logger.save_history(save_path)  # debug here for data_logger.model.R_st
     return
 
@@ -202,9 +210,9 @@ def v_abc_exact(data_logger, path_to_motor_info):
 
     dt = data_logger['time'][-1] - data_logger['time'][-2]
     dphi = 1 / dt * np.diff(data_logger['flux_st_yoke'].T)  # forward euler, flux_st_yoke, this array is one shorter
-    di = 1 / dt * np.diff(data_logger['i_st'].T)  # forward euler, flux_st_yoke, this array is one shorter
+    di = 1 / dt * np.diff(data_logger['i_st'].T)  # forward euler, flux_st_yoke, !!! this array is one shorter !!!
 
-    ist = data_logger['i_st'][:-1,:] # remove the last value of i_st
+    ist = data_logger['i_st'][:-1, :]  # remove the last value of i_st
     v_abc = np.dot(R, ist.T) + np.dot(Nt, dphi) + L_s * di
 
     return v_abc.T
@@ -219,28 +227,26 @@ def v_abc_estimate(data_logger):
     return 1 / 3 * np.dot(T, data_logger['v_applied'].T).T
 
 
-def calculate_xdot(x,t):
-    dt = np.diff(t, axis=0)
-    xdot = np.diff(x, axis=0)
-    return xdot / dt
+def calculate_xdot(x, t):  # use pySINDy to calculate xdot
+    return ps.FiniteDifference(order=2, axis=0)._differentiate(x,  t.reshape(t.shape[0]))  # Default order is two.
 
 
-def plot_coefs(coefs, featurenames = None):
+def plot_coefs(coefs, featurenames=None):
     # plot coefs of the model, based on the code provided by pysindy: https://pysindy.readthedocs.io/en/latest/examples/7_plasma_examples/example.html
-    input_features = [f"$\dot x_{k}$" for k in range(coefs.shape[0])]
+    input_features = [rf"$\dot x_{k}$" for k in range(coefs.shape[0])]
     if featurenames == None:
-        input_names = [f"$x_{k}$" for k in range(coefs.shape[1])]
+        input_names = [rf"$x_{k}$" for k in range(coefs.shape[1])]
     else:
-        input_names  = featurenames
-    
-    with sns.axes_style(style="white", rc={"axes.facecolor": (0,0,0,0)}):
-        fig, ax = plt.subplots(1,1)
+        input_names = featurenames
+
+    with sns.axes_style(style="white", rc={"axes.facecolor": (0, 0, 0, 0)}):
+        fig, ax = plt.subplots(1, 1)
         max_magnitude = np.max(np.abs(coefs))
         heatmap_args = {
             "xticklabels": input_features,
             "yticklabels": input_names,
             "center": 0.0,
-            #"cmap": "RdBu_r",
+            # "cmap": "RdBu_r",
             "cmap": sns.color_palette("vlag", n_colors=20),
             "ax": ax,
             "linewidths": 0.1,
@@ -254,17 +260,3 @@ def plot_coefs(coefs, featurenames = None):
 
         ax.tick_params(axis="y", rotation=0)
     return
-    
-    
-    
-    
-
-
-if __name__ == '__main__':
-    def f(t, offset): return np.sin(2 * np.pi * t + offset)
-
-
-    # test reference_abc_to_dq0 : for a balanced system
-    array = np.array([[f(0, 0), f(0, 2 / 3 * np.pi), f(0, 4 / 3 * np.pi)],
-                      [f(0.2, 0), f(0.2, 2 / 3 * np.pi), f(0.2, 4 / 3 * np.pi)]])
-    print(reference_abc_to_dq0(array))
