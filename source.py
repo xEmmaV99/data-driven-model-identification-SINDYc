@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pysindy as ps
 import seaborn as sns
-
+import os
 
 def reference_abc_to_dq0(coord_array):
     # coord_array is a Nx3 array with N the number of samples
@@ -229,6 +229,33 @@ def v_abc_estimate(data_logger):
 
 def calculate_xdot(x, t):  # use pySINDy to calculate xdot
     return ps.FiniteDifference(order=2, axis=0)._differentiate(x,  t.reshape(t.shape[0]))  # Default order is two.
+
+def save_plot_data(save_name, xydata, title, xlab, ylab, legend = None):
+    # xydata contains the data to plot, but if multiple axis should be plotted, xy data should be a list of arrays
+    #if it is only one x,y then [np.array([x,y])] should be the input
+    # create the dictionary to save as is
+    pltdata = {'title': title, 'xlab':xlab, 'ylab':ylab, 'legend' = legend}
+    pltdata['plots'] = {}
+    for xy_array in xydata:
+        pltdata['plots']['x'] = xy_array[:, 0]
+        pltdata["plots"]['y'] = xy_array[:,1]
+
+    cwd = os.getcwd()
+    save_path = os.path.join(cwd, '\\plot_data\\', save_name + '.pkl')
+    with open(save_path, 'wb') as file:
+        pkl.dump(pltdata, file)
+    return
+
+def plot_data(path = 'plotdata.pkl'):
+    with open(path , 'rb') as file:
+        data = pkl.load(file)
+    plt.figure()
+    plt.title(data['title'])
+    plt.xlabel(data['xlab']), plt.ylabel(data['ylab'])
+    for thing in data['plots']:
+        plt.plot(thing['x'], thing['y'])
+    plt.show()
+    return
 
 
 def plot_coefs(coefs, featurenames=None):
