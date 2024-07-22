@@ -7,7 +7,7 @@ import scipy
 from source import *
 
 
-def prepare_data(path_to_data_files, V_test_data=None, Torque=False, path_to_test_file=None, t_end=1.0):
+def prepare_data(path_to_data_files, V_test_data=None, Torque=False, UMP=False, path_to_test_file=None, t_end=1.0):
     path_to_simulation_data = os.path.join(path_to_data_files, 'SIMULATION_data.pkl')
 
     # Read Voltages used for simulation
@@ -38,7 +38,7 @@ def prepare_data(path_to_data_files, V_test_data=None, Torque=False, path_to_tes
 
     DATA = {'x': np.array([]), 'u': np.array([]), 'xdot': np.array([])}
     TESTDATA = {'x': np.array([]), 'u': np.array([]), 'xdot': np.array([]), 't': np.array([]), 'V': V_test_data,
-                'T_em': np.array([])}
+                'T_em': np.array([]), 'UMP': np.array([])}
 
     # for each datafile, fix the data (eg calculate xdot) and add to the DATA dictionary
     for V_value in V_range:
@@ -62,14 +62,16 @@ def prepare_data(path_to_data_files, V_test_data=None, Torque=False, path_to_tes
             # v_stator is one shorter, so must the other data!
 
         # remove last timestep from datafile
-        for key_to_crop in ['time', 'i_st', 'omega_rot', 'gamma_rot', 'T_em']:  # note that v_stator is already cropped
-            dataset[key_to_crop] = dataset[key_to_crop][:-1]
+        for key_to_crop in ['time', 'omega_rot', 'gamma_rot', 'T_em']:  # note that v_stator is already cropped
+            dataset[key_to_crop] = dataset[key_to_crop][:-1] # todo how does this work for i_st as it has 3 dimensions?
+        for key_to_crop in ['i_st', 'F_em']:
+            dataset[key_to_crop] = dataset[key_to_crop][:-1, :]
 
         x_data = x_data[:-1, :]  # update x_data
         t_data = dataset['time']  # update t_data
 
         # get u data: potentials_st, i_st, omega_rot, gamma_rot, and the integrals.
-        timestep = t_data[1] - t_data[0]
+        # timestep = t_data[1] - t_data[0]
         # I = np.cumsum(x_data, 0) * timestep
         # V = np.cumsum(v_stator, 0) * timestep  # Consider using trapezoid method
         I = scipy.integrate.cumtrapz(x_data, t_data, axis=0, initial=0)
@@ -91,19 +93,21 @@ def prepare_data(path_to_data_files, V_test_data=None, Torque=False, path_to_tes
             TESTDATA['xdot'] = xdots
             TESTDATA['t'] = t_data
             TESTDATA['T_em'] = dataset["T_em"]
+            TESTDATA['UMP'] = dataset["F_em"]
         else:
             if DATA['x'].shape[0] == 0:
                 DATA['x'] = x_data
                 DATA['u'] = u_data
                 DATA['xdot'] = xdots
                 DATA['T_em'] = dataset["T_em"]
+                DATA['UMP'] = dataset["F_em"]
             else:
                 DATA['x'] = np.vstack(
                     (DATA['x'], x_data))  # note that x_data is in dq0 reference frame while dataset['i_st'] is in abc
                 DATA['u'] = np.vstack((DATA['u'], u_data))
                 DATA['xdot'] = np.vstack((DATA['xdot'], xdots))
                 DATA['T_em'] = np.vstack((DATA['T_em'], dataset["T_em"]))
-
+                DATA['UMP'] = np.vstack((DATA['UMP'], dataset["F_em"]))
     # note the slicing is done because 1) forward euler in v
 
     # note that the test data will not be shuffled
@@ -113,6 +117,7 @@ def prepare_data(path_to_data_files, V_test_data=None, Torque=False, path_to_tes
     DATA['u'] = DATA['u'][shuffled_indices, :]
     DATA['xdot'] = DATA['xdot'][shuffled_indices, :]
     DATA['T_em'] = DATA['T_em'][shuffled_indices, :]
+    DATA['UMP'] = DATA['UMP'][shuffled_indices, :]
 
     # split the data into train and validation data
     p = 0.8  # percentage of data to be used for training
@@ -122,10 +127,12 @@ def prepare_data(path_to_data_files, V_test_data=None, Torque=False, path_to_tes
     u_train = DATA['u'][:cutidx, :]
     xdot_train = DATA['xdot'][:cutidx, :]
     T_em_train = DATA['T_em'][:cutidx, :]
+    UMP_train = DATA['UMP'][:cutidx, :]
     x_val = DATA['x'][cutidx:, :]
     u_val = DATA['u'][cutidx:, :]
     xdot_val = DATA['xdot'][cutidx:, :]
     T_em_val = DATA['T_em'][cutidx:, :]
+    UMP_val = DATA['UMP'][cutidx:, :]
 
     visualise_train_data = False
     if visualise_train_data:
@@ -166,4 +173,6 @@ def prepare_data(path_to_data_files, V_test_data=None, Torque=False, path_to_tes
     TESTDATA['u_names'] = u_names  # Save the names of u_data for SINDy
     if Torque:
         return T_em_train, x_train, u_train, T_em_val, x_val, u_val, TESTDATA
+    elif UMP:
+        return UMP_train, x_train, u_train, UMP_val, x_val, u_val, TESTDATA
     return xdot_train, x_train, u_train, xdot_val, x_val, u_val, TESTDATA

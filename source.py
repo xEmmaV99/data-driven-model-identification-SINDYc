@@ -218,6 +218,7 @@ def v_abc_exact(data_logger, path_to_motor_info):
 
     return v_abc.T
 
+
 def read_V_from_directory(path_to_directory):
     # most datafiles have the name IMMEC_history_{voltage}V_1.0sec.pkl, so this function reads the voltage from the
     # directory name, return an array with all voltages from files in this directory
@@ -242,12 +243,12 @@ def calculate_xdot(x, t):  # use pySINDy to calculate xdot
     return ps.FiniteDifference(order=2, axis=0)._differentiate(x, t.reshape(t.shape[0]))  # Default order is two.
 
 
-def save_plot_data(save_name, xydata, title, xlab, ylab, legend=None, plot_now = False, specs = None):
+def save_plot_data(save_name, xydata, title, xlab, ylab, legend=None, plot_now=False, specs=None, sindy_model=None):
     # xydata contains the data to plot, but if multiple axis should be plotted, xy data should be a list of arrays
     # if it is only one x,y then [np.array([x,y])] should be the input
     # create the dictionary to save as is
-    pltdata = {'title': title, 'xlab': xlab, 'ylab': ylab, 'legend': legend, 'plots': {}, 'specs': specs}
-    for i,xy_array in enumerate(xydata):
+    pltdata = {'title': title, 'xlab': xlab, 'ylab': ylab, 'legend': legend, 'plots': {}, 'specs': specs, 'model': sindy_model}
+    for i, xy_array in enumerate(xydata):
         pltdata['plots'][str(i)] = xy_array
     cwd = os.getcwd()
     save_path = os.path.join(cwd, 'plot_data\\', save_name + '.pkl')
@@ -259,21 +260,37 @@ def save_plot_data(save_name, xydata, title, xlab, ylab, legend=None, plot_now =
     return save_path
 
 
-def plot_data(path='plotdata.pkl'):
+def plot_data(path='plotdata.pkl', show = True):
     with open(path, 'rb') as file:
         data = pkl.load(file)
-    plt.figure()
-    plt.title(data['title'])
-    plt.xlabel(data['xlab']), plt.ylabel(data['ylab'])
-    specs = data['specs']
-    for idx in data['plots']:
-        if specs[int(idx)] is not None:
-            plt.plot(data['plots'][idx][:, 0], data['plots'][idx][:, 1:], specs[int(idx)])
-        else:
-            plt.plot(data['plots'][idx][:, 0], data['plots'][idx][:, 1:])
 
-    plt.legend(data['legend'])
-    plt.show()
+    if type(data['ylab']) != str: # multiple axis
+        print("Multiple axis plot detected.")
+        fig, ax1 = plt.subplots()
+        ax1.set_xlabel(data['xlab'])
+
+        ax1.set_ylabel(data['ylab'][0], color='r')
+        ax1.plot(data['plots']['0'][:, 0], data['plots']['0'][:, 1:], 'r')
+
+        ax2 = ax1.twinx()
+        ax2.set_ylabel(data['ylab'][1], color='b')
+        ax2.plot(data['plots']['1'][:, 0], data['plots']['1'][:, 1:], 'b')
+
+        fig.tight_layout()
+        plt.title(data['title'])
+    else:
+        plt.xlabel(data['xlab']), plt.ylabel(data['ylab'])
+        specs = data['specs']
+        for idx in data['plots']:
+            if specs[int(idx)] is not None:
+                plt.plot(data['plots'][idx][:, 0], data['plots'][idx][:, 1:], specs[int(idx)])
+            else:
+                plt.plot(data['plots'][idx][:, 0], data['plots'][idx][:, 1:])
+
+        plt.legend(data['legend'])
+        plt.title(data['title'])
+    if show:
+        plt.show()
     return
 
 
