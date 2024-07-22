@@ -13,13 +13,11 @@ def error_value(model, x_val, u_val, xdot_val):  # The theshold = 0 is a minumum
     mse = mean_squared_error(model.predict(x_val, u_val), xdot_val) # this is shuffeled...
     return mse, sparsity  # add penalty for sparsity
 
-#todo simulating and comparing with x itself?
-
 
 path_to_data_files = 'C:/Users/emmav/PycharmProjects/SINDY_project/data/data_files'
 
 # get the data
-xdot_train, x_train, u_train, xdot_val, x_val, u_val, TESTDATA = prepare_data()
+xdot_train, x_train, u_train, xdot_val, x_val, u_val, TESTDATA = prepare_data(path_to_data_files)
 
 # Fit the model
 library = ps.PolynomialLibrary(degree=2, include_interaction=True)
@@ -40,10 +38,8 @@ for i, threshold in enumerate(threshold_list):
     errorlist.append(err)
     spar.append(sp)
 
-model.score()
-plt.scatter(threshold_list,errorlist)
-plt.show()
+#model.score()
+#plt.scatter(threshold_list,errorlist)
+#plt.show()
 
-# plot_pareto(coefs, sparse_regression_optimizer, model, threshold_list, x_val, u_val, xdot_val)
-# plt.show()
-# todo: use validation data for optimising the threshold
+

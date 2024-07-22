@@ -7,6 +7,7 @@ import pysindy as ps
 import seaborn as sns
 import os
 
+
 def reference_abc_to_dq0(coord_array):
     # coord_array is a Nx3 array with N the number of samples
 
@@ -217,6 +218,16 @@ def v_abc_exact(data_logger, path_to_motor_info):
 
     return v_abc.T
 
+def read_V_from_directory(path_to_directory):
+    # most datafiles have the name IMMEC_history_{voltage}V_1.0sec.pkl, so this function reads the voltage from the
+    # directory name, return an array with all voltages from files in this directory
+    files = os.listdir(path_to_directory)
+    V = []
+    for file in files:
+        if file.endswith('.pkl') and file.startswith('IMMEC_history'):
+            V.append(int(file.split('_')[2][:-1]))
+    return np.array(V)
+
 
 def v_abc_estimate(data_logger):
     # actually, only data_logger['v_applied'] is needed here
@@ -228,38 +239,47 @@ def v_abc_estimate(data_logger):
 
 
 def calculate_xdot(x, t):  # use pySINDy to calculate xdot
-    return ps.FiniteDifference(order=2, axis=0)._differentiate(x,  t.reshape(t.shape[0]))  # Default order is two.
+    return ps.FiniteDifference(order=2, axis=0)._differentiate(x, t.reshape(t.shape[0]))  # Default order is two.
 
-def save_plot_data(save_name, xydata, title, xlab, ylab, legend = None):
+
+def save_plot_data(save_name, xydata, title, xlab, ylab, legend=None, plot_now = False, specs = None):
     # xydata contains the data to plot, but if multiple axis should be plotted, xy data should be a list of arrays
-    #if it is only one x,y then [np.array([x,y])] should be the input
+    # if it is only one x,y then [np.array([x,y])] should be the input
     # create the dictionary to save as is
-    pltdata = {'title': title, 'xlab':xlab, 'ylab':ylab, 'legend' = legend}
-    pltdata['plots'] = {}
-    for xy_array in xydata:
-        pltdata['plots']['x'] = xy_array[:, 0]
-        pltdata["plots"]['y'] = xy_array[:,1]
-
+    pltdata = {'title': title, 'xlab': xlab, 'ylab': ylab, 'legend': legend, 'plots': {}, 'specs': specs}
+    for i,xy_array in enumerate(xydata):
+        pltdata['plots'][str(i)] = xy_array
     cwd = os.getcwd()
-    save_path = os.path.join(cwd, '\\plot_data\\', save_name + '.pkl')
+    save_path = os.path.join(cwd, 'plot_data\\', save_name + '.pkl')
+
     with open(save_path, 'wb') as file:
         pkl.dump(pltdata, file)
-    return
+    if plot_now:
+        plot_data(save_path)
+    return save_path
 
-def plot_data(path = 'plotdata.pkl'):
-    with open(path , 'rb') as file:
+
+def plot_data(path='plotdata.pkl'):
+    with open(path, 'rb') as file:
         data = pkl.load(file)
     plt.figure()
     plt.title(data['title'])
     plt.xlabel(data['xlab']), plt.ylabel(data['ylab'])
-    for thing in data['plots']:
-        plt.plot(thing['x'], thing['y'])
+    specs = data['specs']
+    for idx in data['plots']:
+        if specs[int(idx)] is not None:
+            plt.plot(data['plots'][idx][:, 0], data['plots'][idx][:, 1:], specs[int(idx)])
+        else:
+            plt.plot(data['plots'][idx][:, 0], data['plots'][idx][:, 1:])
+
+    plt.legend(data['legend'])
     plt.show()
     return
 
 
 def plot_coefs(coefs, featurenames=None):
-    # plot coefs of the model, based on the code provided by pysindy: https://pysindy.readthedocs.io/en/latest/examples/7_plasma_examples/example.html
+    # plot coefs of the model, based on the code provided by pysindy:
+    # https://pysindy.readthedocs.io/en/latest/examples/7_plasma_examples/example.html
     input_features = [rf"$\dot x_{k}$" for k in range(coefs.shape[0])]
     if featurenames == None:
         input_names = [rf"$x_{k}$" for k in range(coefs.shape[1])]

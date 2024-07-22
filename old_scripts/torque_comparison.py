@@ -7,23 +7,25 @@ import os
 ##ALTERNATIVE TORQUE PREDICTION
 
 cwd = os.getcwd()
-path_to_data = os.path.join(cwd, 'data/07-19/')
+path_to_data = os.path.join(cwd, 'data/Combined/07-20-load')
 
-T_train, x_train, u_train, T_val, x_val, u_val, TESTDATA = prepare_data(path_to_data, Torque=True)
+T_train, x_train, u_train, T_val, x_val, u_val, TESTDATA = prepare_data(path_to_data,
+                                                                        Torque=True,
+                                                                        t_end=2.5)
 # u_val is already in dq0 reference frame
 
 u_test = TESTDATA['u']
 V = u_test[:, 6:9]
 I = u_test[:, 3:6]
 x = TESTDATA['x']
-with open(path_to_data + 'SIMULATION_DATA.pkl', 'rb') as f:
+with open(path_to_data + '/SIMULATION_DATA.pkl', 'rb') as f:
     data = pkl.load(f)
 R = data['R_st']
 lambda_dq0 = (V.T - np.dot(R, I.T)).T
 Torque = lambda_dq0[:, 0]*x[:, 1] - lambda_dq0[:, 1]*x[:, 0]  # lambda_d * i_q - lambda_q * i_d
 
 
-threshold = 1e-4
+threshold = 0
 optimizer = ps.SR3(thresholder="l1", threshold=threshold)
 library = ps.PolynomialLibrary(degree=2, include_interaction=True)
 
