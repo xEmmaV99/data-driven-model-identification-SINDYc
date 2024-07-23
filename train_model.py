@@ -38,8 +38,12 @@ def simulate_currents():
         plt.figure()
     else:
         # make models and calucalte RMSE and sparisty
-        #threshold_grid = np.logspace(-2, 1, number_of_models)
+        # threshold_grid = np.logspace(-2, 1, number_of_models)
         threshold_grid = np.linspace(0.01, 1, number_of_models)
+        dat = np.hstack((xdot_train, x_train, u_train, xdot_val, x_val, u_val))
+        theshold_search(threshold_grid, train_and_validation_data=dat, method="lasso", name="lasso_source_function")
+
+        '''
         variable = {'threshold': threshold_grid,
                     'MSE': np.zeros(number_of_models),
                     'SPAR': np.zeros(number_of_models),
@@ -58,8 +62,6 @@ def simulate_currents():
             variable['model'][i] = model
 
         #rel_sparsity = variable['SPAR'] / np.max(variable['SPAR'])
-
-
         # plot the results
         # save the plots
         xlab = r'Threshold $\lambda$'
@@ -70,7 +72,7 @@ def simulate_currents():
                   np.hstack((variable['threshold'].reshape(number_of_models,1), variable['SPAR'].reshape(number_of_models,1)))]
         specs = ['r', 'b']
         save_plot_data('MSE_sparsity_vs_threshold_SR3', xydata, title, xlab, [ylab1, ylab2], specs, plot_now=True)
-
+        '''
     # CHECK THE BEST MODEL ON THE TESTDATA
     xdot_test = TESTDATA['xdot']
     x_test = TESTDATA['x']
@@ -86,7 +88,8 @@ def simulate_currents():
     title = 'Predicted vs computed derivatives on test set V = ' + str(TESTDATA['V'])
     leg = [r"$\partial_t{i_d}$", r"$\partial_t{i_q}$", r"$\partial_t{i_0}$", "computed"]
     specs = [None, "k--"]
-    save_plot_data("currents", xydata, title, xlab, ylab, legend=leg, plot_now=True, specs=specs)#, sindy_model=model)
+    save_plot_data("currents", xydata, title, xlab, ylab, legend=leg, plot_now=True,
+                   specs=specs)  # , sindy_model=model)
 
     if do_time_simulation:
         simulation_time = 2.0
@@ -121,17 +124,20 @@ def simulate_torque():
     T_train, x_train, u_train, T_val, x_val, u_val, TESTDATA = prepare_data(path_to_data_files,
                                                                             Torque=True,
                                                                             path_to_test_file=path_to_test_file,
-                                                                            t_end=2.5)
+                                                                            t_end=2.5, number_of_trainfiles=20)
 
-    threshold = 0.07
-    # optimizer = ps.SR3(thresholder="l1", threshold=threshold)
-    optimizer = Lasso(alpha=threshold, fit_intercept=False)
+    threshold = 0.0
+    # optimizer = ps.SR3(thresholder="l1", threshold=threshold) # this runs, only reasonable for threshold = 0
+    optimizer = Lasso(alpha=threshold,
+                      fit_intercept=False)  # now, SR3 really is a lot better, it is weird that adding things to the library makes this worse too
     library = ps.PolynomialLibrary(degree=2, include_interaction=True)
 
-    model = ps.SINDy(optimizer=optimizer, feature_library=library)#, feature_names=["i_d","i_q","i_0"]+TESTDATA['u_names'])
+    model = ps.SINDy(optimizer=optimizer, feature_library=library,
+                     feature_names=["i_d", "i_q", "i_0"] + TESTDATA['u_names'])
     model.fit(x_train, u=u_train, t=None, x_dot=T_train)
 
-    return
+    if model.coefficients().ndim == 1:  # fix dimensions of this matrix, bug in pysindy, o this works
+        model.optimizer.coef_ = model.coefficients().reshape(1, model.coefficients().shape[0])
     model.print()
 
     # TESTDATA
@@ -153,24 +159,13 @@ def simulate_torque():
     Torque = lambda_dq0[:, 0] * x[:, 1] - lambda_dq0[:, 1] * x[:, 0]  # lambda_d * i_q - lambda_q * i_d
 
     # save the plots
-    xydata = [np.hstack((t, T_test_predicted)), np.hstack((t, T_test)), np.hstack((t, Torque))]
+    xydata = [np.hstack((t, T_test_predicted)), np.hstack((t, T_test)), np.hstack((t, Torque.reshape(len(t), 1)))]
     xlab = r"$t$"
     ylab = r'$T_{em}$ (Newton-meters)'
     title = 'Predicted (SINDy) vs Torque (Clarke) on test set V = ' + str(TESTDATA['V'])
     legend = [r"Predicted by SINDYc", r"Reference", r"Simplified Torque model"]
     specs = [None, "k--", "r--"]
     save_plot_data("torque", xydata, title, xlab, ylab, legend=legend, plot_now=True, specs=specs)
-
-    '''
-    plt.xlabel(r"$t$")
-    plt.ylabel(r"$T_{em}$ (Newton-meters)")
-    plt.plot(t, T_test_predicted)
-    plt.plot(t, T_test, 'k--')
-    plt.legend(["Predicted", "Reference"])
-    plt.title('Predicted vs test Torque on test set V = ' + str(TESTDATA['V']))
-
-    plt.plot(t, Torque, 'r--')
-    plt.legend([r"Predicted by SINDYc", r"Reference", r"Simplified Torque model"])
 
     plt.figure()  # dont plot first point
     plt.semilogy(t[1:], np.abs(T_test_predicted - T_test)[1:])
@@ -179,43 +174,49 @@ def simulate_torque():
     plt.title(r'Absolute error compared to Reference')
     plt.xlabel(r"$t$")
     plt.ylabel(r"$\log_{10}|T_{em} - T_{em,ref}|$")
-    plt.show()'''
+    plt.show()
     return
+
 
 def simulate_UMP():
     """
     Simulation for the UMP
     """
+    cwd = os.getcwd()
+    path_to_data_files = os.path.join(cwd, 'data/Combined/07-21-load-ecc-x50-y0')
+    print(path_to_data_files)
     path_to_test_file = None
     UMP_train, x_train, u_train, UMP_val, x_val, u_val, TESTDATA = prepare_data(path_to_data_files,
-                                                                            UMP=True,
-                                                                            path_to_test_file=path_to_test_file,
-                                                                            t_end=1.0)
+                                                                                UMP=True,
+                                                                                path_to_test_file=path_to_test_file,
+                                                                                t_end=2.5, number_of_trainfiles=40)
 
-    threshold = 0.07
-    # optimizer = ps.SR3(thresholder="l1", threshold=threshold)
+    threshold = 0.0
+    #optimizer = ps.SR3(thresholder="l1", threshold=threshold)
     optimizer = Lasso(alpha=threshold, fit_intercept=False)
     library = ps.PolynomialLibrary(degree=2, include_interaction=True)
 
-    model = ps.SINDy(optimizer=optimizer, feature_library=library, feature_names=["i_d","i_q","i_0"]+TESTDATA['u_names'])
+    model = ps.SINDy(optimizer=optimizer, feature_library=library,
+                     feature_names=["i_d", "i_q", "i_0"] + TESTDATA['u_names'])
     model.fit(x_train, u=u_train, t=None, x_dot=UMP_train)
     model.print()
 
     # TESTDATA
-    UMP_test = TESTDATA['UMP_em']
+    UMP_test = TESTDATA['UMP']
     x_test = TESTDATA['x']
     u_test = TESTDATA['u']
     t = TESTDATA['t']
     UMP_test_predicted = model.predict(x_test, u_test)
 
     # save the plots
-    xydata = [np.hstack((t, UMP_test_predicted)), np.hstack((t, UMP_test))]
+    xydata = [np.hstack((t, UMP_test_predicted[:, 0].reshape(len(t), 1))),
+              np.hstack((t, UMP_test_predicted[:, 1].reshape(len(t), 1))), np.hstack((t, UMP_test))]
     xlab = r"$t$"
     ylab = r'$UMP$ (Newton)'
     title = 'Predicted (SINDy) vs simulated UMP on test set V = ' + str(TESTDATA['V'])
     legend = [r"Predicted UMP_x", r"Predicted UMP_y", r"Reference"]
-    specs = ["b", "r","k--"]
-    save_plot_data("UMP", xydata, title, xlab, ylab, legend=legend, plot_now=True, specs=specs)
+    specs = ["b", "r", "k--"]
+    save_plot_data("UMP_lasso_ecc_load", xydata, title, xlab, ylab, legend=legend, plot_now=True, specs=specs)
 
 
 def plot_everything(path_to_directory):
@@ -223,12 +224,16 @@ def plot_everything(path_to_directory):
     for file in files:
         if file.endswith('.pkl'):
             path = os.path.join(path_to_directory, file)
-            plot_data(path)
+            plot_data(path, show=False)
+    plt.show()
     return
 
-#plot_everything('C:\\Users\\emmav\\PycharmProjects\\SINDY_project\\plot_data\\')
-simulate_torque()
-#simulate_currents()
+
+# plot_everything('C:\\Users\\emmav\\PycharmProjects\\SINDY_project\\plot_data\\')
+# simulate_torque()
+# simulate_currents()
+# simulate_UMP()
+simulate_currents()
 # todo add non linear to immec model (and try to solve that with sindy)
 # todo add static ecc
 # todo add dynamic ecc

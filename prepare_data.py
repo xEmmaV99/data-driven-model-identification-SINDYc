@@ -7,7 +7,7 @@ import scipy
 from source import *
 
 
-def prepare_data(path_to_data_files, V_test_data=None, Torque=False, UMP=False, path_to_test_file=None, t_end=1.0):
+def prepare_data(path_to_data_files, V_test_data=None, Torque=False, UMP=False, path_to_test_file=None, t_end=1.0, number_of_trainfiles = 10):
     path_to_simulation_data = os.path.join(path_to_data_files, 'SIMULATION_data.pkl')
 
     # Read Voltages used for simulation
@@ -24,7 +24,6 @@ def prepare_data(path_to_data_files, V_test_data=None, Torque=False, UMP=False, 
     if path_to_test_file is not None:  # used if dedicated test file is present
         V_test_data = None
 
-    number_of_trainfiles = 10  # number of files used for training
     # choose random V from V_range
     V_range = random.choices(V_range, k=number_of_trainfiles) #This is needed for the LASSO optimizer (as too much data makes it too slow)
     V_range.append(V_test_data)  # make sure to also loop over V_test_data

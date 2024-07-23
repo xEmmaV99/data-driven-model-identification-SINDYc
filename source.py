@@ -6,7 +6,8 @@ import numpy as np
 import pysindy as ps
 import seaborn as sns
 import os
-
+from sklearn.linear_model import Lasso
+from sklearn.metrics import mean_squared_error
 
 def reference_abc_to_dq0(coord_array):
     # coord_array is a Nx3 array with N the number of samples
@@ -324,3 +325,51 @@ def plot_coefs(coefs, featurenames=None):
 
         ax.tick_params(axis="y", rotation=0)
     return
+
+
+def theshold_search(threshold_array, train_and_validation_data, method = "lasso", name = ""):
+    # method is "lasso" or "sr3"
+    if name == "":
+        name = method
+    method = method.lower()
+    variable = {'threshold': threshold_array,
+                'MSE': np.zeros(len(threshold_array)),
+                'SPAR': np.zeros(len(threshold_array)),
+                'model': list(np.zeros(len(threshold_array)))}
+
+    xdot_train, x_train, u_train, xdot_val, x_val, u_val = np.unwrap(train_and_validation_data)
+
+    for i, threshold in enumerate(threshold_array):
+        print(i)
+        if method == 'sr3':
+            optimizer = ps.SR3(thresholder="l1", threshold=threshold)
+        elif method == 'lasso':
+             optimizer = Lasso(alpha=threshold, fit_intercept=False)
+        else:
+            raise NameError("Method should be sr3 or Lasso")
+        library = ps.PolynomialLibrary(degree=2, include_interaction=True)
+        model = ps.SINDy(optimizer=optimizer, feature_library=library)
+
+        model.fit(x_train, u=u_train, t=None, x_dot=xdot_train)  # fit on training data
+
+        variable['MSE'][i] = mean_squared_error(model.predict(x_val, u_val), xdot_val)  # validate
+        variable['SPAR'][i] = np.count_nonzero(model.coefficients())  # number of non-zero elements
+        variable['model'][i] = model
+
+    # rel_sparsity = variable['SPAR'] / np.max(variable['SPAR'])
+
+    # plot the results
+    # save the plots
+    xlab = r'Threshold $\lambda$'
+    ylab1 = 'MSE'
+    ylab2 = 'Number of non-zero elements'
+    title = 'MSE and sparsity vs threshold'
+    xydata = [
+        np.hstack((variable['threshold'].reshape(len(threshold_array), 1), variable['MSE'].reshape(len(threshold_array ), 1))),
+        np.hstack((variable['threshold'].reshape(len(threshold_array), 1), variable['SPAR'].reshape(len(threshold_array), 1)))]
+    specs = ['r', 'b']
+    save_plot_data('MSE_sparsity_vs_threshold_'+name, xydata, title, xlab, [ylab1, ylab2], specs, plot_now=True)
+
+    idx = np.where(np.min(variable['MSE'])) # best model, lowest MSE
+    best_model = variable['model'][idx]
+    return best_model
