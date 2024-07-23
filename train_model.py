@@ -192,7 +192,7 @@ def simulate_UMP():
                                      ps.FourierLibrary(n_frequencies=1, include_cos=True, include_sin=True)],
                                     tensor_array=None,  # don't merge the libraries
                                     inputs_per_library=inputs_per_library)  # are crossterms needed?
-    number_of_models = 1
+    number_of_models = 10
     if number_of_models >= 2:
         model = theshold_search(np.linspace(0.01, 0.1, number_of_models),
                                 train_and_validation_data=[UMP_train, x_train, u_train, UMP_val, x_val, u_val],
@@ -242,9 +242,9 @@ simulate_torque()
 simulate_UMP() '''
 
 # plot_everything('C:\\Users\\emmav\\PycharmProjects\\SINDY_project\\plots\\')
-simulate_torque()
+# simulate_torque()
 # simulate_currents()
-# simulate_UMP()
+simulate_UMP()
 # simulate_currents()
 # todo add non linear to immec model (and try to solve that with sindy)
 # todo add static ecc
