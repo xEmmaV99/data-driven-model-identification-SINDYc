@@ -13,7 +13,6 @@ def error_value(model, x_val, u_val, xdot_val):  # The theshold = 0 is a minumum
     mse = model.score(x_val, u = u_val, x_dot = xdot_val, metric = mean_squared_error)
     return mse, sparsity  # add penalty for sparsity
 
-
 path_to_data_files = 'C:/Users/emmav/PycharmProjects/SINDY_project/data/Combined/07-20-load'
 
 # get the data
@@ -24,10 +23,6 @@ library = ps.PolynomialLibrary(degree=2, include_interaction=True)
 
 threshold = 0.0
 threshold = 1
-coefs = []
-errorlist = []
-spar = []
-
 
 opt = ps.SR3(thresholder="l1", threshold=threshold)
 #opt = Lasso(alpha=threshold, fit_intercept=False)
@@ -35,4 +30,9 @@ print("starting model")
 model = ps.SINDy(optimizer=opt, feature_names=['i_d', 'i_q', 'i_0'] + TESTDATA['u_names'], feature_library=library)
 model.fit(x_train, u=u_train, t=None, x_dot=xdot_train)
 model.print()
-plot_coefs2(model)
+print(model.coefficients()) #model object cannot be pickled
+#plot_coefs2(model)
+'''
+with open(path, 'wb') as file:
+    pkl.dump(model.coefficients(), file)
+'''

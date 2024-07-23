@@ -21,7 +21,6 @@ def simulate_currents():
                                                                                   t_end=1.0, number_of_trainfiles=20)
     print(TESTDATA['u_names'])
     inputs_per_library = [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14], [12]]
-
     big_lib = ps.GeneralizedLibrary([ps.PolynomialLibrary(degree=3, include_interaction=True),
                                      ps.FourierLibrary(n_frequencies=1, include_cos=True, include_sin=True)],
                                     tensor_array=None,  # don't merge the libraries
@@ -29,10 +28,10 @@ def simulate_currents():
 
 
     # Fit the model
-    number_of_models = 10
+    number_of_models = 1
     # opt was 0.0001 but 10 gave reasonable results
     if number_of_models == 1:
-        threshold = 5.0
+        threshold = 0.07
         # optimizer = ps.SR3(thresholder="l1", threshold=threshold)
         optimizer = Lasso(alpha=threshold, fit_intercept=False)
 
@@ -68,7 +67,7 @@ def simulate_currents():
     leg = [r"$\partial_t{i_d}$", r"$\partial_t{i_q}$", r"$\partial_t{i_0}$", "computed"]
     specs = [None, "k--"]
     save_plot_data("currents", xydata, title, xlab, ylab, legend=leg, plot_now=True,
-                   specs=specs)  # , sindy_model=model)
+                   specs=specs)
 
     if do_time_simulation:
         simulation_time = 1.0
@@ -83,8 +82,6 @@ def simulate_currents():
 
         print("Finished simulation")
 
-
-        xy_data = []
         save_plot_data("currents_simulation",
                        [np.hstack((t_value[:-1].reshape(len(t_value)-1,1), x_sim)), np.hstack((t.reshape(len(t_value),1), x_test))],
                        "Simulated currents on test set V = " + str(TESTDATA['V']),
@@ -109,21 +106,28 @@ def simulate_torque():
     T_train, x_train, u_train, T_val, x_val, u_val, TESTDATA = prepare_data(path_to_data_files,
                                                                             Torque=True,
                                                                             path_to_test_file=path_to_test_file,
-                                                                            t_end=1.0, number_of_trainfiles=20)
-    fit_multiple = True
+                                                                            t_end=1.0, number_of_trainfiles=40)
+
+    inputs_per_library = [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14], [12]]
+    big_lib = ps.GeneralizedLibrary([ps.PolynomialLibrary(degree=3, include_interaction=True),
+                                     ps.FourierLibrary(n_frequencies=1, include_cos=True, include_sin=True)],
+                                    tensor_array=None,  # don't merge the libraries
+                                    inputs_per_library=inputs_per_library) # are crossterms needed?
+
+    fit_multiple = False
     if fit_multiple:
         model = theshold_search(np.logspace(-12, -3, 15),
                                 train_and_validation_data=[T_train, x_train, u_train, T_val, x_val, u_val],
-                                method="lasso", name="torque_opt", plot_now=True)
+                                method="SR3_L1", name="torque_opt", plot_now=True, library=big_lib)
 
     else:
-        threshold = 0.0
+        #threshold = 0.0
+        threshold = 1e-2 #for sr3
         #optimizer = ps.SR3(thresholder="l1", threshold=threshold) # this runs, only reasonable for threshold = 0
-        optimizer = Lasso(alpha=threshold,
-                          fit_intercept=False)  # now, SR3 really is a lot better, it is weird that adding things to the library makes this worse too
+        optimizer = Lasso(alpha=threshold, fit_intercept=False)  # now, SR3 really is a lot better, it is weird that adding things to the library makes this worse too
 
-        library = ps.PolynomialLibrary(degree=3, include_interaction=True)
-
+        #library = ps.PolynomialLibrary(degree=3, include_interaction=True)
+        library = big_lib
         model = ps.SINDy(optimizer=optimizer, feature_library=library,
                          feature_names=["i_d", "i_q", "i_0"] + TESTDATA['u_names'])
         #model.feature_names = ["i_d", "i_q", "i_0"] + TESTDATA['u_names']
@@ -183,18 +187,22 @@ def simulate_UMP():
                                                                                 UMP=True,
                                                                                 path_to_test_file=path_to_test_file,
                                                                                 t_end=1.0, number_of_trainfiles=40)
-
+    inputs_per_library = [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14], [12]]
+    big_lib = ps.GeneralizedLibrary([ps.PolynomialLibrary(degree=3, include_interaction=True),
+                                     ps.FourierLibrary(n_frequencies=1, include_cos=True, include_sin=True)],
+                                    tensor_array=None,  # don't merge the libraries
+                                    inputs_per_library=inputs_per_library)  # are crossterms needed?
     number_of_models = 1
-    if number_of_models > 1:
+    if number_of_models >= 2:
         model = theshold_search(np.linspace(0.01, 0.1, number_of_models),
                                 train_and_validation_data=[UMP_train, x_train, u_train, UMP_val, x_val, u_val],
-                                method="lasso", name="UMP_opt", plot_now=True)
+                                method="lasso", name="UMP_opt", plot_now=True, library=big_lib)
     else:
         threshold = 0.0
         #optimizer = ps.SR3(thresholder="l1", threshold=threshold)
         optimizer = Lasso(alpha=threshold, fit_intercept=False)
-        library = ps.PolynomialLibrary(degree=2, include_interaction=True)
-
+        #library = ps.PolynomialLibrary(degree=2, include_interaction=True)
+        library = big_lib
         model = ps.SINDy(optimizer=optimizer, feature_library=library,
                          feature_names=["i_d", "i_q", "i_0"] + TESTDATA['u_names'])
         model.fit(x_train, u=u_train, t=None, x_dot=UMP_train)
@@ -234,8 +242,8 @@ simulate_torque()
 simulate_UMP() '''
 
 # plot_everything('C:\\Users\\emmav\\PycharmProjects\\SINDY_project\\plots\\')
-# simulate_torque()
-simulate_currents()
+simulate_torque()
+# simulate_currents()
 # simulate_UMP()
 # simulate_currents()
 # todo add non linear to immec model (and try to solve that with sindy)
