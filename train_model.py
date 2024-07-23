@@ -6,73 +6,52 @@ from sklearn.metrics import mean_squared_error
 from sklearn.linear_model import Lasso
 
 cwd = os.getcwd()
-path_to_data_files = os.path.join(cwd, 'data/Combined/07-20-load')
+path_to_data_files = os.path.join(cwd, 'data\\Combined\\07-20-ecc-x0-y50')
 
 
 def simulate_currents():
     """
     Simulation for the currents
     """
-    path_to_test_file = None  # os.path.join(cwd, 'data/07-19/IMMEC_history_long200V_2.0sec.pkl')  # None -> test is chosen from data
+    path_to_test_file = None
     do_time_simulation = False
     # get the data
     xdot_train, x_train, u_train, xdot_val, x_val, u_val, TESTDATA = prepare_data(path_to_data_files,
                                                                                   path_to_test_file=path_to_test_file,
-                                                                                  t_end=2.5)
+                                                                                  t_end=1.0, number_of_trainfiles=20)
+    print(TESTDATA['u_names'])
+    inputs_per_library = [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14], [12]]
+
+    big_lib = ps.GeneralizedLibrary([ps.PolynomialLibrary(degree=3, include_interaction=True),
+                                     ps.FourierLibrary(n_frequencies=1, include_cos=True, include_sin=True)],
+                                    tensor_array=None,  # don't merge the libraries
+                                    inputs_per_library=inputs_per_library) # are crossterms needed?
+
+
     # Fit the model
-    # threshold = 0.041 ?
-    # using LASSO - 0.07
-    number_of_models = 40
+    number_of_models = 10
+    # opt was 0.0001 but 10 gave reasonable results
     if number_of_models == 1:
-        threshold = 0.07
+        threshold = 5.0
         # optimizer = ps.SR3(thresholder="l1", threshold=threshold)
         optimizer = Lasso(alpha=threshold, fit_intercept=False)
-        # print("Lasso optimizer")
 
-        library = ps.PolynomialLibrary(degree=2, include_interaction=True)  # ps.FourierLibrary(n_frequencies=5)
-        model = ps.SINDy(optimizer=optimizer, feature_library=library,
-                         feature_names=['i_d', 'i_q', 'i_0'] + TESTDATA['u_names'])
+        #print(TESTDATA['u_names'])
+
+        #library = ps.PolynomialLibrary(degree=3, include_interaction=True)  # ps.FourierLibrary(n_frequencies=5)
+        library = big_lib
+        model = ps.SINDy(optimizer=optimizer, feature_library=library, feature_names=['i_d', 'i_q', 'i_0'] + TESTDATA['u_names'])
+        print("Fitting model")
         model.fit(x_train, u=u_train, t=None, x_dot=xdot_train)
         model.print()
-        plot_coefs(model.coefficients(), featurenames=model.get_feature_names())
+        plot_coefs2(model)
         plt.figure()
     else:
         # make models and calucalte RMSE and sparisty
-        # threshold_grid = np.logspace(-2, 1, number_of_models)
-        threshold_grid = np.linspace(0.01, 1, number_of_models)
-        dat = np.hstack((xdot_train, x_train, u_train, xdot_val, x_val, u_val))
-        theshold_search(threshold_grid, train_and_validation_data=dat, method="lasso", name="lasso_source_function")
+        threshold_grid = np.logspace(-4, 2, number_of_models)
+        # threshold_grid = np.linspace(0.01, 0.1, number_of_models)
+        model = theshold_search(threshold_grid, train_and_validation_data=[xdot_train, x_train, u_train, xdot_val, x_val, u_val], library = big_lib, method="lasso", name="main2")
 
-        '''
-        variable = {'threshold': threshold_grid,
-                    'MSE': np.zeros(number_of_models),
-                    'SPAR': np.zeros(number_of_models),
-                    'model': list(np.zeros(number_of_models))}
-        for i, threshold in enumerate(threshold_grid):
-            print(i)
-            optimizer = ps.SR3(thresholder="l1", threshold=threshold)
-            #optimizer = Lasso(alpha=threshold, fit_intercept=False)
-
-            library = ps.PolynomialLibrary(degree=2, include_interaction=True)
-            model = ps.SINDy(optimizer=optimizer, feature_library=library)
-            model.fit(x_train, u=u_train, t=None, x_dot=xdot_train)  # fit on training data
-
-            variable['MSE'][i] = mean_squared_error(model.predict(x_val, u_val), xdot_val)  # validate
-            variable['SPAR'][i] = np.count_nonzero(model.coefficients())  # number of non-zero elements
-            variable['model'][i] = model
-
-        #rel_sparsity = variable['SPAR'] / np.max(variable['SPAR'])
-        # plot the results
-        # save the plots
-        xlab = r'Threshold $\lambda$'
-        ylab1 = 'MSE'
-        ylab2 = 'Number of non-zero elements'
-        title = 'MSE and sparsity vs threshold'
-        xydata = [np.hstack((variable['threshold'].reshape(number_of_models,1), variable['MSE'].reshape(number_of_models,1))),
-                  np.hstack((variable['threshold'].reshape(number_of_models,1), variable['SPAR'].reshape(number_of_models,1)))]
-        specs = ['r', 'b']
-        save_plot_data('MSE_sparsity_vs_threshold_SR3', xydata, title, xlab, [ylab1, ylab2], specs, plot_now=True)
-        '''
     # CHECK THE BEST MODEL ON THE TESTDATA
     xdot_test = TESTDATA['xdot']
     x_test = TESTDATA['x']
@@ -92,7 +71,7 @@ def simulate_currents():
                    specs=specs)  # , sindy_model=model)
 
     if do_time_simulation:
-        simulation_time = 2.0
+        simulation_time = 1.0
         plt.figure()
         print("Starting simulation")
         t_value = t[t < simulation_time]
@@ -104,12 +83,20 @@ def simulate_currents():
 
         print("Finished simulation")
 
-        plt.plot(t_value[:-1], x_sim)
+
+        xy_data = []
+        save_plot_data("currents_simulation",
+                       [np.hstack((t_value[:-1].reshape(len(t_value)-1,1), x_sim)), np.hstack((t.reshape(len(t_value),1), x_test))],
+                       "Simulated currents on test set V = " + str(TESTDATA['V']),
+                       r"$t$", r"$x$", plot_now=True, specs = [None, "k--"],
+                       legend=[r"$i_d$", r"$i_q$", r"$i_0$", "test data"])
+
+        '''plt.plot(t_value[:-1], x_sim)
         plt.plot(t, x_test, 'k--')  # plot the test data
         plt.legend([r"$i_d$", r"$i_q$", r"$i_0$", "test data"])
         plt.title('Simulated vs test currents on test set V = ' + str(TESTDATA['V']))
         plt.xlabel(r"$t$")
-        plt.ylabel(r"$x$")
+        plt.ylabel(r"$x$")'''
     plt.show()
     return
 
@@ -118,23 +105,29 @@ def simulate_torque():
     """
     Simulation for the Torque
     """
-
-    # path_to_test_file = os.path.join(cwd,'data/07-19/IMMEC_history_torque-200V_1.0sec.pkl')  # None if testfile should be gathered from the data folder
     path_to_test_file = None
     T_train, x_train, u_train, T_val, x_val, u_val, TESTDATA = prepare_data(path_to_data_files,
                                                                             Torque=True,
                                                                             path_to_test_file=path_to_test_file,
-                                                                            t_end=2.5, number_of_trainfiles=20)
+                                                                            t_end=1.0, number_of_trainfiles=20)
+    fit_multiple = True
+    if fit_multiple:
+        model = theshold_search(np.logspace(-12, -3, 15),
+                                train_and_validation_data=[T_train, x_train, u_train, T_val, x_val, u_val],
+                                method="lasso", name="torque_opt", plot_now=True)
 
-    threshold = 0.0
-    # optimizer = ps.SR3(thresholder="l1", threshold=threshold) # this runs, only reasonable for threshold = 0
-    optimizer = Lasso(alpha=threshold,
-                      fit_intercept=False)  # now, SR3 really is a lot better, it is weird that adding things to the library makes this worse too
-    library = ps.PolynomialLibrary(degree=2, include_interaction=True)
+    else:
+        threshold = 0.0
+        #optimizer = ps.SR3(thresholder="l1", threshold=threshold) # this runs, only reasonable for threshold = 0
+        optimizer = Lasso(alpha=threshold,
+                          fit_intercept=False)  # now, SR3 really is a lot better, it is weird that adding things to the library makes this worse too
 
-    model = ps.SINDy(optimizer=optimizer, feature_library=library,
-                     feature_names=["i_d", "i_q", "i_0"] + TESTDATA['u_names'])
-    model.fit(x_train, u=u_train, t=None, x_dot=T_train)
+        library = ps.PolynomialLibrary(degree=3, include_interaction=True)
+
+        model = ps.SINDy(optimizer=optimizer, feature_library=library,
+                         feature_names=["i_d", "i_q", "i_0"] + TESTDATA['u_names'])
+        #model.feature_names = ["i_d", "i_q", "i_0"] + TESTDATA['u_names']
+        model.fit(x_train, u=u_train, t=None, x_dot=T_train)
 
     if model.coefficients().ndim == 1:  # fix dimensions of this matrix, bug in pysindy, o this works
         model.optimizer.coef_ = model.coefficients().reshape(1, model.coefficients().shape[0])
@@ -183,22 +176,29 @@ def simulate_UMP():
     Simulation for the UMP
     """
     cwd = os.getcwd()
-    path_to_data_files = os.path.join(cwd, 'data/Combined/07-21-load-ecc-x50-y0')
+    path_to_data_files = os.path.join(cwd, 'data/Combined/07-20-ecc-x50-y0')
     print(path_to_data_files)
     path_to_test_file = None
     UMP_train, x_train, u_train, UMP_val, x_val, u_val, TESTDATA = prepare_data(path_to_data_files,
                                                                                 UMP=True,
                                                                                 path_to_test_file=path_to_test_file,
-                                                                                t_end=2.5, number_of_trainfiles=40)
+                                                                                t_end=1.0, number_of_trainfiles=40)
 
-    threshold = 0.0
-    #optimizer = ps.SR3(thresholder="l1", threshold=threshold)
-    optimizer = Lasso(alpha=threshold, fit_intercept=False)
-    library = ps.PolynomialLibrary(degree=2, include_interaction=True)
+    number_of_models = 1
+    if number_of_models > 1:
+        model = theshold_search(np.linspace(0.01, 0.1, number_of_models),
+                                train_and_validation_data=[UMP_train, x_train, u_train, UMP_val, x_val, u_val],
+                                method="lasso", name="UMP_opt", plot_now=True)
+    else:
+        threshold = 0.0
+        #optimizer = ps.SR3(thresholder="l1", threshold=threshold)
+        optimizer = Lasso(alpha=threshold, fit_intercept=False)
+        library = ps.PolynomialLibrary(degree=2, include_interaction=True)
 
-    model = ps.SINDy(optimizer=optimizer, feature_library=library,
-                     feature_names=["i_d", "i_q", "i_0"] + TESTDATA['u_names'])
-    model.fit(x_train, u=u_train, t=None, x_dot=UMP_train)
+        model = ps.SINDy(optimizer=optimizer, feature_library=library,
+                         feature_names=["i_d", "i_q", "i_0"] + TESTDATA['u_names'])
+        model.fit(x_train, u=u_train, t=None, x_dot=UMP_train)
+
     model.print()
 
     # TESTDATA
@@ -228,12 +228,16 @@ def plot_everything(path_to_directory):
     plt.show()
     return
 
-
-# plot_everything('C:\\Users\\emmav\\PycharmProjects\\SINDY_project\\plot_data\\')
-# simulate_torque()
-# simulate_currents()
-# simulate_UMP()
+'''
 simulate_currents()
+simulate_torque()
+simulate_UMP() '''
+
+# plot_everything('C:\\Users\\emmav\\PycharmProjects\\SINDY_project\\plots\\')
+# simulate_torque()
+simulate_currents()
+# simulate_UMP()
+# simulate_currents()
 # todo add non linear to immec model (and try to solve that with sindy)
 # todo add static ecc
 # todo add dynamic ecc

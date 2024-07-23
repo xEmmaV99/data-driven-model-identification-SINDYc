@@ -10,36 +10,29 @@ from prepare_data import *
 def error_value(model, x_val, u_val, xdot_val):  # The theshold = 0 is a minumum, less sparcity
     sparsity = np.count_nonzero(model.coefficients()) / (model.coefficients().shape[0]*model.coefficients().shape[1]) #percentage of non-zero elements
 
-    mse = mean_squared_error(model.predict(x_val, u_val), xdot_val) # this is shuffeled...
+    mse = model.score(x_val, u = u_val, x_dot = xdot_val, metric = mean_squared_error)
     return mse, sparsity  # add penalty for sparsity
 
 
-path_to_data_files = 'C:/Users/emmav/PycharmProjects/SINDY_project/data/data_files'
+path_to_data_files = 'C:/Users/emmav/PycharmProjects/SINDY_project/data/Combined/07-20-load'
 
 # get the data
-xdot_train, x_train, u_train, xdot_val, x_val, u_val, TESTDATA = prepare_data(path_to_data_files)
+xdot_train, x_train, u_train, xdot_val, x_val, u_val, TESTDATA = prepare_data(path_to_data_files, t_end = 2.5)
 
 # Fit the model
 library = ps.PolynomialLibrary(degree=2, include_interaction=True)
 
-threshold_list = np.linspace(1e-5,0.1, 5)
-
+threshold = 0.0
+threshold = 1
 coefs = []
 errorlist = []
 spar = []
-# rmse = mean_squared_error(x_train, np.zeros(x_train.shape), squared=False)
-for i, threshold in enumerate(threshold_list):
-    print(i)
-    opt = ps.SR3(thresholder="l1", threshold=threshold)
-    model = ps.SINDy(optimizer=opt)
-    model.fit(x_train, u=u_train, t=None, x_dot=xdot_train)
-    coefs.append(model.coefficients())
-    err, sp = error_value(model, x_val, u_val, xdot_val)
-    errorlist.append(err)
-    spar.append(sp)
-
-#model.score()
-#plt.scatter(threshold_list,errorlist)
-#plt.show()
 
 
+opt = ps.SR3(thresholder="l1", threshold=threshold)
+#opt = Lasso(alpha=threshold, fit_intercept=False)
+print("starting model")
+model = ps.SINDy(optimizer=opt, feature_names=['i_d', 'i_q', 'i_0'] + TESTDATA['u_names'], feature_library=library)
+model.fit(x_train, u=u_train, t=None, x_dot=xdot_train)
+model.print()
+plot_coefs2(model)

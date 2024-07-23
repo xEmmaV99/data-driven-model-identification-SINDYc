@@ -9,6 +9,7 @@ import os
 from sklearn.linear_model import Lasso
 from sklearn.metrics import mean_squared_error
 
+
 def reference_abc_to_dq0(coord_array):
     # coord_array is a Nx3 array with N the number of samples
 
@@ -69,7 +70,6 @@ def get_immec_training_data(path_to_data_logger, timestep=1e-4, use_estimate_for
     I = np.cumsum(x_data,
                   0) * timestep  # those are caluculated using forward euler. Note that x_train*timestep instead of cumsum * timestep yield same results
     V = np.cumsum(v_stator, 0) * timestep
-    # CONSIDER USING RUNGE KUTTA METHOD FOR THIS - see ABU-SEIF ET AL.
 
     u_data = np.hstack((v_stator, I, V, data_logger['gamma_rot'] % (2 * np.pi),
                         data_logger['omega_rot']))
@@ -248,7 +248,8 @@ def save_plot_data(save_name, xydata, title, xlab, ylab, legend=None, plot_now=F
     # xydata contains the data to plot, but if multiple axis should be plotted, xy data should be a list of arrays
     # if it is only one x,y then [np.array([x,y])] should be the input
     # create the dictionary to save as is
-    pltdata = {'title': title, 'xlab': xlab, 'ylab': ylab, 'legend': legend, 'plots': {}, 'specs': specs, 'model': sindy_model}
+    pltdata = {'title': title, 'xlab': xlab, 'ylab': ylab, 'legend': legend, 'plots': {}, 'specs': specs,
+               'model': sindy_model}
     for i, xy_array in enumerate(xydata):
         pltdata['plots'][str(i)] = xy_array
     cwd = os.getcwd()
@@ -261,25 +262,29 @@ def save_plot_data(save_name, xydata, title, xlab, ylab, legend=None, plot_now=F
     return save_path
 
 
-def plot_data(path='plotdata.pkl', show = True):
+def plot_data(path='plotdata.pkl', show=True, figure=True):
     with open(path, 'rb') as file:
         data = pkl.load(file)
 
-    if type(data['ylab']) != str: # multiple axis
+    if type(data['ylab']) != str:  # multiple axis
         print("Multiple axis plot detected.")
+
         fig, ax1 = plt.subplots()
         ax1.set_xlabel(data['xlab'])
 
         ax1.set_ylabel(data['ylab'][0], color='r')
-        ax1.plot(data['plots']['0'][:, 0], data['plots']['0'][:, 1:], 'r')
+        ax1.semilogx(data['plots']['0'][:, 0], data['plots']['0'][:, 1:], 'r')
 
         ax2 = ax1.twinx()
         ax2.set_ylabel(data['ylab'][1], color='b')
-        ax2.plot(data['plots']['1'][:, 0], data['plots']['1'][:, 1:], 'b')
+        ax2.semilogx(data['plots']['1'][:, 0], data['plots']['1'][:, 1:], 'b')
 
         fig.tight_layout()
+        #ax1.set_ylim([0, 100])
+        #ax2.set_ylim([0, 200])
         plt.title(data['title'])
     else:
+        plt.figure()
         plt.xlabel(data['xlab']), plt.ylabel(data['ylab'])
         specs = data['specs']
         for idx in data['plots']:
@@ -295,7 +300,9 @@ def plot_data(path='plotdata.pkl', show = True):
     return
 
 
-def plot_coefs(coefs, featurenames=None):
+def plot_coefs(model):
+    coefs = model.coefficients()
+    featurenames = model.feature_names()
     # plot coefs of the model, based on the code provided by pysindy:
     # https://pysindy.readthedocs.io/en/latest/examples/7_plasma_examples/example.html
     input_features = [rf"$\dot x_{k}$" for k in range(coefs.shape[0])]
@@ -327,8 +334,30 @@ def plot_coefs(coefs, featurenames=None):
     return
 
 
-def theshold_search(threshold_array, train_and_validation_data, method = "lasso", name = ""):
-    # method is "lasso" or "sr3"
+def plot_coefs2(model):
+    xticknames = model.get_feature_names()
+    for i in range(len(xticknames)):
+        xticknames[i] = xticknames[i]
+    plt.figure(figsize=(len(xticknames), 4))
+    colors = ["b", "r", "k"]
+
+    # plt.subplot(1, 2, 1)
+    # plt.title("ensembling")
+    for i in range(2):
+        plt.scatter(np.arange(0, len(xticknames), 1), model.coefficients()[i, :].T, color=colors[i],
+                    label=r"Equation for $\dot{" + xticknames[i + 1].strip("$") + "}$")
+
+    plt.grid(True)
+    plt.xticks(range(len(xticknames)), xticknames, rotation=90)
+
+    # plt.set_xticklabels(xticknames, verticalalignment="top")
+    plt.legend()
+
+    plt.show()
+    return
+
+
+def theshold_search(threshold_array, train_and_validation_data, method="lasso", name="", plot_now=True, library=None):
     if name == "":
         name = method
     method = method.lower()
@@ -337,22 +366,31 @@ def theshold_search(threshold_array, train_and_validation_data, method = "lasso"
                 'SPAR': np.zeros(len(threshold_array)),
                 'model': list(np.zeros(len(threshold_array)))}
 
-    xdot_train, x_train, u_train, xdot_val, x_val, u_val = np.unwrap(train_and_validation_data)
+    xdot_train, x_train, u_train, xdot_val, x_val, u_val = train_and_validation_data
 
     for i, threshold in enumerate(threshold_array):
         print(i)
-        if method == 'sr3':
-            optimizer = ps.SR3(thresholder="l1", threshold=threshold)
+        if method[:3] == 'sr3':
+            optimizer = ps.SR3(thresholder=method[-2:], threshold=threshold)
         elif method == 'lasso':
-             optimizer = Lasso(alpha=threshold, fit_intercept=False)
+            optimizer = Lasso(alpha=threshold, fit_intercept=False)
+        elif method == 'stlsq':
+            optimizer = ps.STLSQ(threshold=0.1, alpha=threshold)
+        elif method == 'srr':
+            optimizer = ps.SSR(alpha=threshold)
         else:
-            raise NameError("Method should be sr3 or Lasso")
-        library = ps.PolynomialLibrary(degree=2, include_interaction=True)
+            raise NameError("Method is invalid")
+
+        if library is None:
+            library = ps.PolynomialLibrary(degree=2, include_interaction=True)
+
         model = ps.SINDy(optimizer=optimizer, feature_library=library)
-
+        print('Fitting model')
         model.fit(x_train, u=u_train, t=None, x_dot=xdot_train)  # fit on training data
-
-        variable['MSE'][i] = mean_squared_error(model.predict(x_val, u_val), xdot_val)  # validate
+        if model.coefficients().ndim == 1:  # fix dimensions of this matrix, bug in pysindy, o this works
+            model.optimizer.coef_ = model.coefficients().reshape(1, model.coefficients().shape[0])
+        variable['MSE'][i] = model.score(x_val, u=u_val, x_dot=xdot_val, metric=mean_squared_error)
+        # the same as: mean_squared_error(model.predict(x_val, u_val), xdot_val) 
         variable['SPAR'][i] = np.count_nonzero(model.coefficients())  # number of non-zero elements
         variable['model'][i] = model
 
@@ -365,11 +403,15 @@ def theshold_search(threshold_array, train_and_validation_data, method = "lasso"
     ylab2 = 'Number of non-zero elements'
     title = 'MSE and sparsity vs threshold'
     xydata = [
-        np.hstack((variable['threshold'].reshape(len(threshold_array), 1), variable['MSE'].reshape(len(threshold_array ), 1))),
-        np.hstack((variable['threshold'].reshape(len(threshold_array), 1), variable['SPAR'].reshape(len(threshold_array), 1)))]
+        np.hstack(
+            (variable['threshold'].reshape(len(threshold_array), 1), variable['MSE'].reshape(len(threshold_array), 1))),
+        np.hstack((variable['threshold'].reshape(len(threshold_array), 1),
+                   variable['SPAR'].reshape(len(threshold_array), 1)))]
     specs = ['r', 'b']
-    save_plot_data('MSE_sparsity_vs_threshold_'+name, xydata, title, xlab, [ylab1, ylab2], specs, plot_now=True)
+    save_plot_data('MSE_sparsity_vs_threshold_' + name, xydata, title, xlab, [ylab1, ylab2], specs, plot_now=plot_now)
 
-    idx = np.where(np.min(variable['MSE'])) # best model, lowest MSE
-    best_model = variable['model'][idx]
+    idx = np.where(np.min(variable['MSE']))  # best model, lowest MSE
+    best_model = variable['model'][idx[0][0]]
+    print("Best model found with MSE: ", variable['MSE'][idx[0][0]], " and threshold: ",
+          variable['threshold'][idx[0][0]], "for ", method)
     return best_model

@@ -8,8 +8,8 @@ from source import *
 
 
 def prepare_data(path_to_data_files, V_test_data=None, Torque=False, UMP=False, path_to_test_file=None, t_end=1.0, number_of_trainfiles = 10):
-    path_to_simulation_data = os.path.join(path_to_data_files, 'SIMULATION_data.pkl')
 
+    path_to_simulation_data = os.path.join(path_to_data_files, 'SIMULATION_data.pkl')
     # Read Voltages used for simulation
     '''
     with open(path_to_simulation_data, 'rb') as f:
@@ -79,7 +79,7 @@ def prepare_data(path_to_data_files, V_test_data=None, Torque=False, UMP=False, 
         # u_data add supply frequency to the input data
         freq = V_value * 50 / 400  # constant proportion
 
-        u_data = np.hstack((v_stator, I, V, dataset['gamma_rot'] % (2 * np.pi),
+        u_data = np.hstack((v_stator, I, V, dataset['gamma_rot'] % (2 * np.pi)  ,
                             dataset['omega_rot'],
                             np.repeat(freq, len(dataset['omega_rot'])).reshape(len(dataset['omega_rot']), 1)))
         u_names = [r'$v_d$', r'$v_q$', r'$v_0$', r'$I_d$', r'$I_q$', r'$I_0$', r'$V_d$', r'$V_q$', r'$V_0$',
@@ -135,6 +135,8 @@ def prepare_data(path_to_data_files, V_test_data=None, Torque=False, UMP=False, 
 
     visualise_train_data = False
     if visualise_train_data:
+        print(V_range)
+
         # todo think about it
         raise NotImplementedError('Visualisation of training data is not yet implemented')
 
@@ -170,6 +172,7 @@ def prepare_data(path_to_data_files, V_test_data=None, Torque=False, UMP=False, 
         TESTDATA['T_em'] = testset["T_em"]
 
     TESTDATA['u_names'] = u_names  # Save the names of u_data for SINDy
+
     if Torque:
         return T_em_train, x_train, u_train, T_em_val, x_val, u_val, TESTDATA
     elif UMP:
