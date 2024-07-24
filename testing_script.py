@@ -35,3 +35,9 @@ print(model.coefficients()) #model object cannot be pickled
 
 path = 'C:/Users/emmav/PycharmProjects/SINDY_project/models/test.pkl'
 save_model_coef(model, 'test')
+temp_coefs = model.coefficients()
+
+new_model = ps.SINDy(optimizer= opt, feature_names=['i_d', 'i_q', 'i_0'] + TESTDATA['u_names'], feature_library=library)
+new_model.optimizer.coef_ = model.coefficients()
+
+new_model.predict(x_val, u_val)

@@ -332,7 +332,7 @@ def save_plot_data(save_name, xydata, title, xlab, ylab, legend=None, plot_now=F
     return save_path
 
 
-def plot_data(path='plotdata.pkl', show=True, figure=True):
+def plot_data(path='plotdata.pkl', show=True, figure=True, limits = None):
     with open(path, 'rb') as file:
         data = pkl.load(file)
 
@@ -350,10 +350,11 @@ def plot_data(path='plotdata.pkl', show=True, figure=True):
         ax2.semilogx(data['plots']['1'][:, 0], data['plots']['1'][:, 1:], 'b')
 
         plt.title(data['title'])
-        ax1.set_ylim([1e-6, 1])
-        ax2.set_ylim([0, 100])
-        #fig.tight_layout()
-
+        if limits == None:
+            fig.tight_layout()
+        else:
+            ax1.set_ylim(limits[0])
+            ax2.set_ylim(limits[1])
 
     else:
         plt.figure()
@@ -431,6 +432,7 @@ def plot_coefs2(model, normalize_values=False, show=False):
 
 
 def save_model_coef(model, name):
+    #todo!!!!!!!!!!!!
     path = 'C:/Users/emmav/PycharmProjects/SINDY_project/models/' + name + '.pkl'
     lib = {'coefs': model.coefficients(), 'features': model.feature_names()}
     with open(path, 'wb') as file:
@@ -502,3 +504,14 @@ def parameter_search(parameter_array, train_and_validation_data, method="lasso",
     print("Best model found with MSE: ", variable['MSE'][idx[0][0]], " and parameter: ",
           variable['parameter'][idx[0][0]], "for ", method)
     return best_model
+
+
+
+def plot_everything(path_to_directory):
+    files = os.listdir(path_to_directory)
+    for file in files:
+        if file.endswith('.pkl'):
+            path = os.path.join(path_to_directory, file)
+            plot_data(path, show=False)
+    plt.show()
+    return

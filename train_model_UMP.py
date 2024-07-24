@@ -34,7 +34,7 @@ def optimise_UMP_simulation(path_to_data_files, nmbr_models=20, loglwrbnd=None, 
     return
 
 
-def simulate_UMP(path_to_data_files, alpha, optmizer = 'sr3', path_to_test_file=None):
+def simulate_UMP(path_to_data_files, alpha, optimizer = 'sr3', path_to_test_file=None):
     """
     Simulates the UMP using the SINDy model
     :param path_to_data_files:
@@ -47,15 +47,15 @@ def simulate_UMP(path_to_data_files, alpha, optmizer = 'sr3', path_to_test_file=
                                                                                 UMP=True,
                                                                                 path_to_test_file=path_to_test_file,
                                                                                 t_end=1.0, number_of_trainfiles=40)
-    if optmizer == 'sr3':
-        optimizer = ps.SR3(thresholder="l1", threshold=alpha)
-    elif optmizer == 'lasso':
-        optimizer = Lasso(alpha=alpha, fit_intercept=False)
+    if optimizer == 'sr3':
+        opt = ps.SR3(thresholder="l1", threshold=alpha)
+    elif optimizer == 'lasso':
+        opt = Lasso(alpha=alpha, fit_intercept=False)
     else:
         raise ValueError("Unknown optimizer")
 
     library = ps.PolynomialLibrary(degree=2, include_interaction=True)
-    model = ps.SINDy(optimizer=optimizer, feature_library=library,
+    model = ps.SINDy(optimizer=opt, feature_library=library,
                      feature_names=["i_d", "i_q", "i_0"] + testdata['u_names'])
     model.fit(x_train, u=u_train, t=None, x_dot=UMP_train)
     model.print()
@@ -82,6 +82,9 @@ def simulate_UMP(path_to_data_files, alpha, optmizer = 'sr3', path_to_test_file=
 
 if __name__ == "__main__":
     path_to_data_files = os.path.join(os.getcwd(), "data\\Combined\\07-20-ecc-x50-y0")
-    optimise_UMP_simulation(path_to_data_files, nmbr_models=20, loglwrbnd=[-12, -12], loguprbnd=[-1, -1])
-    #simulate_UMP(path_to_data_files, alpha=0.1, optmizer='lasso')
+    #optimise_UMP_simulation(path_to_data_files, nmbr_models=20, loglwrbnd=[-7, -7], loguprbnd=[3, 3])
+    for p in ["\\UMP_sr3", "\\UMP_lasso"]:
+        plot_data(os.getcwd() + "\\plots" + p + ".pkl", show=False, limits=[[1e1,1e3],[0,200]])
+
+    simulate_UMP(path_to_data_files, alpha=0.05, optimizer='lasso')
     plt.show()

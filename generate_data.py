@@ -24,8 +24,9 @@ def do_merged_simulation(V_applied, motor_path, save_path, t_end=2e-4):
                                    save_path=save_path,
                                    V=V_applied, solving_tolerance=1e-5)
 
-    return datalogger.quantities['i_st'], datalogger.quantities['omega_rot'], datalogger.quantities['T_em'], datalogger.quantities['F_em'], \
-           datalogger.quantities['v_applied'], datalogger.quantities['T_l'], datalogger.quantities['ecc']
+    return [datalogger.quantities['i_st'], datalogger.quantities['omega_rot'], datalogger.quantities['T_em'],
+            datalogger.quantities['F_em'], \
+            datalogger.quantities['v_applied'], datalogger.quantities['T_l'], datalogger.quantities['ecc']]
 
 
 if __name__ == "__main__":
@@ -39,7 +40,6 @@ if __name__ == "__main__":
     if not os.path.exists(save_path):
         os.makedirs(save_path)
 
-
     if generate_traindata:
         V_ranges = np.random.randint(40, 400, 1)  # randomly generated V values
         V_dict = {"V": V_ranges}
@@ -50,23 +50,32 @@ if __name__ == "__main__":
              'i_st', 'i_rot', 'alpha_rot', 'omega_rot', 'gamma_rot', 'T_em', 'F_em', 'v_applied', 'T_l', 'ecc',
              'iterations', 'time'])
         '''
-        dataset = {'i_st': np.array([]),  # shape t, 3, simulations
-                   'omega_rot': np.array([]),  # shape t, simulations
-                   'T_em': np.array([]),  # shape t, simulations
-                   'F_em': np.array([]),  # shape t, 2, simulations
-                   'v_applied': np.array([]),  # shape t, 3, simulations
-                   'T_l': np.array([]),  # shape t, simulations
-                   'ecc': np.array([])}  # shape t, 2, simulations
 
         print("Starting simulation")
+        debug = True
+        if not debug:
+            p = multiprocessing.Pool(processes=2)
+            input_data = [(V, motor_path, save_path) for V in V_ranges]
+            output_list = p.starmap(do_merged_simulation, input_data)
+        else:
+            output_list = []
+            V = V_ranges[0]
+            output_list = do_merged_simulation(V, motor_path, save_path)
 
-        p = multiprocessing.Pool(processes=2)
-        input_data = [(V, motor_path, save_path) for V in V_ranges]
-        output_list = p.starmap(do_merged_simulation, input_data)
-
-        for i, k in enumerate(dataset.keys()):
-            # append to dataset for each simulation, perhaps hstack ?
-            dataset[k] = np.stack((dataset[k], output_list[i]), axis=-1)
+        # if dataset library not initialised, create it, else append to it
+        if not 'dataset' in locals():
+            # initialise dataset dictionnary
+            dataset = {'i_st': output_list[0],  # shape t, 3, simulations
+                       'omega_rot': output_list[1],  # shape t, simulations
+                       'T_em': output_list[2],  # shape t, simulations
+                       'F_em': output_list[3],  # shape t, 2, simulations
+                       'v_applied': output_list[4],  # shape t, 3, simulations
+                       'T_l': output_list[5],  # shape t, simulations
+                       'ecc': output_list[6]}  # shape t, 2, simulations
+        else:
+            for i, k in enumerate(dataset.keys()):
+                # append to dataset for each simulation, perhaps hstack ?
+                dataset[k] = np.stack((dataset[k], output_list[i]), axis=-1)
 
         print("Simulation finished")
 
@@ -81,5 +90,5 @@ if __name__ == "__main__":
 
         if not os.path.exists(save_path):
             os.makedirs(save_path)
-        #do_simulation(V, motor_path, save_path, t_end=1.0)
+        # do_simulation(V, motor_path, save_path, t_end=1.0)
         do_merged_simulation(V, motor_path, save_path, t_end=1.0)

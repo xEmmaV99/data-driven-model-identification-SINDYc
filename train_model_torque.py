@@ -18,9 +18,9 @@ def optimise_torque_simulation(path_to_data_files, nmbr_models=20, loglwrbnd=Non
         loglwrbnd = [-12, -12]
 
     T_train, x_train, u_train, T_val, x_val, u_val, _ = prepare_data(path_to_data_files,
-                                                                            Torque=True,
-                                                                            t_end=1.0,
-                                                                            number_of_trainfiles=40)
+                                                                     Torque=True,
+                                                                     t_end=1.0,
+                                                                     number_of_trainfiles=40)
     library = ps.PolynomialLibrary(degree=2, include_interaction=True)
     print("SR3_L1 optimisation")
     parameter_search(np.logspace(loglwrbnd[0], loguprbnd[0], nmbr_models),
@@ -32,13 +32,18 @@ def optimise_torque_simulation(path_to_data_files, nmbr_models=20, loglwrbnd=Non
                      method="lasso", name="torque_lasso", plot_now=False, library=library)
     path = os.path.join(os.getcwd(), "plot_data")
     for p in ["\\torque_sr3", "\\torque_lasso"]:
-        plot_data(path+p+".pkl")
+        plot_data(path + p + ".pkl")
     return
 
 
-def simulate_torque(path_to_data_files, alpha, optimizer = 'sr3', path_to_test_file=None):
+def simulate_torque(path_to_data_files, alpha, optimizer='sr3', path_to_test_file=None):
     """
-    Simulation for the Torque
+    Simulates the Torque on test data, and compares with the Clarke model
+    :param path_to_data_files:
+    :param alpha:
+    :param optimizer:
+    :param path_to_test_file:
+    :return:
     """
     T_train, x_train, u_train, T_val, x_val, u_val, testdata = prepare_data(path_to_data_files,
                                                                             Torque=True,
@@ -46,22 +51,23 @@ def simulate_torque(path_to_data_files, alpha, optimizer = 'sr3', path_to_test_f
                                                                             t_end=1.0, number_of_trainfiles=40)
     if optimizer == 'sr3':
         print("SR3_L1 optimisation")
-        optimizer = ps.SR3(thresholder="l1", threshold=alpha)
+        opt = ps.SR3(thresholder="l1", threshold=alpha)
     elif optimizer == 'lasso':
         print("Lasso optimisation")
-        optimizer = Lasso(alpha=alpha, fit_intercept=False)
+        opt = Lasso(alpha=alpha, fit_intercept=False)
     else:
         raise ValueError("Optimizer not known")
 
     library = ps.PolynomialLibrary(degree=2, include_interaction=True)
-    model = ps.SINDy(optimizer=optimizer, feature_library=library,
+    model = ps.SINDy(optimizer=opt, feature_library=library,
                      feature_names=["i_d", "i_q", "i_0"] + testdata['u_names'])
+    print("Fitting model")
     model.fit(x_train, u=u_train, t=None, x_dot=T_train)
 
     if model.coefficients().ndim == 1:  # fix dimensions of this matrix, bug in pysindy, o this works
         model.optimizer.coef_ = model.coefficients().reshape(1, model.coefficients().shape[0])
     model.print()
-    #plot_coefs2(model, show = True)
+    # plot_coefs2(model, show = True)
 
     # testdata
     T_test = testdata['T_em']
@@ -100,10 +106,11 @@ def simulate_torque(path_to_data_files, alpha, optimizer = 'sr3', path_to_test_f
     plt.show()
     return
 
+
 if __name__ == "__main__":
     path_to_data_files = os.path.join(os.getcwd(), "data/07-24-default-5e-5")
-    #optimise_torque_simulation(path_to_data_files, nmbr_models=20, loglwrbnd=[-12, -12], loguprbnd=[0, 0])
+    # optimise_torque_simulation(path_to_data_files, nmbr_models=20, loglwrbnd=[-12, -12], loguprbnd=[0, 0])
     for p in ["\\torque_sr3", "\\torque_lasso"]:
-        plot_data(os.getcwd()+"\\plots" + p + ".pkl", show=False)
+        plot_data(os.getcwd() + "\\plots" + p + ".pkl", show=False, limits=[[1e-6, 1], [0, 100]])
     plt.show()
-    #simulate_torque(path_to_data_files, alpha=1e-3, optimizer='lasso')
+    # simulate_torque(path_to_data_files, alpha=1e-3, optimizer='lasso')
