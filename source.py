@@ -153,9 +153,9 @@ def create_and_save_immec_data(timestep, t_end, path_to_motor, save_path, V=400,
         # I.A Load torque
         # The IMMEC function smooth_runup is called.
         # Here, it runs up to 3.7 Nm between 1.5 seconds and 1.7 seconds
-        # T_l = smooth_runup(3.7, n * timestep, 1.5, 1.7)
+        T_l = smooth_runup(3.7, n * timestep, 1.5, 1.7)
         # Here, no torque is applied
-        T_l = 0
+        # T_l = 0
 
         # I.B Applied voltage
         # 400 V_RMS symmetrical line voltages are used
@@ -196,9 +196,79 @@ def create_and_save_immec_data(timestep, t_end, path_to_motor, save_path, V=400,
                 except NoConvergenceException:
                     tuner.jump()
 
-        # data_logger.log(0, np.array([V]), quantities_to_log= "V_max")
         data_logger.save_history(save_path)  # debug here for data_logger.model.R_st
     return
+
+
+def create_immec_data(timestep, t_end, path_to_motor, save_path, V=400, mode='linear', solving_tolerance=1e-4):
+    # V should always be below 400, minimal V is 40 (means 5hz f)
+    motordict = read_motordict(path_to_motor)
+    stator_connection = 'wye'
+
+    if mode == 'linear':
+        motor_model = MotorModel(motordict, timestep, stator_connection)
+    else:
+        motor_model = MotorModel(motordict, timestep, stator_connection, solver='newton',
+                                 solving_tolerance=solving_tolerance)
+
+    tuner = RelaxationTuner()
+    data_logger = HistoryDataLogger(motor_model)
+
+    steps_total = int(t_end // timestep)  # Total number of steps to simulate
+
+    Vf_ratio = 400 / 50
+
+    # data_logger.pre_allocate(steps_total)
+
+    for n in tqdm(range(steps_total)):
+        # I. Generate the input
+
+        # I.A Load torque
+        # The IMMEC function smooth_runup is called.
+        # Here, it runs up to 3.7 Nm between 1.5 seconds and 1.7 seconds
+        T_l = smooth_runup(3.7, n * timestep, 1.5, 1.7)
+        # Here, no torque is applied
+        # T_l = 0
+
+        # I.B Applied voltage
+        # 400 V_RMS symmetrical line voltages are used
+        v_u = V * np.sqrt(2) * np.sin(2 * np.pi * V / Vf_ratio * n * timestep)
+        v_v = V * np.sqrt(2) * np.sin(2 * np.pi * V / Vf_ratio * n * timestep - 2 * np.pi / 3)
+        v_w = V * np.sqrt(2) * np.sin(2 * np.pi * V / Vf_ratio * n * timestep - 4 * np.pi / 3)
+        v_uvw = np.array([v_u, v_v, v_w])
+
+        v_uvw = smooth_runup(v_uvw, n * timestep, 0.0, 1.5)
+
+        # I.C Rotor eccentricity
+        # In this demo, the rotor is placed in a centric position
+        ecc = np.zeros(2)
+
+        # I.D The inputs are concatenated to a single vector
+        inputs = np.concatenate([v_uvw, [T_l], ecc])
+
+        # II. Log the motor model values, time, and inputs
+
+        data_logger.log(n * timestep, inputs)
+
+        # III. Step the motor model
+        if mode == 'linear':
+            motor_model.step(inputs)
+        else:
+            # A step is initialised as unsolved
+            tuner.solved = False
+
+            while not tuner.solved:
+                try:
+                    # Apply the relaxation factor of the tuner to the motor model
+                    motor_model.relaxation_factor = tuner.relaxation
+                    # Attempt to step the motor model
+                    motor_model.step(inputs)
+                    # When succesful, increase the tuner relaxation factor
+                    tuner.step()
+                # When unsuccesful, decrease the tuner relaxation factor
+                except NoConvergenceException:
+                    tuner.jump()
+    return data_logger
 
 
 def v_abc_exact(data_logger, path_to_motor_info):
@@ -268,21 +338,23 @@ def plot_data(path='plotdata.pkl', show=True, figure=True):
 
     if type(data['ylab']) != str:  # multiple axis
         print("Multiple axis plot detected.")
-
+        print("loglog ax1 and semilogx ax2.")
         fig, ax1 = plt.subplots()
         ax1.set_xlabel(data['xlab'])
 
         ax1.set_ylabel(data['ylab'][0], color='r')
-        ax1.semilogx(data['plots']['0'][:, 0], data['plots']['0'][:, 1:], 'r')
+        ax1.loglog(data['plots']['0'][:, 0], data['plots']['0'][:, 1:], 'r')
 
         ax2 = ax1.twinx()
         ax2.set_ylabel(data['ylab'][1], color='b')
         ax2.semilogx(data['plots']['1'][:, 0], data['plots']['1'][:, 1:], 'b')
 
-        fig.tight_layout()
-        #ax1.set_ylim([0, 100])
-        #ax2.set_ylim([0, 200])
         plt.title(data['title'])
+        ax1.set_ylim([1e-6, 1])
+        ax2.set_ylim([0, 100])
+        #fig.tight_layout()
+
+
     else:
         plt.figure()
         plt.xlabel(data['xlab']), plt.ylabel(data['ylab'])
@@ -334,21 +406,16 @@ def plot_coefs(model):
     return
 
 
-def plot_coefs2(model, normalize_values = True):
+def plot_coefs2(model, normalize_values=False, show=False):
     xticknames = model.get_feature_names()
     for i in range(len(xticknames)):
         xticknames[i] = xticknames[i]
     plt.figure(figsize=(len(xticknames), 4))
     colors = ["b", "r", "k"]
-
-    # plt.subplot(1, 2, 1)
-    # plt.title("ensembling")
     coefs = model.coefficients()
-    '''
+
     if normalize_values:
-        for i, coef, in enumerate(coefs):
-            coef = coef*np.max()
-    '''
+        raise NotImplementedError("This function is not implemented yet.")  # todo
 
     for i in range(2):
         plt.scatter(np.arange(0, len(xticknames), 1), coefs[i, :].T, color=colors[i],
@@ -357,34 +424,47 @@ def plot_coefs2(model, normalize_values = True):
     plt.grid(True)
     plt.xticks(range(len(xticknames)), xticknames, rotation=90)
 
-    # plt.set_xticklabels(xticknames, verticalalignment="top")
     plt.legend()
-
-    plt.show()
+    if show:
+        plt.show()
     return
 
 
-def theshold_search(threshold_array, train_and_validation_data, method="lasso", name="", plot_now=True, library=None):
+def save_model_coef(model, name):
+    path = 'C:/Users/emmav/PycharmProjects/SINDY_project/models/' + name + '.pkl'
+    lib = {'coefs': model.coefficients(), 'features': model.feature_names()}
+    with open(path, 'wb') as file:
+        pkl.dump(lib, file)
+
+
+def read_model_coef(name):
+    path = 'C:/Users/emmav/PycharmProjects/SINDY_project/models/' + name + '.pkl'
+    with open(path, 'rb') as file:
+        coefs = pkl.load(file)
+    return coefs
+
+
+def parameter_search(parameter_array, train_and_validation_data, method="lasso", name="", plot_now=True, library=None):
     if name == "":
         name = method
     method = method.lower()
-    variable = {'threshold': threshold_array,
-                'MSE': np.zeros(len(threshold_array)),
-                'SPAR': np.zeros(len(threshold_array)),
-                'model': list(np.zeros(len(threshold_array)))}
+    variable = {'parameter': parameter_array,
+                'MSE': np.zeros(len(parameter_array)),
+                'SPAR': np.zeros(len(parameter_array)),
+                'model': list(np.zeros(len(parameter_array)))}
 
     xdot_train, x_train, u_train, xdot_val, x_val, u_val = train_and_validation_data
 
-    for i, threshold in enumerate(threshold_array):
+    for i, para in enumerate(parameter_array):
         print(i)
         if method[:3] == 'sr3':
-            optimizer = ps.SR3(thresholder=method[-2:], threshold=threshold)
+            optimizer = ps.SR3(thresholder=method[-2:], threshold=para)
         elif method == 'lasso':
-            optimizer = Lasso(alpha=threshold, fit_intercept=False)
+            optimizer = Lasso(alpha=para, fit_intercept=False)
         elif method == 'stlsq':
-            optimizer = ps.STLSQ(threshold=0.1, alpha=threshold)
+            optimizer = ps.STLSQ(threshold=0.1, alpha=para)
         elif method == 'srr':
-            optimizer = ps.SSR(alpha=threshold)
+            optimizer = ps.SSR(alpha=para)
         else:
             raise NameError("Method is invalid")
 
@@ -405,20 +485,20 @@ def theshold_search(threshold_array, train_and_validation_data, method="lasso", 
 
     # plot the results
     # save the plots
-    xlab = r'Threshold $\lambda$'
+    xlab = r'Sparsity weighting factor $\alpha$'
     ylab1 = 'MSE'
     ylab2 = 'Number of non-zero elements'
-    title = 'MSE and sparsity vs threshold'
+    title = 'MSE and sparsity VS Sparsity weighting parameter, ' + method + ' method'
     xydata = [
         np.hstack(
-            (variable['threshold'].reshape(len(threshold_array), 1), variable['MSE'].reshape(len(threshold_array), 1))),
-        np.hstack((variable['threshold'].reshape(len(threshold_array), 1),
-                   variable['SPAR'].reshape(len(threshold_array), 1)))]
+            (variable['parameter'].reshape(len(parameter_array), 1), variable['MSE'].reshape(len(parameter_array), 1))),
+        np.hstack((variable['parameter'].reshape(len(parameter_array), 1),
+                   variable['SPAR'].reshape(len(parameter_array), 1)))]
     specs = ['r', 'b']
-    save_plot_data('MSE_sparsity_vs_threshold_' + name, xydata, title, xlab, [ylab1, ylab2], specs, plot_now=plot_now)
+    save_plot_data(name, xydata, title, xlab, [ylab1, ylab2], specs, plot_now=plot_now)
 
     idx = np.where(np.min(variable['MSE']))  # best model, lowest MSE
     best_model = variable['model'][idx[0][0]]
-    print("Best model found with MSE: ", variable['MSE'][idx[0][0]], " and threshold: ",
-          variable['threshold'][idx[0][0]], "for ", method)
+    print("Best model found with MSE: ", variable['MSE'][idx[0][0]], " and parameter: ",
+          variable['parameter'][idx[0][0]], "for ", method)
     return best_model

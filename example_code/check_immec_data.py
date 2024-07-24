@@ -2,11 +2,19 @@ import matplotlib.pyplot as plt
 
 from source import *
 
-path = 'C:/Users/emmav/PycharmProjects/SINDY_project/data/IMMEC_history_soltol_-400.0V_1.0sec.pkl'
+path = 'C:/Users/emmav/PycharmProjects/SINDY_project/test-data/07-24/IMMEC_history_40V_5.0sec.pkl'
+
 with open(path, 'rb') as f:
     dataset = pkl.load(f)
 
-plt.plot(dataset['omega_rot'])
+plt.plot(dataset['time'],dataset['omega_rot'])
+plt.title("omega_rot")
+plt.figure()
+plt.plot(dataset['time'],dataset['i_st'])
+plt.title("i_st")
+plt.figure()
+plt.plot(dataset['time'],dataset['T_em'])
+plt.title("T_em")
 plt.show()
 
 '''

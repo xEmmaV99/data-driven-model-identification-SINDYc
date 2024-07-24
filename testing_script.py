@@ -32,7 +32,6 @@ model.fit(x_train, u=u_train, t=None, x_dot=xdot_train)
 model.print()
 print(model.coefficients()) #model object cannot be pickled
 #plot_coefs2(model)
-'''
-with open(path, 'wb') as file:
-    pkl.dump(model.coefficients(), file)
-'''
+
+path = 'C:/Users/emmav/PycharmProjects/SINDY_project/models/test.pkl'
+save_model_coef(model, 'test')
