@@ -1,8 +1,4 @@
-import matplotlib.pyplot as plt
-import sklearn.linear_model
-
 from prepare_data import *
-from sklearn.metrics import mean_squared_error
 from sklearn.linear_model import Lasso
 
 cwd = os.getcwd()
@@ -18,21 +14,27 @@ def simulate_currents():
     # get the data
     xdot_train, x_train, u_train, xdot_val, x_val, u_val, TESTDATA = prepare_data(path_to_data_files,
                                                                                   path_to_test_file=path_to_test_file,
-                                                                                  t_end=1.0, number_of_trainfiles=20)
+                                                                                  t_end=1.0, number_of_trainfiles=20,
+                                                                                  normalize_input = False)
     print(TESTDATA['u_names'])
-    inputs_per_library = [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14], [12]]
+    inputs_per_library = [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], [12]]
     big_lib = ps.GeneralizedLibrary([ps.PolynomialLibrary(degree=3, include_interaction=True),
                                      ps.FourierLibrary(n_frequencies=1, include_cos=True, include_sin=True)],
                                     tensor_array=None,  # don't merge the libraries
                                     inputs_per_library=inputs_per_library) # are crossterms needed?
 
+    #function = [lambda x: np.cos(x)**(-1)] # bad function, has asymptotes
+    function = [lambda x: np.cos(x), lambda x: np.sin(x)]
+    customlib = ps.CustomLibrary(function)
+    big_lib = ps.GeneralizedLibrary([ps.PolynomialLibrary(degree=2, include_interaction=True),
+                                     customlib], tensor_array=[[1,1]], inputs_per_library=inputs_per_library)
 
     # Fit the model
     number_of_models = 1
     # opt was 0.0001 but 10 gave reasonable results
     if number_of_models == 1:
-        threshold = 0.07
-        # optimizer = ps.SR3(thresholder="l1", threshold=threshold)
+        threshold = 0.01
+        #optimizer = ps.SR3(thresholder="l1", threshold=threshold, normalize_columns=True)
         optimizer = Lasso(alpha=threshold, fit_intercept=False)
 
         #print(TESTDATA['u_names'])
@@ -43,6 +45,7 @@ def simulate_currents():
         print("Fitting model")
         model.fit(x_train, u=u_train, t=None, x_dot=xdot_train)
         model.print()
+        print(model.score(x_val, t=None, x_dot = xdot_val, u=u_val, metric = mean_squared_error))
         plot_coefs2(model)
         plt.figure()
     else:
@@ -225,7 +228,7 @@ def simulate_UMP():
     legend = [r"Predicted UMP_x", r"Predicted UMP_y", r"Reference"]
     specs = ["b", "r", "k--"]
     save_plot_data("UMP_lasso_ecc_load", xydata, title, xlab, ylab, legend=legend, plot_now=True, specs=specs)
-
+    return
 
 def plot_everything(path_to_directory):
     files = os.listdir(path_to_directory)
@@ -243,8 +246,8 @@ simulate_UMP() '''
 
 # plot_everything('C:\\Users\\emmav\\PycharmProjects\\SINDY_project\\plots\\')
 # simulate_torque()
-# simulate_currents()
-simulate_UMP()
+simulate_currents()
+# simulate_UMP()
 # simulate_currents()
 # todo add non linear to immec model (and try to solve that with sindy)
 # todo add static ecc

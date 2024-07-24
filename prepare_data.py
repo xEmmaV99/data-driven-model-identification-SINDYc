@@ -7,7 +7,7 @@ import scipy
 from source import *
 
 
-def prepare_data(path_to_data_files, V_test_data=None, Torque=False, UMP=False, path_to_test_file=None, t_end=1.0, number_of_trainfiles = 10):
+def prepare_data(path_to_data_files, V_test_data=None, Torque=False, UMP=False, path_to_test_file=None, t_end=1.0, number_of_trainfiles = 10, normalize_input = False):
 
     path_to_simulation_data = os.path.join(path_to_data_files, 'SIMULATION_data.pkl')
     # Read Voltages used for simulation
@@ -82,6 +82,14 @@ def prepare_data(path_to_data_files, V_test_data=None, Torque=False, UMP=False, 
         u_data = np.hstack((v_stator, I, V, dataset['gamma_rot'] % (2 * np.pi)  ,
                             dataset['omega_rot'],
                             np.repeat(freq, len(dataset['omega_rot'])).reshape(len(dataset['omega_rot']), 1)))
+
+        if normalize_input:
+            # probably not the best, as it normalizes for EACH sample seperately, meaning that 40V can be mapped to 1 or .05
+            x_max = np.max(x_data, 0) #along row axis
+            x_data = x_data / x_max
+            u_max = np.max(u_data, 0)
+            u_data = u_data / u_max
+
         u_names = [r'$v_d$', r'$v_q$', r'$v_0$', r'$I_d$', r'$I_q$', r'$I_0$', r'$V_d$', r'$V_q$', r'$V_0$',
                    r'$\gamma$', r'$\omega$', r'$f$']
 

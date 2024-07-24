@@ -334,7 +334,7 @@ def plot_coefs(model):
     return
 
 
-def plot_coefs2(model):
+def plot_coefs2(model, normalize_values = True):
     xticknames = model.get_feature_names()
     for i in range(len(xticknames)):
         xticknames[i] = xticknames[i]
@@ -343,8 +343,15 @@ def plot_coefs2(model):
 
     # plt.subplot(1, 2, 1)
     # plt.title("ensembling")
+    coefs = model.coefficients()
+    '''
+    if normalize_values:
+        for i, coef, in enumerate(coefs):
+            coef = coef*np.max()
+    '''
+
     for i in range(2):
-        plt.scatter(np.arange(0, len(xticknames), 1), model.coefficients()[i, :].T, color=colors[i],
+        plt.scatter(np.arange(0, len(xticknames), 1), coefs[i, :].T, color=colors[i],
                     label=r"Equation for $\dot{" + xticknames[i + 1].strip("$") + "}$")
 
     plt.grid(True)
