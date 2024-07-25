@@ -499,7 +499,7 @@ def plot_coefs(model):
     return
 
 
-def plot_coefs2(model, normalize_values=False, show=False):
+def plot_coefs2(model, normalize_values=False, show=False, log = False):
     xticknames = model.get_feature_names()
     for i in range(len(xticknames)):
         xticknames[i] = xticknames[i]
@@ -509,6 +509,10 @@ def plot_coefs2(model, normalize_values=False, show=False):
 
     if normalize_values:
         raise NotImplementedError("This function is not implemented yet.")  # todo
+
+    if log:
+        plt.yscale('log', base=10)
+        coefs = np.abs(coefs)
 
     for i in range(2):
         plt.scatter(np.arange(0, len(xticknames), 1), coefs[i, :].T, color=colors[i],

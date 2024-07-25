@@ -1,4 +1,4 @@
-from prepare_data2 import *
+from prepare_data import *
 from libs import *
 
 def optimize_currents_simulation(path_to_data_files, nmbr_models=20, loglwrbnd=None, loguprbnd=None):
@@ -18,7 +18,7 @@ def optimize_currents_simulation(path_to_data_files, nmbr_models=20, loglwrbnd=N
     xdot_train, x_train, u_train, xdot_val, x_val, u_val, _ = prepare_data(path_to_data_files,
                                                                            t_end=1.0,
                                                                            number_of_trainfiles=40)
-    library = ps.PolynomialLibrary(degree=2, include_interaction=True)
+    library = get_custom_library_funcs()
     print("SR3_L1 optimisation")
     parameter_search(np.logspace(loglwrbnd[0], loguprbnd[0], nmbr_models),
                      train_and_validation_data=[xdot_train, x_train, u_train, xdot_val, x_val, u_val],
@@ -45,8 +45,7 @@ def simulate_currents(path_to_data_files, alpha, optimizer='sr3', path_to_test_f
     """
     xdot_train, x_train, u_train, xdot_val, x_val, u_val, testdata = prepare_data(path_to_data_files,
                                                                                   path_to_test_file=path_to_test_file,
-                                                                                  t_end=1.0, number_of_trainfiles=10,
-                                                                                  normalize_input=False)
+                                                                                  t_end=1.0, number_of_trainfiles=60)
 
     #library = ps.PolynomialLibrary(degree=2, interaction_only=True)
     library = get_custom_library_funcs()
@@ -68,8 +67,9 @@ def simulate_currents(path_to_data_files, alpha, optimizer='sr3', path_to_test_f
 
 
     print("MSE: "+ str(model.score(x_val, t=None, x_dot=xdot_val, u=u_val, metric=mean_squared_error)))
-    # plot_coefs2(model)
+    plot_coefs2(model, log = True)
 
+    save_model(model, "currents_model")
 
     # Validate the best model, on testdata
     xdot_test = testdata['xdot']
@@ -114,20 +114,24 @@ def simulate_currents(path_to_data_files, alpha, optimizer='sr3', path_to_test_f
 
 
 if __name__ == "__main__":
-    '''   
-     path_to_data_files = os.path.join(os.getcwd(), 'data\\07-24-default-5e-5')
 
+    path_to_data_files = os.path.join(os.getcwd(), 'data\\07-24-default-5e-5')
+
+    ### OPTIMIZE ALPHA
     #optimize_currents_simulation(path_to_data_files, nmbr_models=20, loglwrbnd=[-7, -7], loguprbnd=[3, 3])
 
+    ### PLOT MSE FOR DIFFERENT ALPHA
     for p in ["\\currents_sr3", "\\currents_lasso"]:
-        plot_data(os.getcwd() + "\\plots" + p + ".pkl", show=False, limits=[[1e0,1e2],[0,150]])
+        plot_data(os.getcwd() + "\\plots" + p + ".pkl", show=False, limits=[[1e0,5e2],[0,150]])
 
-    simulate_currents(path_to_data_files, alpha=1e-1, optimizer='lasso', do_time_simulation=False)
+    ### SIMULATE CURRENTS
+    simulate_currents(path_to_data_files, alpha=1e-1, optimizer='lasso', do_time_simulation=True)
     plt.show()
-    '''
-    path_to_data_files = os.path.join(os.getcwd(), 'train-data','07-25','IMMEC_0ecc_1.0sec.npz')
-    simulate_currents(path_to_data_files, alpha=1e-1, optimizer='lasso', do_time_simulation=False)
-    plt.show()
+
+    # TEST WITH NEW DATAFILES
+    #path_to_data_files = os.path.join(os.getcwd(), 'train-data','07-25','IMMEC_0ecc_1.0sec.npz')
+    #simulate_currents(path_to_data_files, alpha=1e-1, optimizer='lasso', do_time_simulation=False)
+    #plt.show()
 
 
 

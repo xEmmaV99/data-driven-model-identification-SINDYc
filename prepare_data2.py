@@ -1,11 +1,13 @@
 import random
+
+import matplotlib.pyplot as plt
 import scipy
 
 from source import *
 
 
 def prepare_data(path_to_data_file, V_test_data=None, Torque=False, UMP=False, path_to_test_file=None, t_end=1.0,
-                 number_of_trainfiles=10, normalize_input=False, use_estimate_for_v=False):
+                 number_of_trainfiles=10, use_estimate_for_v=False):
     path_to_simulation_data = os.path.join( os.path.dirname(path_to_data_file),'SIMULATION_DATA.pkl')  # get out one
     V_range, load_range = read_V_load_from_simulationdata(path_to_simulation_data)
     #todo consider multithreading here, as one CPU might be the bottleneck
@@ -13,8 +15,9 @@ def prepare_data(path_to_data_file, V_test_data=None, Torque=False, UMP=False, p
     if path_to_test_file is not None:  # if no testdata is demanded
         V_test_data = None
 
+    print(number_of_trainfiles) #debug
     # choose random V from V_range
-    random_idx = random.sample(range(len(V_range)), number_of_trainfiles) # THIS IS SHUFFLED ALREADY, the simulations are shuffled
+    random_idx = random.sample(range(len(V_range)), number_of_trainfiles) # the simulations are shuffled
 
     V_range = V_range[random_idx]
     load_range = load_range[random_idx]
@@ -24,17 +27,15 @@ def prepare_data(path_to_data_file, V_test_data=None, Torque=False, UMP=False, p
     TESTDATA = {'x': np.array([]), 'u': np.array([]), 'xdot': np.array([]), 't': np.array([]), 'V': V_test_data,
                 'T_em': np.array([]), 'UMP': np.array([])}
 
-    # for each datafile, fix the data (eg calculate xdot) and add to the DATA dictionary
-    #for idx in random_idx:
-
-    # the files are dim x dim x number_of_simulations or dim x number_of_simulations
-
     # load numpy file
     dataset = dict(np.load(path_to_data_file)) # should be a dictionary
+    # crop dataset to desired amount of simulations (random_idx)
+    for key in dataset.keys():
+        dataset[key] = dataset[key][:, :, random_idx]
 
     # get x data
-    x_data = reference_abc_to_dq0(dataset['i_st'][:,:,random_idx])
-    t_data = dataset['time'][:,:,random_idx]
+    x_data = reference_abc_to_dq0(dataset['i_st'])
+    t_data = dataset['time']
 
     # first, calculate xdots and add to the data
     xdots = calculate_xdot(x_data, t_data)  # SINDY DOESN'T SHORTEN THE VECTOR
@@ -68,7 +69,7 @@ def prepare_data(path_to_data_file, V_test_data=None, Torque=False, UMP=False, p
         V = np.dstack((V, scipy.integrate.cumulative_trapezoid(v_stator[:,:,simul], t_data[:,0,simul], axis=0, initial=0)))
 
     # u_data add supply frequency to the input data
-    freqs = V_range[random_idx] * 50 / 400  # constant proportion
+    freqs = V_range * 50 / 400  # constant proportion
 
     freqs = freqs.reshape(1,1,len(freqs)) #along third axis
     u_data = np.hstack((v_stator, I, V, dataset['gamma_rot'] % (2 * np.pi),
@@ -78,18 +79,16 @@ def prepare_data(path_to_data_file, V_test_data=None, Torque=False, UMP=False, p
     u_names = [r'$v_d$', r'$v_q$', r'$v_0$', r'$I_d$', r'$I_q$', r'$I_0$', r'$V_d$', r'$V_q$', r'$V_0$',
                r'$\gamma$', r'$\omega$', r'$f$']
 
-
-
-    # Now, stack data on top of each other and shuffle!
-    DATA['x'] = x_data.reshape(x_data.shape[0]*x_data.shape[-1],x_data.shape[1])
-    DATA['u'] = u_data.reshape(u_data.shape[0]*u_data.shape[-1],u_data.shape[1])
-    DATA['xdot'] = xdots.reshape(xdots.shape[0]*xdots.shape[-1],xdots.shape[1])
-    DATA['T_em'] = dataset["T_em"].reshape(dataset["T_em"].shape[0]*dataset["T_em"].shape[-1])
-    DATA['UMP'] = dataset["F_em"].reshape(dataset["F_em"].shape[0]*dataset["F_em"].shape[-1],dataset["F_em"].shape[1])
+    # Now, stack data on top of each other and shuffle! (Note that the transpose is needed otherwise the reshape is wrong)
+    DATA['x'] = x_data.transpose(0, 2, 1).reshape(x_data.shape[0]*x_data.shape[-1],x_data.shape[1])
+    DATA['u'] = u_data.transpose(0, 2, 1).reshape(u_data.shape[0]*u_data.shape[-1],u_data.shape[1])
+    DATA['xdot'] = xdots.transpose(0, 2, 1).reshape(xdots.shape[0]*xdots.shape[-1],xdots.shape[1])
+    DATA['T_em'] = dataset["T_em"].transpose(0, 2, 1).reshape(dataset["T_em"].shape[0]*dataset["T_em"].shape[-1])
+    DATA['UMP'] = dataset["F_em"].transpose(0, 2, 1).reshape(dataset["F_em"].shape[0]*dataset["F_em"].shape[-1],dataset["F_em"].shape[1])
 
     # shuffle the DATA entirely, but according to the same shuffle
     shuffled_indices = np.random.permutation(DATA['x'].shape[0])
-    DATA['x'] = DATA['x'][shuffled_indices]
+    DATA['x'] = DATA['x'][shuffled_indices] #debug
     DATA['u'] = DATA['u'][shuffled_indices]
     DATA['xdot'] = DATA['xdot'][shuffled_indices]
     DATA['T_em'] = DATA['T_em'][shuffled_indices]
@@ -112,7 +111,9 @@ def prepare_data(path_to_data_file, V_test_data=None, Torque=False, UMP=False, p
 
     visualise_train_data = False
     if visualise_train_data:
-        print(V_range)
+        print(DATA["xdot"].shape)
+        plt.plot(DATA['xdot'])
+        plt.show()
         # todo think about it
         raise NotImplementedError('Visualisation of training data is not yet implemented')
 

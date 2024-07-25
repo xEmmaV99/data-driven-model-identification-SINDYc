@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 
 from prepare_data import *
+from libs import *
 
 
 def optimise_torque_simulation(path_to_data_files, nmbr_models=20, loglwrbnd=None, loguprbnd=None):
@@ -21,7 +22,7 @@ def optimise_torque_simulation(path_to_data_files, nmbr_models=20, loglwrbnd=Non
                                                                      Torque=True,
                                                                      t_end=1.0,
                                                                      number_of_trainfiles=40)
-    library = ps.PolynomialLibrary(degree=2, include_interaction=True)
+    library = get_custom_library_funcs()
     print("SR3_L1 optimisation")
     parameter_search(np.logspace(loglwrbnd[0], loguprbnd[0], nmbr_models),
                      train_and_validation_data=[T_train, x_train, u_train, T_val, x_val, u_val],
@@ -58,7 +59,7 @@ def simulate_torque(path_to_data_files, alpha, optimizer='sr3', path_to_test_fil
     else:
         raise ValueError("Optimizer not known")
 
-    library = ps.PolynomialLibrary(degree=2, include_interaction=True)
+    library = get_custom_library_funcs()
     model = ps.SINDy(optimizer=opt, feature_library=library,
                      feature_names=["i_d", "i_q", "i_0"] + testdata['u_names'])
     print("Fitting model")
@@ -67,7 +68,9 @@ def simulate_torque(path_to_data_files, alpha, optimizer='sr3', path_to_test_fil
     if model.coefficients().ndim == 1:  # fix dimensions of this matrix, bug in pysindy, o this works
         model.optimizer.coef_ = model.coefficients().reshape(1, model.coefficients().shape[0])
     model.print()
-    # plot_coefs2(model, show = True)
+    # plot_coefs2(model, show = False, log = True)
+
+    save_model(model, "torque_model")
 
     # testdata
     T_test = testdata['T_em']
@@ -109,8 +112,15 @@ def simulate_torque(path_to_data_files, alpha, optimizer='sr3', path_to_test_fil
 
 if __name__ == "__main__":
     path_to_data_files = os.path.join(os.getcwd(), "data/07-24-default-5e-5")
+
+    ### OPTIMISE ALPHA FOR TORQUE SIMULATION
     # optimise_torque_simulation(path_to_data_files, nmbr_models=20, loglwrbnd=[-12, -12], loguprbnd=[0, 0])
-    for p in ["\\torque_sr3", "\\torque_lasso"]:
+
+    ### PLOT MSE FOR TORQUE SIMULATION
+    for p in ["\\torque_SR3_", "\\torque_lasso"]:
         plot_data(os.getcwd() + "\\plots" + p + ".pkl", show=False, limits=[[1e-6, 1], [0, 100]])
+
     plt.show()
-    # simulate_torque(path_to_data_files, alpha=1e-3, optimizer='lasso')
+    ### SIMULATE TORQUE WITH CHOSEN ALPHA AND OPTIMIZER
+    simulate_torque(path_to_data_files, alpha=1e-4, optimizer='lasso')
+    plt.show()
