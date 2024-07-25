@@ -200,8 +200,9 @@ def create_and_save_immec_data(timestep, t_end, path_to_motor, save_path, V=400,
     return
 
 
-def create_immec_data(timestep, t_end, path_to_motor, save_path, V=400, mode='linear', solving_tolerance=1e-4):
+def create_immec_data(timestep, t_end, path_to_motor, V=400, mode='linear', solving_tolerance=1e-4, load = 3.7, ecc = [0, 0]):
     # V should always be below 400, minimal V is 40 (means 5hz f)
+    print("remove save_path")
     motordict = read_motordict(path_to_motor)
     stator_connection = 'wye'
 
@@ -225,8 +226,8 @@ def create_immec_data(timestep, t_end, path_to_motor, save_path, V=400, mode='li
 
         # I.A Load torque
         # The IMMEC function smooth_runup is called.
-        # Here, it runs up to 3.7 Nm between 1.5 seconds and 1.7 seconds
-        T_l = smooth_runup(3.7, n * timestep, 1.5, 1.7)
+        # Here, it runs up to 3.7 Nm (load) between 1.5 seconds and 1.7 seconds
+        T_l = smooth_runup(load, n * timestep, 1.5, 1.7)
         # Here, no torque is applied
         # T_l = 0
 
@@ -299,6 +300,13 @@ def read_V_from_directory(path_to_directory):
         if file.endswith('.pkl') and file.startswith('IMMEC_history'):
             V.append(int(file.split('_')[2][:-1]))
     return np.array(V)
+
+
+def read_V_load_from_simulationdata(path_to_simulation_data):
+    # read the load torque from the simulation data
+    with open(path_to_simulation_data, 'rb') as file:
+        data = pkl.load(file)
+    return data['V'], data['load']
 
 
 def v_abc_estimate(data_logger):
@@ -431,19 +439,33 @@ def plot_coefs2(model, normalize_values=False, show=False):
     return
 
 
-def save_model_coef(model, name):
+def save_model(model, name):
     #todo!!!!!!!!!!!!
+    print("Saving model")
     path = 'C:/Users/emmav/PycharmProjects/SINDY_project/models/' + name + '.pkl'
-    lib = {'coefs': model.coefficients(), 'features': model.feature_names()}
+    x = model.n_features_in_ - model.n_control_features_
+    u = model.n_control_features_
+
+    lib = {'coefs': model.coefficients(), 'features': model.feature_names, 'library': model.feature_library, 'shapes': [(1,x),(1,u),(1,x)] }
     with open(path, 'wb') as file:
         pkl.dump(lib, file)
 
 
-def read_model_coef(name):
+def load_model(name):
     path = 'C:/Users/emmav/PycharmProjects/SINDY_project/models/' + name + '.pkl'
     with open(path, 'rb') as file:
-        coefs = pkl.load(file)
-    return coefs
+        model_data = pkl.load(file)
+
+    # initialize pysindy model
+    new_model = ps.SINDy(optimizer=None, feature_names=model_data['features'],
+                         feature_library=model_data['library'])
+
+    x_shape, u_shape, xdot_shape = model_data['shapes']
+    new_model.fit(np.zeros(x_shape), u=np.zeros(u_shape), t=None, x_dot=np.zeros(xdot_shape))
+
+    new_model.optimizer.coef_ = model_data['coefs']
+
+    return new_model
 
 
 def parameter_search(parameter_array, train_and_validation_data, method="lasso", name="", plot_now=True, library=None):

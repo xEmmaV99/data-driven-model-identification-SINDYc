@@ -9,7 +9,9 @@ from source import *
 
 def prepare_data(path_to_data_files, V_test_data=None, Torque=False, UMP=False, path_to_test_file=None, t_end=1.0,
                  number_of_trainfiles=10, normalize_input=False, use_estimate_for_v=False):
-    path_to_simulation_data = os.path.join(path_to_data_files, 'SIMULATION_data.pkl')
+
+    path_to_simulation_data = os.path.join(path_to_data_files, 'SIMULATION_DATA.pkl')
+
     # Read Voltages used for simulation
     V_range = read_V_from_directory(path_to_data_files)  # this is better in case data generation is terminated before
     # all voltages were generated
@@ -20,10 +22,13 @@ def prepare_data(path_to_data_files, V_test_data=None, Torque=False, UMP=False, 
         V_test_data = None
 
     # choose random V from V_range
-    V_range = random.choices(V_range,
-                             k=number_of_trainfiles)  # This is needed for the LASSO optimizer (as too much data makes it too slow)
+    random_idx = random.sample(range(len(V_range)), number_of_trainfiles)
+
+
+    V_range = V_range[random_idx]  # This is needed for the LASSO optimizer (as too much data makes it too slow)
+
     if path_to_test_file is None:
-        V_range.append(V_test_data)  # make sure to also loop over V_test_data
+        V_range = np.append(V_range,V_test_data)  # make sure to also loop over V_test_data
 
     # load data
     DATA = {'x': np.array([]), 'u': np.array([]), 'xdot': np.array([])}

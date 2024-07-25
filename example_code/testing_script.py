@@ -22,22 +22,37 @@ xdot_train, x_train, u_train, xdot_val, x_val, u_val, TESTDATA = prepare_data(pa
 library = ps.PolynomialLibrary(degree=2, include_interaction=True)
 
 threshold = 0.0
-threshold = 1
 
 opt = ps.SR3(thresholder="l1", threshold=threshold)
 #opt = Lasso(alpha=threshold, fit_intercept=False)
 print("starting model")
-model = ps.SINDy(optimizer=opt, feature_names=['i_d', 'i_q', 'i_0'] + TESTDATA['u_names'], feature_library=library)
-model.fit(x_train, u=u_train, t=None, x_dot=xdot_train)
-model.print()
-print(model.coefficients()) #model object cannot be pickled
-#plot_coefs2(model)
+model2 = ps.SINDy(optimizer=opt, feature_names=['i_d', 'i_q', 'i_0'] + TESTDATA['u_names'], feature_library=library)
+model2.fit(x_train, u=u_train, t=None, x_dot=xdot_train)
+model2.print()
+
+u_test = TESTDATA['u']
+x_test = TESTDATA['x']
+xdot_test = TESTDATA['xdot']
 
 path = 'C:/Users/emmav/PycharmProjects/SINDY_project/models/test.pkl'
-save_model_coef(model, 'test')
-temp_coefs = model.coefficients()
+save_model_coef(model2, 'test')
+
+temp_coefs = model2.coefficients()
 
 new_model = ps.SINDy(optimizer= opt, feature_names=['i_d', 'i_q', 'i_0'] + TESTDATA['u_names'], feature_library=library)
-new_model.optimizer.coef_ = model.coefficients()
 
-new_model.predict(x_val, u_val)
+
+#new_model.fit(np.zeros(x_train.shape),u = np.zeros(u_train.shape),t  = None, x_dot = np.zeros(xdot_train.shape))
+new_model.fit(np.zeros(x_test.shape), u=np.zeros(u_test.shape), t=None, x_dot=np.zeros(xdot_test.shape))
+
+new_model.optimizer.coef_ = temp_coefs
+
+oldmod = model2.predict(x_test, u=u_test)
+print("old ok")
+newmod = new_model.predict(x_test, u=u_test)
+
+
+plt.plot(xdot_test, 'k')
+plt.plot(newmod, 'r')
+plt.plot(oldmod, 'b--')
+plt.show()
