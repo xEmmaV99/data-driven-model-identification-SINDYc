@@ -8,6 +8,7 @@ def prepare_data(path_to_data_file, V_test_data=None, Torque=False, UMP=False, p
                  number_of_trainfiles=10, normalize_input=False, use_estimate_for_v=False):
     path_to_simulation_data = os.path.join( os.path.dirname(path_to_data_file),'SIMULATION_DATA.pkl')  # get out one
     V_range, load_range = read_V_load_from_simulationdata(path_to_simulation_data)
+    #todo consider multithreading here, as one CPU might be the bottleneck
 
     if path_to_test_file is not None:  # if no testdata is demanded
         V_test_data = None
@@ -29,11 +30,11 @@ def prepare_data(path_to_data_file, V_test_data=None, Torque=False, UMP=False, p
     # the files are dim x dim x number_of_simulations or dim x number_of_simulations
 
     # load numpy file
-    dataset = np.load(path_to_data_file) # should be a dictionary
+    dataset = dict(np.load(path_to_data_file)) # should be a dictionary
 
     # get x data
     x_data = reference_abc_to_dq0(dataset['i_st'][:,:,random_idx])
-    t_data = dataset['time'][:,random_idx]
+    t_data = dataset['time'][:,:,random_idx]
 
     # first, calculate xdots and add to the data
     xdots = calculate_xdot(x_data, t_data)  # SINDY DOESN'T SHORTEN THE VECTOR
@@ -58,26 +59,28 @@ def prepare_data(path_to_data_file, V_test_data=None, Torque=False, UMP=False, p
     t_data = dataset['time']  # update t_data
 
     # get u data: potentials_st, i_st, omega_rot, gamma_rot, and the integrals.
-
-    I = scipy.integrate.cumtrapz(x_data, t_data, axis=0, initial=0)
-    V = scipy.integrate.cumtrapz(v_stator, t_data, axis=0, initial=0)
+    for simul in range(len(random_idx)):
+        if simul == 0: #initiliaze
+            I = scipy.integrate.cumulative_trapezoid(x_data[:,:,simul], t_data[:,0,simul], axis=0, initial=0)
+            V = scipy.integrate.cumulative_trapezoid(v_stator[:,:,simul], t_data[:,0,simul], axis=0, initial=0)
+            continue
+        I = np.dstack((I,scipy.integrate.cumulative_trapezoid(x_data[:,:,simul], t_data[:,0,simul], axis=0, initial=0)))
+        V = np.dstack((V, scipy.integrate.cumulative_trapezoid(v_stator[:,:,simul], t_data[:,0,simul], axis=0, initial=0)))
 
     # u_data add supply frequency to the input data
     freqs = V_range[random_idx] * 50 / 400  # constant proportion
-    '''
+
+    freqs = freqs.reshape(1,1,len(freqs)) #along third axis
     u_data = np.hstack((v_stator, I, V, dataset['gamma_rot'] % (2 * np.pi),
                         dataset['omega_rot'],
-                        np.repeat(freq, len(dataset['omega_rot'])).reshape(len(dataset['omega_rot']), 1)))
-    '''
-    u_data = np.stack((v_stator, I, V, dataset['gamma_rot'] % (2 * np.pi),
-                        dataset['omega_rot'],
-                        np.repeat(freqs, len(dataset['omega_rot'])).reshape(len(dataset['omega_rot']), 1)), axis = 1) #stack along the second axis
+                        np.repeat(freqs, dataset['omega_rot'].shape[0], axis=0)))
 
     u_names = [r'$v_d$', r'$v_q$', r'$v_0$', r'$I_d$', r'$I_q$', r'$I_0$', r'$V_d$', r'$V_q$', r'$V_0$',
                r'$\gamma$', r'$\omega$', r'$f$']
 
-    # Now, stack data on top of each other and shuffle!
 
+
+    # Now, stack data on top of each other and shuffle!
     DATA['x'] = x_data.reshape(x_data.shape[0]*x_data.shape[-1],x_data.shape[1])
     DATA['u'] = u_data.reshape(u_data.shape[0]*u_data.shape[-1],u_data.shape[1])
     DATA['xdot'] = xdots.reshape(xdots.shape[0]*xdots.shape[-1],xdots.shape[1])
@@ -86,26 +89,26 @@ def prepare_data(path_to_data_file, V_test_data=None, Torque=False, UMP=False, p
 
     # shuffle the DATA entirely, but according to the same shuffle
     shuffled_indices = np.random.permutation(DATA['x'].shape[0])
-    DATA['x'] = DATA['x'][shuffled_indices, :]
-    DATA['u'] = DATA['u'][shuffled_indices, :]
-    DATA['xdot'] = DATA['xdot'][shuffled_indices, :]
-    DATA['T_em'] = DATA['T_em'][shuffled_indices, :]
-    DATA['UMP'] = DATA['UMP'][shuffled_indices, :]
+    DATA['x'] = DATA['x'][shuffled_indices]
+    DATA['u'] = DATA['u'][shuffled_indices]
+    DATA['xdot'] = DATA['xdot'][shuffled_indices]
+    DATA['T_em'] = DATA['T_em'][shuffled_indices]
+    DATA['UMP'] = DATA['UMP'][shuffled_indices]
 
     # split the data into train and validation data
     p = 0.8  # percentage of data to be used for training
     cutidx = int(p * DATA['x'].shape[0])
 
-    x_train = DATA['x'][:cutidx, :]
-    u_train = DATA['u'][:cutidx, :]
-    xdot_train = DATA['xdot'][:cutidx, :]
-    T_em_train = DATA['T_em'][:cutidx, :]
-    UMP_train = DATA['UMP'][:cutidx, :]
-    x_val = DATA['x'][cutidx:, :]
-    u_val = DATA['u'][cutidx:, :]
-    xdot_val = DATA['xdot'][cutidx:, :]
-    T_em_val = DATA['T_em'][cutidx:, :]
-    UMP_val = DATA['UMP'][cutidx:, :]
+    x_train = DATA['x'][:cutidx]
+    u_train = DATA['u'][:cutidx]
+    xdot_train = DATA['xdot'][:cutidx]
+    T_em_train = DATA['T_em'][:cutidx]
+    UMP_train = DATA['UMP'][:cutidx]
+    x_val = DATA['x'][cutidx:]
+    u_val = DATA['u'][cutidx:]
+    xdot_val = DATA['xdot'][cutidx:]
+    T_em_val = DATA['T_em'][cutidx:]
+    UMP_val = DATA['UMP'][cutidx:]
 
     visualise_train_data = False
     if visualise_train_data:
@@ -125,5 +128,5 @@ def prepare_data(path_to_data_file, V_test_data=None, Torque=False, UMP=False, p
 
 
 if __name__ == "__main__":
-    path = os.path.join(os.getcwd(), 'train-data', '07-25', 'IMMEC_0ecc_1.0sec.npz')
-    data = prepare_data(path, number_of_trainfiles=2)
+    path = os.path.join(os.getcwd(), 'train-data', '07-25', 'IMMEC_0ecc_0.001sec.npz')
+    data = prepare_data(path, number_of_trainfiles=5)

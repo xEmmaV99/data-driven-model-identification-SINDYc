@@ -10,34 +10,52 @@ from sklearn.linear_model import Lasso
 from sklearn.metrics import mean_squared_error
 
 
-def reference_abc_to_dq0(coord_array):
-    # coord_array is a Nx3 array with N the number of samples
-
+def reference_abc_to_dq0(coord_array: np.array):
+    """
+    Changes reference system from abc to dq0. Note that if dimension is (N, 3, k)
+     then for each k, the (N, 3) will be transformed
+    :param coord_array: array with shape (N, 3) with N the number of samples
+    :return: transformed array with shape (N, 3)
+    """
     # Clarke transformation: power invariant
     T = np.sqrt(2 / 3) * np.array([[1, -0.5, -0.5],
                                    [0, np.sqrt(3) / 2, -np.sqrt(3) / 2],
                                    [1 / np.sqrt(2), 1 / np.sqrt(2), 1 / np.sqrt(2)]])
-    return np.dot(T, coord_array.T).T
+    return np.tensordot(T, coord_array.swapaxes(0,1), axes=([1],[0])).swapaxes(0, 1)
 
 
-def reference_dq0_to_abc(coord_array):
-    # coord_array is a Nx3 array with N the number of samples
-
+def reference_dq0_to_abc(coord_array: np.array):
+    """
+    Changes reference system from dq0 to abc
+    :param coord_array: array with shape (N, 3) with N the number of samples
+    :return: transformed array with shape (N, 3)
+    """
     # Clarke inverse transformation: power invariant
     T = np.sqrt(2 / 3) * np.array([[1, -0.5, -0.5],
                                    [0, np.sqrt(3) / 2, -np.sqrt(3) / 2],
                                    [1 / np.sqrt(2), 1 / np.sqrt(2), 1 / np.sqrt(2)]]).T
-    return np.dot(T, coord_array.T).T
+    return np.dot(T, coord_array.swapaxes(0,1), axes=([1],[0])).swapaxes(0, 1)
 
 
-def show_data_keys(path_to_data_logger):
+def show_data_keys(path_to_data_logger: str):
+    """
+    Shows the keys of the data logger from a .pkl file
+    :param path_to_data_logger: str with the path to the .pkl file
+    :return:
+    """
     with open(path_to_data_logger, 'rb') as file:
         data_logger = pkl.load(file)
     print(data_logger.keys())
     return
 
 
-def check_training_data(path_to_data_logger, keys_to_plot_list=None):
+def check_training_data(path_to_data_logger: str, keys_to_plot_list: list = None):
+    """
+    Plots the data from the data logger, optional list of keys to plot
+    :param path_to_data_logger: str with the path to the .pkl file
+    :param keys_to_plot_list: list of str with the keys to plot
+    :return:
+    """
     if keys_to_plot_list is None:
         keys_to_plot_list = ['i_st']
     with open(path_to_data_logger, 'rb') as file:
@@ -48,7 +66,7 @@ def check_training_data(path_to_data_logger, keys_to_plot_list=None):
     plt.show()
     return
 
-
+''' TO BE REMOVED
 def get_immec_training_data(path_to_data_logger, timestep=1e-4, use_estimate_for_v=False, motorinfo_path=None,
                             useOldData=False):
     # useOldData TO BE REMOVED, for backward compatibility
@@ -107,12 +125,19 @@ def get_immec_training_data(path_to_data_logger, timestep=1e-4, use_estimate_for
         plt.scatter(t_valid, x_valid[:, 0], marker=".")
         plt.legend(["traindata", "validationdata"])
         plt.show()
-    return x_train, u_train, t_train, x_valid, u_valid, t_valid
+    return x_train, u_train, t_train, x_valid, u_valid, t_valid'''
 
 
-def save_motor_data(motor_path, save_path, extra_dict=None):
+def save_simulation_data(motor_path: str, save_path: str, extra_dict: dict = None):
+    """
+    Saves useful simulation data in a dictionary to a .pkl file
+    :param motor_path: path to motor data file
+    :param save_path: path to save the file
+    :param extra_dict: dict with extra things to save
+    :return:
+    """
     motordict = read_motordict(motor_path)
-    motor_model = MotorModel(motordict, 1e-4, "wye", solver='newton')
+    motor_model = MotorModel(motordict, 5e-5, "wye", solver='newton')
 
     dictionary = {}
     dictionary['stator_leakage_inductance'] = motor_model.stator_leakage_inductance
@@ -127,7 +152,19 @@ def save_motor_data(motor_path, save_path, extra_dict=None):
     return
 
 
-def create_and_save_immec_data(timestep, t_end, path_to_motor, save_path, V=400, mode='linear', solving_tolerance=1e-4):
+def create_and_save_immec_data(timestep: float, t_end: float, path_to_motor: str , save_path:str,
+                               V:float =400, mode:str ='linear', solving_tolerance:float =1e-4):
+    """
+    Creates and saves data for the IMMEC project, TO BE REMOVED
+    :param timestep:
+    :param t_end:
+    :param path_to_motor:
+    :param save_path:
+    :param V:
+    :param mode:
+    :param solving_tolerance:
+    :return:
+    """
     # V should always be below 400, minimal V is 40 (means 5hz f)
     motordict = read_motordict(path_to_motor)
     stator_connection = 'wye'
@@ -200,9 +237,22 @@ def create_and_save_immec_data(timestep, t_end, path_to_motor, save_path, V=400,
     return
 
 
-def create_immec_data(timestep, t_end, path_to_motor, V=400, mode='linear', solving_tolerance=1e-4, load = 3.7, ecc = [0, 0]):
+def create_immec_data(timestep: float, t_end: float, path_to_motor:str, V: float =400,
+                      mode:str ='linear', solving_tolerance:float =1e-4, load:float = 3.7,
+                      ecc: np.array = np.zeros(2)):
+    """
+    Creates data from the IMMEC model
+    :param timestep: timestep of the simulation
+    :param t_end: end of the simulation
+    :param path_to_motor: path to the motor data file
+    :param V: Maximum voltage applied to the motor
+    :param mode: 'linear' for no nonlinear effects when simulating
+    :param solving_tolerance:  tolerance used for the approximation of non linearities, only used when mode is not "linear"
+    :param load: Load applied to the motor in Nm, at time 1.5s to 1.7s
+    :param ecc: eccentricity of the motor, in percentage of the airgap
+    :return: data_logger object (HistoryDataLogger) containing the data
+    """
     # V should always be below 400, minimal V is 40 (means 5hz f)
-    print("remove save_path")
     motordict = read_motordict(path_to_motor)
     stator_connection = 'wye'
 
@@ -242,7 +292,7 @@ def create_immec_data(timestep, t_end, path_to_motor, V=400, mode='linear', solv
 
         # I.C Rotor eccentricity
         # In this demo, the rotor is placed in a centric position
-        ecc = np.zeros(2)
+        ecc = ecc*motordict['d_air']
 
         # I.D The inputs are concatenated to a single vector
         inputs = np.concatenate([v_uvw, [T_l], ecc])
@@ -272,7 +322,14 @@ def create_immec_data(timestep, t_end, path_to_motor, V=400, mode='linear', solv
     return data_logger
 
 
-def v_abc_exact(data_logger, path_to_motor_info):
+def v_abc_exact(data_logger: dict, path_to_motor_info: str):
+    """
+    This function calculates the exact abc voltages from the line voltages
+    :param data_logger: HistoryDataLogger object or dict, containing the data
+    :param path_to_motor_info: str, path to the motor data file
+    :return: np.array with shape (N, 3), abc voltages
+    """
+
     with open(path_to_motor_info, 'rb') as file:
         motorinfo = pkl.load(file)
 
@@ -281,17 +338,36 @@ def v_abc_exact(data_logger, path_to_motor_info):
     Nt = motorinfo['N_abc_T']  # model.N_abc
     L_s = motorinfo['stator_leakage_inductance']  # model.stator_leakage_inductance
 
-    dt = data_logger['time'][-1] - data_logger['time'][-2]
-    dphi = 1 / dt * np.diff(data_logger['flux_st_yoke'].T)  # forward euler, flux_st_yoke, this array is one shorter
-    di = 1 / dt * np.diff(data_logger['i_st'].T)  # forward euler, flux_st_yoke, !!! this array is one shorter !!!
+    print('dt : '+str(5e-5))
+    dt = 5e-5
+    dphi = 1 / dt * np.diff(data_logger['flux_st_yoke'].swapaxes(0,1), axis = 1)  # forward euler, flux_st_yoke, this array is one shorter
+    di = 1 / dt * np.diff(data_logger['i_st'].swapaxes(0,1), axis = 1)  # forward euler, flux_st_yoke, !!! this array is one shorter !!!
 
-    ist = data_logger['i_st'][:-1, :]  # remove the last value of i_st
-    v_abc = np.dot(R, ist.T) + np.dot(Nt, dphi) + L_s * di
+    ist = data_logger['i_st'][:-1]  # remove the last value of i_st
+    v_abc = np.tensordot(R, ist.swapaxes(0,1), axes=([1],[0])) + np.tensordot(Nt, dphi, axes = ([1],[0])) + L_s * di
 
-    return v_abc.T
+    return v_abc.swapaxes(0,1)
+
+def v_abc_estimate(data_logger: dict):
+    """
+    This function estimates the abc voltages from the line voltages, using a transformation
+    :param data_logger: HistoryDataLogger object containing the data
+    :return: np.array with shape (N, 3), abc voltages
+    """
+    # actually, only data_logger['v_applied'] is needed here
+    # outputs Nx3 array
+    T = np.array([[1, -1, 0],
+                  [1, 2, 0],
+                  [-2, -1, 0]])
+    return 1 / 3 * np.dot(T, data_logger['v_applied'].T).T
 
 
-def read_V_from_directory(path_to_directory):
+def read_V_from_directory(path_to_directory: str):
+    """
+    This function reads the voltage from the directory name, when multiple simulations are in seperate files. TO BE REMOVED
+    :param path_to_directory:
+    :return:
+    """
     # most datafiles have the name IMMEC_history_{voltage}V_1.0sec.pkl, so this function reads the voltage from the
     # directory name, return an array with all voltages from files in this directory
     files = os.listdir(path_to_directory)
@@ -302,27 +378,35 @@ def read_V_from_directory(path_to_directory):
     return np.array(V)
 
 
-def read_V_load_from_simulationdata(path_to_simulation_data):
+def read_V_load_from_simulationdata(path_to_simulation_data: str):
+    """
+    This function reads the voltage and load from the simulation data
+    :param path_to_simulation_data: str, path to the simulation data file
+    :return: np.array, np.array of the voltage and load
+    """
     # read the load torque from the simulation data
     with open(path_to_simulation_data, 'rb') as file:
         data = pkl.load(file)
     return data['V'], data['load']
 
 
-def v_abc_estimate(data_logger):
-    # actually, only data_logger['v_applied'] is needed here
-    # outputs Nx3 array
-    T = np.array([[1, -1, 0],
-                  [1, 2, 0],
-                  [-2, -1, 0]])
-    return 1 / 3 * np.dot(T, data_logger['v_applied'].T).T
-
-
-def calculate_xdot(x, t):  # use pySINDy to calculate xdot
+def calculate_xdot(x: np.array, t:np.array):
+    """
+    Calculate the time derivative of the state x at time t, by using pySINDy
+    :param x: array of shape (N , 3)
+    :param t: array of shape (N , 1) or (N, )
+    :return: array of shape (N , 3) with the time derivative of x, pySINDy does not remove one value.
+    """
+    if np.ndim(t) == 3:
+        print("Assume all t_vec are equal")
+        t_ = t[:,0,0].reshape(t.shape[0])
+        return ps.FiniteDifference(order=2, axis=0)._differentiate(x, t_)
+        #t should have shape (N, )
     return ps.FiniteDifference(order=2, axis=0)._differentiate(x, t.reshape(t.shape[0]))  # Default order is two.
 
 
-def save_plot_data(save_name, xydata, title, xlab, ylab, legend=None, plot_now=False, specs=None, sindy_model=None):
+def save_plot_data(save_name: str, xydata: list, title:str, xlab, ylab,
+                   legend=None, plot_now=False, specs=None, sindy_model=None):
     # xydata contains the data to plot, but if multiple axis should be plotted, xy data should be a list of arrays
     # if it is only one x,y then [np.array([x,y])] should be the input
     # create the dictionary to save as is
@@ -440,7 +524,6 @@ def plot_coefs2(model, normalize_values=False, show=False):
 
 
 def save_model(model, name):
-    #todo!!!!!!!!!!!!
     print("Saving model")
     path = 'C:/Users/emmav/PycharmProjects/SINDY_project/models/' + name + '.pkl'
     x = model.n_features_in_ - model.n_control_features_
@@ -507,8 +590,7 @@ def parameter_search(parameter_array, train_and_validation_data, method="lasso",
 
     # rel_sparsity = variable['SPAR'] / np.max(variable['SPAR'])
 
-    # plot the results
-    # save the plots
+    # plot and save the results
     xlab = r'Sparsity weighting factor $\alpha$'
     ylab1 = 'MSE'
     ylab2 = 'Number of non-zero elements'
@@ -526,7 +608,6 @@ def parameter_search(parameter_array, train_and_validation_data, method="lasso",
     print("Best model found with MSE: ", variable['MSE'][idx[0][0]], " and parameter: ",
           variable['parameter'][idx[0][0]], "for ", method)
     return best_model
-
 
 
 def plot_everything(path_to_directory):

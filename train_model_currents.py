@@ -1,5 +1,5 @@
-from prepare_data import *
-
+from prepare_data2 import *
+from libs import *
 
 def optimize_currents_simulation(path_to_data_files, nmbr_models=20, loglwrbnd=None, loguprbnd=None):
     """
@@ -45,17 +45,11 @@ def simulate_currents(path_to_data_files, alpha, optimizer='sr3', path_to_test_f
     """
     xdot_train, x_train, u_train, xdot_val, x_val, u_val, testdata = prepare_data(path_to_data_files,
                                                                                   path_to_test_file=path_to_test_file,
-                                                                                  t_end=1.0, number_of_trainfiles=60,
+                                                                                  t_end=1.0, number_of_trainfiles=10,
                                                                                   normalize_input=False)
-    print(testdata['u_names'])
-    ''' # Generalized library, sine and cos functions for gamma
-    #inputs_per_library = [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], [12]]
-    big_lib = ps.GeneralizedLibrary([ps.PolynomialLibrary(degree=3, include_interaction=True),
-                                     ps.FourierLibrary(n_frequencies=1, include_cos=True, include_sin=True)],
-                                    tensor_array=None,  # don't merge the libraries
-                                    inputs_per_library=inputs_per_library) # are crossterms needed?
-    '''
-    library = ps.PolynomialLibrary(degree=2, include_interaction=True)
+
+    #library = ps.PolynomialLibrary(degree=2, interaction_only=True)
+    library = get_custom_library_funcs()
 
     if optimizer == 'sr3':
         opt = ps.SR3(thresholder="l1", threshold=alpha)
@@ -120,7 +114,8 @@ def simulate_currents(path_to_data_files, alpha, optimizer='sr3', path_to_test_f
 
 
 if __name__ == "__main__":
-    path_to_data_files = os.path.join(os.getcwd(), 'data\\07-24-default-5e-5')
+    '''   
+     path_to_data_files = os.path.join(os.getcwd(), 'data\\07-24-default-5e-5')
 
     #optimize_currents_simulation(path_to_data_files, nmbr_models=20, loglwrbnd=[-7, -7], loguprbnd=[3, 3])
 
@@ -129,7 +124,13 @@ if __name__ == "__main__":
 
     simulate_currents(path_to_data_files, alpha=1e-1, optimizer='lasso', do_time_simulation=False)
     plt.show()
-# now, Training without Load but test WITH load
+    '''
+    path_to_data_files = os.path.join(os.getcwd(), 'train-data','07-25','IMMEC_0ecc_1.0sec.npz')
+    simulate_currents(path_to_data_files, alpha=1e-1, optimizer='lasso', do_time_simulation=False)
+    plt.show()
+
+
+
 # todo add non linear to immec model (and try to solve that with sindy)
 # todo add static ecc
 # todo add dynamic ecc
