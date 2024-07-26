@@ -17,7 +17,7 @@ def do_old_simulation(V_applied, motor_path, save_path, t_end=1.0, test_name="")
     return
 
 
-def do_simulation(V_applied, motor_path, load=3.7, ecc=0.0, t_end=1.0):
+def do_simulation(V_applied, motor_path, load=3.7, ecc=np.zeros(2), t_end=1.0):
     dt = 5e-5  # default
 
     datalogger = create_immec_data(mode='linear', timestep=dt, t_end=t_end, path_to_motor=motor_path, load=load, ecc=ecc,
@@ -31,22 +31,23 @@ def do_simulation(V_applied, motor_path, load=3.7, ecc=0.0, t_end=1.0):
 
 
 if __name__ == "__main__":
-    generate_traindata = True
-    generate_testdata = False
+    generate_traindata = False
+    generate_testdata = True
 
-    save_path = os.path.join(os.getcwd(), 'train-data/', date.today().strftime("%m-%d"))
     motor_path = os.path.join(os.getcwd(), 'Cantoni.pkl')
 
-    t_end = 1.0
+    t_end = 5.0
     ecc = np.zeros(2)
     eccname = '0'
-    numbr_of_simulations = 20
-
-    # create directory if not exists
-    if not os.path.exists(save_path):
-        os.makedirs(save_path)
+    numbr_of_simulations = 1 # always 1 for test data
 
     if generate_traindata:
+        print("Generating training data")
+        save_path = os.path.join(os.getcwd(), 'train-data/', date.today().strftime("%m-%d"))
+        # create directory if not exists
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+
         V_ranges = np.random.randint(40, 400, numbr_of_simulations)  # randomly generated V values
         load_ranges = 1 / 100 * np.random.randint(0.0, 370, numbr_of_simulations) * (
                     V_ranges / 400.0)  # randomly generated load values, scaled according to V
@@ -96,11 +97,32 @@ if __name__ == "__main__":
                             gamma_rot=dataset['gamma_rot'])
 
     elif generate_testdata:
-        # choose V and load somewhere between 0.0 and 3.7, but scale with V (so 3.7 is for V=400)
+        print("Generating test data")
+        save_path = os.path.join(os.getcwd(), 'test-data/', date.today().strftime("%m-%d"))
+        # choose V and (initial) load somewhere between 0.0 and 3.7, but scale with V (so 3.7 is for V=400)
         V = np.random.randint(40, 400, 1)
-        load = 1 / 100 * np.random.randint(0.0, 370, 1) * (V / 400.0)
+        load = 1 / 100 * np.random.randint(0.0, 370) * (V / 400.0)
 
         if not os.path.exists(save_path):
             os.makedirs(save_path)
-        # do_simulation(V, motor_path, save_path, t_end=1.0)
-        do_simulation(V, motor_path, t_end=1.0)
+        print("Starting simulation")
+        simulation = do_simulation(V, motor_path, t_end=1.0, ecc=ecc, load=load)
+        dataset = {'i_st': simulation[0],  # shape t, 3, simulations
+                   'omega_rot': simulation[1],  # shape t, simulations
+                   'T_em': simulation[2],  # shape t, simulations
+                   'F_em': simulation[3],  # shape t, 2, simulations
+                   'v_applied': simulation[4],  # shape t, 3, simulations
+                   'T_l': simulation[5],  # shape t, simulations
+                   'ecc': simulation[6],  # shape t, 2, simulations
+                   'time': simulation[7],
+                   'flux_st_yoke': simulation[8],
+                   'gamma_rot': simulation[9]}  # shape t, simulations
+
+        print("Simulation finished")
+        title = "\\IMMEC_" + eccname + 'ecc_' + str(t_end) + 'sec'
+        np.savez_compressed(save_path + title + '.npz',
+                            i_st=dataset['i_st'], omega_rot=dataset['omega_rot'], T_em=dataset['T_em'],
+                            F_em=dataset['F_em'], v_applied=dataset['v_applied'], T_l=dataset['T_l'],
+                            ecc=dataset['ecc'], time=dataset['time'], flux_st_yoke=dataset['flux_st_yoke'],
+                            gamma_rot=dataset['gamma_rot'])
+

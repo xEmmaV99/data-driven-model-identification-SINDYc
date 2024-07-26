@@ -18,7 +18,8 @@ def optimize_currents_simulation(path_to_data_files, nmbr_models=20, loglwrbnd=N
     xdot_train, x_train, u_train, xdot_val, x_val, u_val, _ = prepare_data(path_to_data_files,
                                                                            t_end=1.0,
                                                                            number_of_trainfiles=40)
-    library = get_custom_library_funcs()
+    library = get_custom_library_funcs("exp")
+    print("using custom library: ", library)
     print("SR3_L1 optimisation")
     parameter_search(np.logspace(loglwrbnd[0], loguprbnd[0], nmbr_models),
                      train_and_validation_data=[xdot_train, x_train, u_train, xdot_val, x_val, u_val],
@@ -48,7 +49,8 @@ def simulate_currents(path_to_data_files, alpha, optimizer='sr3', path_to_test_f
                                                                                   t_end=1.0, number_of_trainfiles=60)
 
     #library = ps.PolynomialLibrary(degree=2, interaction_only=True)
-    library = get_custom_library_funcs()
+    library = get_custom_library_funcs("exp")
+    #library = ps.PolynomialLibrary(degree=2, include_interaction=True)
 
     if optimizer == 'sr3':
         opt = ps.SR3(thresholder="l1", threshold=alpha)
@@ -98,7 +100,7 @@ def simulate_currents(path_to_data_files, alpha, optimizer='sr3', path_to_test_f
         x_sim = model.simulate(x_test[0, :],
                                u=u_test[(t < simulation_time).reshape(-1), :],
                                t=t_value.reshape(t_value.shape[0]),
-                               integrator_kws={'method': 'RK23'})
+                               integrator_kws={'method': 'RK23'}) # todo : change integration method
 
         print("Finished simulation")
 
@@ -122,16 +124,16 @@ if __name__ == "__main__":
 
     ### PLOT MSE FOR DIFFERENT ALPHA
     for p in ["\\currents_sr3", "\\currents_lasso"]:
-        plot_data(os.getcwd() + "\\plots" + p + ".pkl", show=False, limits=[[1e0,5e2],[0,150]])
+        plot_data(os.getcwd() + "\\plot_data" + p + ".pkl", show=False, limits=[[1e0,5e2],[0,150]])
 
     ### SIMULATE CURRENTS
-    simulate_currents(path_to_data_files, alpha=1e-1, optimizer='lasso', do_time_simulation=True)
-    plt.show()
+    #simulate_currents(path_to_data_files, alpha=1e-1, optimizer='sr3', do_time_simulation=False)
+    #plt.show()
 
     # TEST WITH NEW DATAFILES
     #path_to_data_files = os.path.join(os.getcwd(), 'train-data','07-25','IMMEC_0ecc_1.0sec.npz')
-    #simulate_currents(path_to_data_files, alpha=1e-1, optimizer='lasso', do_time_simulation=False)
-    #plt.show()
+    simulate_currents(path_to_data_files, alpha=1e1, optimizer='lasso', do_time_simulation=False)
+    plt.show()
 
 
 
