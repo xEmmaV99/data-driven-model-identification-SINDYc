@@ -356,8 +356,14 @@ def create_immec_data(
                 except NoConvergenceException:
                     tuner.jump()
 
-        # check if the steady state is reached
-        close_to_steady_state = check_steady_state(T_l=end_load, T_em=data_logger.quantities["T_em"][-1])
+        # check if the steady state is reached, every .2 seconds
+        if n % int(0.2 / timestep) == 0:
+            close_to_steady_state = check_steady_state(
+                T_em=data_logger.quantities["T_em"],
+                speed=data_logger.quantities["omega_rot"],
+                nmbr_of_steps=int(0.1 / timestep),
+            )
+
     return data_logger
 
 
@@ -378,11 +384,19 @@ plt.show()
 """
 
 
-def check_steady_state(T_l, T_em):
-    # steady state torque is motor torque, within 5%
-    if T_l == 0:
-        return False
-    return np.abs((T_l - T_em) / T_l) < 5e-2
+def check_steady_state(T_em, speed, nmbr_of_steps):
+    # steady state  is when T_em and speed is constant
+    T_em = T_em[-nmbr_of_steps:]
+    speed = speed[-nmbr_of_steps:]
+
+    meanT = np.mean(T_em)
+    meanS = np.mean(speed)
+
+    # all points should be within 5% of the mean
+    if np.all(np.abs(T_em - meanT) < 0.05 * meanT) and np.all(np.abs(speed - meanS) < 0.05 * meanS):
+        return True
+
+    return False
 
 
 def change_load(start_load, end_load, time: float, start_time: float, end_time: float):
