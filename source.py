@@ -1,5 +1,4 @@
 import copy
-
 import sklearn.utils
 from tqdm import tqdm
 from immec import *
@@ -21,9 +20,9 @@ def reference_abc_to_dq0(coord_array: np.array):
     :return: transformed array with shape (N, 3)
     """
     # Clarke transformation: power invariant
-    T = np.sqrt(2 / 3) * np.array([[1, -0.5, -0.5],
-                                   [0, np.sqrt(3) / 2, -np.sqrt(3) / 2],
-                                   [1 / np.sqrt(2), 1 / np.sqrt(2), 1 / np.sqrt(2)]])
+    T = np.sqrt(2 / 3) * np.array(
+        [[1, -0.5, -0.5], [0, np.sqrt(3) / 2, -np.sqrt(3) / 2], [1 / np.sqrt(2), 1 / np.sqrt(2), 1 / np.sqrt(2)]]
+    )
     return np.tensordot(T, coord_array.swapaxes(0, 1), axes=([1], [0])).swapaxes(0, 1)
 
 
@@ -34,9 +33,12 @@ def reference_dq0_to_abc(coord_array: np.array):
     :return: transformed array with shape (N, 3)
     """
     # Clarke inverse transformation: power invariant
-    T = np.sqrt(2 / 3) * np.array([[1, -0.5, -0.5],
-                                   [0, np.sqrt(3) / 2, -np.sqrt(3) / 2],
-                                   [1 / np.sqrt(2), 1 / np.sqrt(2), 1 / np.sqrt(2)]]).T
+    T = (
+        np.sqrt(2 / 3)
+        * np.array(
+            [[1, -0.5, -0.5], [0, np.sqrt(3) / 2, -np.sqrt(3) / 2], [1 / np.sqrt(2), 1 / np.sqrt(2), 1 / np.sqrt(2)]]
+        ).T
+    )
     return np.dot(T, coord_array.swapaxes(0, 1), axes=([1], [0])).swapaxes(0, 1)
 
 
@@ -46,7 +48,7 @@ def show_data_keys(path_to_data_logger: str):
     :param path_to_data_logger: str with the path to the .pkl file
     :return:
     """
-    with open(path_to_data_logger, 'rb') as file:
+    with open(path_to_data_logger, "rb") as file:
         data_logger = pkl.load(file)
     print(data_logger.keys())
     return
@@ -60,8 +62,8 @@ def check_training_data(path_to_data_logger: str, keys_to_plot_list: list = None
     :return:
     """
     if keys_to_plot_list is None:
-        keys_to_plot_list = ['i_st']
-    with open(path_to_data_logger, 'rb') as file:
+        keys_to_plot_list = ["i_st"]
+    with open(path_to_data_logger, "rb") as file:
         data_logger = pkl.load(file)
     for key in keys_to_plot_list:
         plt.figure()
@@ -70,7 +72,7 @@ def check_training_data(path_to_data_logger: str, keys_to_plot_list: list = None
     return
 
 
-''' TO BE REMOVED
+""" TO BE REMOVED
 def get_immec_training_data(path_to_data_logger, timestep=1e-4, use_estimate_for_v=False, motorinfo_path=None,
                             useOldData=False):
     # useOldData TO BE REMOVED, for backward compatibility
@@ -129,7 +131,7 @@ def get_immec_training_data(path_to_data_logger, timestep=1e-4, use_estimate_for
         plt.scatter(t_valid, x_valid[:, 0], marker=".")
         plt.legend(["traindata", "validationdata"])
         plt.show()
-    return x_train, u_train, t_train, x_valid, u_valid, t_valid'''
+    return x_train, u_train, t_train, x_valid, u_valid, t_valid"""
 
 
 def save_simulation_data(motor_path: str, save_path: str, extra_dict: dict = None):
@@ -141,23 +143,31 @@ def save_simulation_data(motor_path: str, save_path: str, extra_dict: dict = Non
     :return:
     """
     motordict = read_motordict(motor_path)
-    motor_model = MotorModel(motordict, 5e-5, "wye", solver='newton')
+    motor_model = MotorModel(motordict, 5e-5, "wye", solver="newton")
 
-    dictionary = {}
-    dictionary['stator_leakage_inductance'] = motor_model.stator_leakage_inductance
-    dictionary['N_abc_T'] = motor_model.N_abc_T
-    dictionary['R_st'] = motor_model.R_st
+    dictionary = {
+        "stator_leakage_inductance": motor_model.stator_leakage_inductance,
+        "N_abc_T": motor_model.N_abc_T,
+        "R_st": motor_model.R_st,
+    }
 
     for key in extra_dict.keys():  # add extra things
         dictionary[key] = extra_dict[key]
 
-    with open(save_path + '/SIMULATION_DATA.pkl', 'wb') as file:
+    with open(save_path + "/SIMULATION_DATA.pkl", "wb") as file:
         pkl.dump(dictionary, file)
     return
 
 
-def create_and_save_immec_data(timestep: float, t_end: float, path_to_motor: str, save_path: str,
-                               V: float = 400, mode: str = 'linear', solving_tolerance: float = 1e-4):
+def create_and_save_immec_data(
+    timestep: float,
+    t_end: float,
+    path_to_motor: str,
+    save_path: str,
+    V: float = 400,
+    mode: str = "linear",
+    solving_tolerance: float = 1e-4,
+):
     """
     Creates and saves data for the IMMEC project, TO BE REMOVED
     :param timestep:
@@ -171,13 +181,14 @@ def create_and_save_immec_data(timestep: float, t_end: float, path_to_motor: str
     """
     # V should always be below 400, minimal V is 40 (means 5hz f)
     motordict = read_motordict(path_to_motor)
-    stator_connection = 'wye'
+    stator_connection = "wye"
 
-    if mode == 'linear':
+    if mode == "linear":
         motor_model = MotorModel(motordict, timestep, stator_connection)
     else:
-        motor_model = MotorModel(motordict, timestep, stator_connection, solver='newton',
-                                 solving_tolerance=solving_tolerance)
+        motor_model = MotorModel(
+            motordict, timestep, stator_connection, solver="newton", solving_tolerance=solving_tolerance
+        )
 
     tuner = RelaxationTuner()
     data_logger = HistoryDataLogger(motor_model)
@@ -219,7 +230,7 @@ def create_and_save_immec_data(timestep: float, t_end: float, path_to_motor: str
         data_logger.log(n * timestep, inputs)
 
         # III. Step the motor model
-        if mode == 'linear':
+        if mode == "linear":
             motor_model.step(inputs)
         else:
             # A step is initialised as unsolved
@@ -241,9 +252,16 @@ def create_and_save_immec_data(timestep: float, t_end: float, path_to_motor: str
     return
 
 
-def create_immec_data(timestep: float, t_end: float, path_to_motor: str, V: float = 400,
-                      mode: str = 'linear', solving_tolerance: float = 1e-4, load: float = 3.7,
-                      ecc: np.array = np.zeros(2)):
+def create_immec_data(
+    timestep: float,
+    t_end: float,
+    path_to_motor: str,
+    V: float = 400,
+    mode: str = "linear",
+    solving_tolerance: float = 1e-4,
+    load: float = 3.7,
+    ecc: np.array = np.zeros(2),
+):
     """
     Creates data from the IMMEC model
     :param timestep: timestep of the simulation
@@ -258,13 +276,14 @@ def create_immec_data(timestep: float, t_end: float, path_to_motor: str, V: floa
     """
     # V should always be below 400, minimal V is 40 (means 5hz f)
     motordict = read_motordict(path_to_motor)
-    stator_connection = 'wye'
+    stator_connection = "wye"
 
-    if mode == 'linear':
+    if mode == "linear":
         motor_model = MotorModel(motordict, timestep, stator_connection)
     else:
-        motor_model = MotorModel(motordict, timestep, stator_connection, solver='newton',
-                                 solving_tolerance=solving_tolerance)
+        motor_model = MotorModel(
+            motordict, timestep, stator_connection, solver="newton", solving_tolerance=solving_tolerance
+        )
 
     tuner = RelaxationTuner()
     data_logger = HistoryDataLogger(motor_model)
@@ -273,7 +292,7 @@ def create_immec_data(timestep: float, t_end: float, path_to_motor: str, V: floa
 
     Vf_ratio = 400 / 50
 
-    #data_logger.pre_allocate(steps_total)
+    # data_logger.pre_allocate(steps_total)
 
     # initial load
     start_load = 0.0
@@ -292,25 +311,26 @@ def create_immec_data(timestep: float, t_end: float, path_to_motor: str, V: floa
         # T_l = 0
         if close_to_steady_state:
             start_load = end_load
-            end_load = np.random.randint(0.0, 370) /100 * (V / 400.0) # choose new load
-            print('New applied load: ', end_load, 'Nm')
-            start_time = n*timestep # apply now
+            end_load = int(np.random.randint(0, 370) * (V / 400.0)) / 100  # choose new load
+            print("New applied load: ", end_load, "Nm")
+            start_time = n * timestep  # apply now
+            close_to_steady_state = False
 
-        T_l = change_load(start_load, end_load, n*timestep, start_time, start_time+0.2)
+        T_l = change_load(start_load, end_load, n * timestep, start_time, start_time + 0.2)
 
         # I.B Applied voltage
         # 400 V_RMS symmetrical line voltages are used
-        V_amp = smooth_runup(V, n*timestep, 0.0, 1.5)[0] # SWEEP runup, also varying the frequency
+        V_amp = smooth_runup(V, n * timestep, 0.0, 1.5)  # SWEEP runup, also varying the frequency
 
         v_u = V_amp * np.sqrt(2) * np.sin(2 * np.pi * V_amp / Vf_ratio * n * timestep)
         v_v = V_amp * np.sqrt(2) * np.sin(2 * np.pi * V_amp / Vf_ratio * n * timestep - 2 * np.pi / 3)
         v_w = V_amp * np.sqrt(2) * np.sin(2 * np.pi * V_amp / Vf_ratio * n * timestep - 4 * np.pi / 3)
         v_uvw = np.array([v_u, v_v, v_w])
 
-        #v_uvw = smooth_runup(v_uvw, n * timestep, 0.0, 1.5)
+        # v_uvw = smooth_runup(v_uvw, n * timestep, 0.0, 1.5)
 
         # I.C Rotor eccentricity
-        ecc = ecc * motordict['d_air']
+        ecc = ecc * motordict["d_air"]
 
         # I.D The inputs are concatenated to a single vector
         inputs = np.concatenate([v_uvw, [T_l], ecc])
@@ -319,12 +339,11 @@ def create_immec_data(timestep: float, t_end: float, path_to_motor: str, V: floa
         data_logger.log(n * timestep, inputs)
 
         # III. Step the motor model
-        if mode == 'linear':
+        if mode == "linear":
             motor_model.step(inputs)
         else:
             # A step is initialised as unsolved
             tuner.solved = False
-
             while not tuner.solved:
                 try:
                     # Apply the relaxation factor of the tuner to the motor model
@@ -336,8 +355,13 @@ def create_immec_data(timestep: float, t_end: float, path_to_motor: str, V: floa
                 # When unsuccesful, decrease the tuner relaxation factor
                 except NoConvergenceException:
                     tuner.jump()
+
+        # check if the steady state is reached
+        close_to_steady_state = check_steady_state(T_l=end_load, T_em=data_logger.quantities["T_em"][-1])
     return data_logger
-'''
+
+
+"""
 x = np.arange(0,2,0.0001)
 y=np.array([0,0,0])
 Vf_ratio = 400/5 # should be 400/50 but this is more visible
@@ -351,12 +375,19 @@ for x_val in x:
 
 plt.plot(y)
 plt.show()
-'''
+"""
+
+
+def check_steady_state(T_l, T_em):
+    # steady state torque is motor torque, within 5%
+    if T_l == 0:
+        return False
+    return np.abs((T_l - T_em) / T_l) < 5e-2
 
 
 def change_load(start_load, end_load, time: float, start_time: float, end_time: float):
     """
-    Function used to change the load coninuously with 1 - cos(t) type of run-up and run-down.
+    Function used to change the load continuously with 1 - cos(t) type of run-up and run-down.
     :param start_load: The value of the initial load
     :param end_load: The value of the applied load
     :param time: The continuous (current) time value
@@ -373,16 +404,16 @@ def change_load(start_load, end_load, time: float, start_time: float, end_time: 
         if time < end_time:
             duration = end_time - start_time
             return start_load + (end_load - start_load) * 0.5 * (1 - np.cos(np.pi / duration * (time - start_time)))
-    if start_load > end_load:
+    elif start_load > end_load:
         # Use cos(t) run-down between the start time and the end time
         if time < end_time:
             duration = end_time - start_time
             return end_load + (start_load - end_load) * 0.5 * (1 + np.cos(np.pi / duration * (time - start_time)))
     # Return the value(s) after the end time
-    else:
-        return end_load
+    return end_load
 
-'''
+
+"""
 x  = np.arange(0,10,0.01)
 y = []
 for x_val in x:
@@ -393,7 +424,7 @@ for x_val in x2:
 
 plt.plot(y)
 plt.show()
-'''
+"""
 
 
 def v_abc_exact(data_logger: dict, path_to_motor_info: str):
@@ -404,22 +435,24 @@ def v_abc_exact(data_logger: dict, path_to_motor_info: str):
     :return: np.array with shape (N, 3), abc voltages
     """
 
-    with open(path_to_motor_info, 'rb') as file:
+    with open(path_to_motor_info, "rb") as file:
         motorinfo = pkl.load(file)
 
     # input the entire data_logger
-    R = motorinfo['R_st']
-    Nt = motorinfo['N_abc_T']  # model.N_abc
-    L_s = motorinfo['stator_leakage_inductance']  # model.stator_leakage_inductance
+    R = motorinfo["R_st"]
+    Nt = motorinfo["N_abc_T"]  # model.N_abc
+    L_s = motorinfo["stator_leakage_inductance"]  # model.stator_leakage_inductance
 
-    print('dt : ' + str(5e-5))
+    print("dt : " + str(5e-5))
     dt = 5e-5
-    dphi = 1 / dt * np.diff(data_logger['flux_st_yoke'].swapaxes(0, 1),
-                            axis=1)  # forward euler, flux_st_yoke, this array is one shorter
-    di = 1 / dt * np.diff(data_logger['i_st'].swapaxes(0, 1),
-                          axis=1)  # forward euler, flux_st_yoke, !!! this array is one shorter !!!
+    dphi = (
+        1 / dt * np.diff(data_logger["flux_st_yoke"].swapaxes(0, 1), axis=1)
+    )  # forward euler, flux_st_yoke, this array is one shorter
+    di = (
+        1 / dt * np.diff(data_logger["i_st"].swapaxes(0, 1), axis=1)
+    )  # forward euler, flux_st_yoke, !!! this array is one shorter !!!
 
-    ist = data_logger['i_st'][:-1]  # remove the last value of i_st
+    ist = data_logger["i_st"][:-1]  # remove the last value of i_st
     v_abc = np.tensordot(R, ist.swapaxes(0, 1), axes=([1], [0])) + np.tensordot(Nt, dphi, axes=([1], [0])) + L_s * di
 
     return v_abc.swapaxes(0, 1)
@@ -433,10 +466,8 @@ def v_abc_estimate(data_logger: dict):
     """
     # actually, only data_logger['v_applied'] is needed here
     # outputs Nx3 array
-    T = np.array([[1, -1, 0],
-                  [1, 2, 0],
-                  [-2, -1, 0]])
-    return 1 / 3 * np.dot(T, data_logger['v_applied'].T).T
+    T = np.array([[1, -1, 0], [1, 2, 0], [-2, -1, 0]])
+    return 1 / 3 * np.dot(T, data_logger["v_applied"].T).T
 
 
 def read_V_from_directory(path_to_directory: str):
@@ -450,8 +481,8 @@ def read_V_from_directory(path_to_directory: str):
     files = os.listdir(path_to_directory)
     V = []
     for file in files:
-        if file.endswith('.pkl') and file.startswith('IMMEC_history'):
-            V.append(int(file.split('_')[2][:-1]))
+        if file.endswith(".pkl") and file.startswith("IMMEC_history"):
+            V.append(int(file.split("_")[2][:-1]))
     return np.array(V)
 
 
@@ -462,9 +493,9 @@ def read_V_load_from_simulationdata(path_to_simulation_data: str):
     :return: np.array, np.array of the voltage and load
     """
     # read the load torque from the simulation data
-    with open(path_to_simulation_data, 'rb') as file:
+    with open(path_to_simulation_data, "rb") as file:
         data = pkl.load(file)
-    return data['V'], data['load']
+    return data["V"], data["load"]
 
 
 def calculate_xdot(x: np.array, t: np.array):
@@ -482,43 +513,51 @@ def calculate_xdot(x: np.array, t: np.array):
     return ps.FiniteDifference(order=2, axis=0)._differentiate(x, t.reshape(t.shape[0]))  # Default order is two.
 
 
-def save_plot_data(save_name: str, xydata: list, title: str, xlab, ylab,
-                   legend=None, plot_now=False, specs=None, sindy_model=None):
+def save_plot_data(
+    save_name: str, xydata: list, title: str, xlab, ylab, legend=None, plot_now=False, specs=None, sindy_model=None
+):
     # xydata contains the data to plot, but if multiple axis should be plotted, xy data should be a list of arrays
     # if it is only one x,y then [np.array([x,y])] should be the input
     # create the dictionary to save as is
-    pltdata = {'title': title, 'xlab': xlab, 'ylab': ylab, 'legend': legend, 'plots': {}, 'specs': specs,
-               'model': sindy_model}
+    pltdata = {
+        "title": title,
+        "xlab": xlab,
+        "ylab": ylab,
+        "legend": legend,
+        "plots": {},
+        "specs": specs,
+        "model": sindy_model,
+    }
     for i, xy_array in enumerate(xydata):
-        pltdata['plots'][str(i)] = xy_array
+        pltdata["plots"][str(i)] = xy_array
     cwd = os.getcwd()
-    save_path = os.path.join(cwd, 'plot_data\\', save_name + '.pkl')
+    save_path = os.path.join(cwd, "plot_data\\", save_name + ".pkl")
 
-    with open(save_path, 'wb') as file:
+    with open(save_path, "wb") as file:
         pkl.dump(pltdata, file)
     if plot_now:
         plot_data(save_path)
     return save_path
 
 
-def plot_data(path='plotdata.pkl', show=True, figure=True, limits=None):
-    with open(path, 'rb') as file:
+def plot_data(path="plotdata.pkl", show=True, figure=True, limits=None):
+    with open(path, "rb") as file:
         data = pkl.load(file)
 
-    if type(data['ylab']) != str:  # multiple axis
+    if type(data["ylab"]) != str:  # multiple axis
         print("Multiple axis plot detected.")
         print("loglog ax1 and semilogx ax2.")
         fig, ax1 = plt.subplots()
-        ax1.set_xlabel(data['xlab'])
+        ax1.set_xlabel(data["xlab"])
 
-        ax1.set_ylabel(data['ylab'][0], color='r')
-        ax1.loglog(data['plots']['0'][:, 0], data['plots']['0'][:, 1:], 'r')
+        ax1.set_ylabel(data["ylab"][0], color="r")
+        ax1.loglog(data["plots"]["0"][:, 0], data["plots"]["0"][:, 1:], "r")
 
         ax2 = ax1.twinx()
-        ax2.set_ylabel(data['ylab'][1], color='b')
-        ax2.semilogx(data['plots']['1'][:, 0], data['plots']['1'][:, 1:], 'b')
+        ax2.set_ylabel(data["ylab"][1], color="b")
+        ax2.semilogx(data["plots"]["1"][:, 0], data["plots"]["1"][:, 1:], "b")
 
-        plt.title(data['title'])
+        plt.title(data["title"])
         if limits == None:
             fig.tight_layout()
         else:
@@ -527,16 +566,16 @@ def plot_data(path='plotdata.pkl', show=True, figure=True, limits=None):
 
     else:
         plt.figure()
-        plt.xlabel(data['xlab']), plt.ylabel(data['ylab'])
-        specs = data['specs']
-        for idx in data['plots']:
+        plt.xlabel(data["xlab"]), plt.ylabel(data["ylab"])
+        specs = data["specs"]
+        for idx in data["plots"]:
             if specs[int(idx)] is not None:
-                plt.plot(data['plots'][idx][:, 0], data['plots'][idx][:, 1:], specs[int(idx)])
+                plt.plot(data["plots"][idx][:, 0], data["plots"][idx][:, 1:], specs[int(idx)])
             else:
-                plt.plot(data['plots'][idx][:, 0], data['plots'][idx][:, 1:])
+                plt.plot(data["plots"][idx][:, 0], data["plots"][idx][:, 1:])
 
-        plt.legend(data['legend'])
-        plt.title(data['title'])
+        plt.legend(data["legend"])
+        plt.title(data["title"])
     if show:
         plt.show()
     return
@@ -567,10 +606,7 @@ def plot_coefs(model):
             "linecolor": "whitesmoke",
         }
 
-        sns.heatmap(
-            coefs[:, :len(input_names)].T,
-            **heatmap_args
-        )
+        sns.heatmap(coefs[:, : len(input_names)].T, **heatmap_args)
 
         ax.tick_params(axis="y", rotation=0)
     return
@@ -588,14 +624,18 @@ def plot_coefs2(model, normalize_values=False, show=False, log=False):
         raise NotImplementedError("This function is not implemented yet.")  # todo
 
     if log:
-        plt.yscale('log', base=10)
+        plt.yscale("log", base=10)
         coefs = np.abs(coefs)
 
     for i in range(2):
         values = coefs[i, :].T
         values[values == 0] = np.nan  # don't plot zero
-        plt.scatter(np.arange(0, len(xticknames), 1), values, color=colors[i],
-                    label=r"Equation for $\dot{" + xticknames[i + 1].strip("$") + "}$")
+        plt.scatter(
+            np.arange(0, len(xticknames), 1),
+            values,
+            color=colors[i],
+            label=r"Equation for $\dot{" + xticknames[i + 1].strip("$") + "}$",
+        )
 
     plt.grid(True)
     plt.xticks(range(len(xticknames)), xticknames, rotation=90)
@@ -608,29 +648,32 @@ def plot_coefs2(model, normalize_values=False, show=False, log=False):
 
 def save_model(model, name):
     print("Saving model")
-    path = 'C:/Users/emmav/PycharmProjects/SINDY_project/models/' + name + '.pkl'
+    path = "C:/Users/emmav/PycharmProjects/SINDY_project/models/" + name + ".pkl"
     x = model.n_features_in_ - model.n_control_features_
     u = model.n_control_features_
 
-    lib = {'coefs': model.coefficients(), 'features': model.feature_names, 'library': model.feature_library,
-           'shapes': [(1, x), (1, u), (1, x)]}
-    with open(path, 'wb') as file:
+    lib = {
+        "coefs": model.coefficients(),
+        "features": model.feature_names,
+        "library": model.feature_library,
+        "shapes": [(1, x), (1, u), (1, x)],
+    }
+    with open(path, "wb") as file:
         pkl.dump(lib, file)
 
 
 def load_model(name):
-    path = 'C:/Users/emmav/PycharmProjects/SINDY_project/models/' + name + '.pkl'
-    with open(path, 'rb') as file:
+    path = "C:/Users/emmav/PycharmProjects/SINDY_project/models/" + name + ".pkl"
+    with open(path, "rb") as file:
         model_data = pkl.load(file)
 
     # initialize pysindy model
-    new_model = ps.SINDy(optimizer=None, feature_names=model_data['features'],
-                         feature_library=model_data['library'])
+    new_model = ps.SINDy(optimizer=None, feature_names=model_data["features"], feature_library=model_data["library"])
 
-    x_shape, u_shape, xdot_shape = model_data['shapes']
+    x_shape, u_shape, xdot_shape = model_data["shapes"]
     new_model.fit(np.zeros(x_shape), u=np.zeros(u_shape), t=None, x_dot=np.zeros(xdot_shape))
 
-    new_model.optimizer.coef_ = model_data['coefs']
+    new_model.optimizer.coef_ = model_data["coefs"]
 
     return new_model
 
@@ -639,22 +682,24 @@ def parameter_search(parameter_array, train_and_validation_data, method="lasso",
     if name == "":
         name = method
     method = method.lower()
-    variable = {'parameter': parameter_array,
-                'MSE': np.zeros(len(parameter_array)),
-                'SPAR': np.zeros(len(parameter_array)),
-                'model': list(np.zeros(len(parameter_array)))}
+    variable = {
+        "parameter": parameter_array,
+        "MSE": np.zeros(len(parameter_array)),
+        "SPAR": np.zeros(len(parameter_array)),
+        "model": list(np.zeros(len(parameter_array))),
+    }
 
     xdot_train, x_train, u_train, xdot_val, x_val, u_val = train_and_validation_data
 
     for i, para in enumerate(parameter_array):
         print(i)
-        if method[:3] == 'sr3':
+        if method[:3] == "sr3":
             optimizer = ps.SR3(thresholder=method[-2:], threshold=para)
-        elif method == 'lasso':
+        elif method == "lasso":
             optimizer = Lasso(alpha=para, fit_intercept=False)
-        elif method == 'stlsq':
+        elif method == "stlsq":
             optimizer = ps.STLSQ(threshold=0.1, alpha=para)
-        elif method == 'srr':
+        elif method == "srr":
             optimizer = ps.SSR(alpha=para)
         else:
             raise NameError("Method is invalid")
@@ -663,41 +708,50 @@ def parameter_search(parameter_array, train_and_validation_data, method="lasso",
             library = ps.PolynomialLibrary(degree=2, include_interaction=True)
 
         model = ps.SINDy(optimizer=optimizer, feature_library=library)
-        print('Fitting model')
+        print("Fitting model")
         model.fit(x_train, u=u_train, t=None, x_dot=xdot_train)  # fit on training data
         if model.coefficients().ndim == 1:  # fix dimensions of this matrix, bug in pysindy, o this works
             model.optimizer.coef_ = model.coefficients().reshape(1, model.coefficients().shape[0])
-        variable['MSE'][i] = model.score(x_val, u=u_val, x_dot=xdot_val, metric=mean_squared_error)
-        # the same as: mean_squared_error(model.predict(x_val, u_val), xdot_val) 
-        variable['SPAR'][i] = np.count_nonzero(model.coefficients())  # number of non-zero elements
-        variable['model'][i] = model
+        variable["MSE"][i] = model.score(x_val, u=u_val, x_dot=xdot_val, metric=mean_squared_error)
+        # the same as: mean_squared_error(model.predict(x_val, u_val), xdot_val)
+        variable["SPAR"][i] = np.count_nonzero(model.coefficients())  # number of non-zero elements
+        variable["model"][i] = model
 
     # rel_sparsity = variable['SPAR'] / np.max(variable['SPAR'])
 
     # plot and save the results
-    xlab = r'Sparsity weighting factor $\alpha$'
-    ylab1 = 'MSE'
-    ylab2 = 'Number of non-zero elements'
-    title = 'MSE and sparsity VS Sparsity weighting parameter, ' + method + ' method'
+    xlab = r"Sparsity weighting factor $\alpha$"
+    ylab1 = "MSE"
+    ylab2 = "Number of non-zero elements"
+    title = "MSE and sparsity VS Sparsity weighting parameter, " + method + " method"
     xydata = [
         np.hstack(
-            (variable['parameter'].reshape(len(parameter_array), 1), variable['MSE'].reshape(len(parameter_array), 1))),
-        np.hstack((variable['parameter'].reshape(len(parameter_array), 1),
-                   variable['SPAR'].reshape(len(parameter_array), 1)))]
-    specs = ['r', 'b']
+            (variable["parameter"].reshape(len(parameter_array), 1), variable["MSE"].reshape(len(parameter_array), 1))
+        ),
+        np.hstack(
+            (variable["parameter"].reshape(len(parameter_array), 1), variable["SPAR"].reshape(len(parameter_array), 1))
+        ),
+    ]
+    specs = ["r", "b"]
     save_plot_data(name, xydata, title, xlab, [ylab1, ylab2], specs, plot_now=plot_now)
 
-    idx = np.where(np.min(variable['MSE']))  # best model, lowest MSE
-    best_model = variable['model'][idx[0][0]]
-    print("Best model found with MSE: ", variable['MSE'][idx[0][0]], " and parameter: ",
-          variable['parameter'][idx[0][0]], "for ", method)
+    idx = np.where(np.min(variable["MSE"]))  # best model, lowest MSE
+    best_model = variable["model"][idx[0][0]]
+    print(
+        "Best model found with MSE: ",
+        variable["MSE"][idx[0][0]],
+        " and parameter: ",
+        variable["parameter"][idx[0][0]],
+        "for ",
+        method,
+    )
     return best_model
 
 
 def plot_everything(path_to_directory):
     files = os.listdir(path_to_directory)
     for file in files:
-        if file.endswith('.pkl'):
+        if file.endswith(".pkl"):
             path = os.path.join(path_to_directory, file)
             plot_data(path, show=False)
     plt.show()
