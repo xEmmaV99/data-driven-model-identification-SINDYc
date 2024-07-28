@@ -297,7 +297,7 @@ def create_immec_data(
     # initial load
     start_load = 0.0
     end_load = load
-    start_time = 0.0
+    start_time = 1.0
     close_to_steady_state = False
     for n in tqdm(range(steps_total)):
         # I. Generate the input
@@ -320,14 +320,29 @@ def create_immec_data(
 
         # I.B Applied voltage
         # 400 V_RMS symmetrical line voltages are used
-        V_amp = smooth_runup(V, n * timestep, 0.0, 1.5)  # SWEEP runup, also varying the frequency
+        mode = "sweep_constantV"
+        if mode == "constant_freq":
+            v_u = V * np.sqrt(2) * np.sin(2 * np.pi * V / Vf_ratio * n * timestep)
+            v_v = V * np.sqrt(2) * np.sin(2 * np.pi * V / Vf_ratio * n * timestep - 2 * np.pi / 3)
+            v_w = V * np.sqrt(2) * np.sin(2 * np.pi * V / Vf_ratio * n * timestep - 4 * np.pi / 3)
+            v_uvw = np.array([v_u, v_v, v_w])
+            v_uvw = smooth_runup(v_uvw, n * timestep, 0.0, 1.5)  # change amplitude of voltage
 
-        v_u = V_amp * np.sqrt(2) * np.sin(2 * np.pi * V_amp / Vf_ratio * n * timestep)
-        v_v = V_amp * np.sqrt(2) * np.sin(2 * np.pi * V_amp / Vf_ratio * n * timestep - 2 * np.pi / 3)
-        v_w = V_amp * np.sqrt(2) * np.sin(2 * np.pi * V_amp / Vf_ratio * n * timestep - 4 * np.pi / 3)
-        v_uvw = np.array([v_u, v_v, v_w])
+        if mode == "sweep_scaled":
+            V_amp = smooth_runup(V, n * timestep, 0.0, 1.5)  # SWEEP runup, also varying the frequency
+            v_u = V_amp * np.sqrt(2) * np.sin(2 * np.pi * V_amp / Vf_ratio * n * timestep)
+            v_v = V_amp * np.sqrt(2) * np.sin(2 * np.pi * V_amp / Vf_ratio * n * timestep - 2 * np.pi / 3)
+            v_w = V_amp * np.sqrt(2) * np.sin(2 * np.pi * V_amp / Vf_ratio * n * timestep - 4 * np.pi / 3)
+            v_uvw = np.array([v_u, v_v, v_w])
 
-        # v_uvw = smooth_runup(v_uvw, n * timestep, 0.0, 1.5)
+        if mode == "sweep_constantV":
+            V_amp = smooth_runup(V, n * timestep, 0.0, 1.5)  # runup but only for frequency
+            v_u = V * np.sqrt(2) * np.sin(2 * np.pi * V_amp / Vf_ratio * n * timestep)
+            v_v = V * np.sqrt(2) * np.sin(2 * np.pi * V_amp / Vf_ratio * n * timestep - 2 * np.pi / 3)
+            v_w = V * np.sqrt(2) * np.sin(2 * np.pi * V_amp / Vf_ratio * n * timestep - 4 * np.pi / 3)
+            v_uvw = np.array([v_u, v_v, v_w])
+
+        # v_uvw = smooth_runup(v_uvw, n * timestep, 0.0, 1.5) #change amplitude of voltage
 
         # I.C Rotor eccentricity
         ecc = ecc * motordict["d_air"]
@@ -394,6 +409,8 @@ def check_steady_state(T_em, speed, nmbr_of_steps):
 
     # all points should be within 5% of the mean
     if np.all(np.abs(T_em - meanT) < 0.05 * meanT) and np.all(np.abs(speed - meanS) < 0.05 * meanS):
+        print("no")
+        return False
         return True
 
     return False

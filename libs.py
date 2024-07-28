@@ -21,27 +21,11 @@ def get_custom_library_funcs(type='default'):
         library_functions = [
             lambda x, y: np.cos(x * y),
             lambda x, y: np.sin(x * y),
-            #lambda x, y: np.cos(2*x * y),
-            #lambda x, y: np.sin(2*x * y),
-            #lambda x, y: np.cos(3 * x * y),
-            #lambda x, y: np.sin(3 * x * y),
-            #lambda x, y: np.cos(4 * x * y),
-            #lambda x, y: np.sin(4 * x * y),
-            #lambda x, y: np.cos(5 * x * y),
-            #lambda x, y: np.sin(5 * x * y),
             # lambda x: np.log(np.abs(x + 1)),
         ]
         function_names = [
             lambda x, y: '\\cos{' + x + y + '}',
             lambda x, y: '\\sin{' + x + y + '}',
-            #lambda x, y: '\\cos{2' + x + y + '}',
-            #lambda x, y: '\\sin{2' + x + y + '}',
-            #lambda x, y: '\\cos{3' + x + y + '}',
-            #lambda x, y: '\\sin{3' + x + y + '}',
-            #lambda x, y: '\\cos{4' + x + y + '}',
-            #lambda x, y: '\\sin{4' + x + y + '}',
-            #lambda x, y: '\\cos{5' + x + y + '}',
-            #lambda x, y: '\\sin{5' + x + y + '}',
 
             # lambda x: '\\log{' + x + '}',
         ]
