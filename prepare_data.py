@@ -93,8 +93,11 @@ def prepare_data(path_to_data_files, V_test_data=None, Torque=False, UMP=False, 
             u_max = np.max(u_data, 0)
             u_data = u_data / u_max
 
-        u_names = [r'$v_d$', r'$v_q$', r'$v_0$', r'$I_d$', r'$I_q$', r'$I_0$', r'$V_d$', r'$V_q$', r'$V_0$',
-                   r'$\gamma$', r'$\omega$', r'$f$']
+        feature_names = [r'$i_0$',r'$i_0$',r'$i_0$',
+                         r'$v_d$', r'$v_q$', r'$v_0$',
+                         r'$I_d$', r'$I_q$', r'$I_0$',
+                         r'$V_d$', r'$V_q$', r'$V_0$',
+                         r'$\gamma$', r'$\omega$', r'$f$']
 
         # at this point, data should me merged to one big dataset, whereafter it can be shuffled.
         if V_value == V_test_data:  # if dedicated test file is present, this is never used
@@ -168,7 +171,7 @@ def prepare_data(path_to_data_files, V_test_data=None, Torque=False, UMP=False, 
             v_stator = reference_abc_to_dq0(v_abc_exact(testset, path_to_motor_info=path_to_simulation_data))
 
         for key_to_crop in ['time', 'i_st', 'omega_rot', 'gamma_rot', 'T_em']:  # note that v_stator is already cropped
-            testset[key_to_crop] = testset[key_to_crop][:-1]  # todo how does this work for i_st as it has 3 dimensions?
+            testset[key_to_crop] = testset[key_to_crop][:-1]
         for key_to_crop in ['i_st', 'F_em']:
             testset[key_to_crop] = testset[key_to_crop][:-1, :]
 
@@ -178,7 +181,7 @@ def prepare_data(path_to_data_files, V_test_data=None, Torque=False, UMP=False, 
         I = scipy.integrate.cumtrapz(x_data, t_data, axis=0, initial=0)
         V = scipy.integrate.cumtrapz(v_stator, t_data, axis=0, initial=0)
 
-        freq = V_value * 50 / 400  # constant proportion
+        freq = V_test_data * 50 / 400  # constant proportion
         u_data = np.hstack((v_stator, I, V, testset['gamma_rot'] % (2 * np.pi),
                             testset['omega_rot'],
                             np.repeat(freq, len(testset['omega_rot'])).reshape(len(testset['omega_rot']), 1)))
@@ -190,7 +193,7 @@ def prepare_data(path_to_data_files, V_test_data=None, Torque=False, UMP=False, 
         TESTDATA['T_em'] = testset["T_em"]
         TESTDATA['UMP'] = testset["F_em"]
 
-    TESTDATA['u_names'] = u_names  # Save the names of u_data for SINDy
+    TESTDATA['feature_names'] = feature_names  # Save the names of u_data for SINDy
     if Torque:
         return T_em_train, x_train, u_train, T_em_val, x_val, u_val, TESTDATA
     elif UMP:

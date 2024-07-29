@@ -19,9 +19,10 @@ plt.plot(dataset['time'],dataset['T_em'])
 plt.title("T_em")
 plt.show()
 """
-path = "C:/Users/emmav/PycharmProjects/SINDY_project/test-data/07-27/IMMEC_0ecc_5.0sec_sweepnoload.npz"
+#path = "C:/Users/emmav/PycharmProjects/SINDY_project/test-data/07-27/IMMEC_0ecc_5.0sec-nosweep.npz"
 #path = "C:/Users/emmav/PycharmProjects/SINDY_project/test-data/07-27/IMMEC_0ecc_5.0sec-nosweep.npz"
 path = "C:/Users/emmav/PycharmProjects/SINDY_project/test-data/07-29/IMMEC_0ecc_3.0sec.npz"
+path = "C:/Users/emmav/PycharmProjects/SINDY_project/test-data/07-29/IMMEC_0ecc_5.0sec.npz"
 dataset = np.load(path)
 
 plt.subplot(2, 3, 1)

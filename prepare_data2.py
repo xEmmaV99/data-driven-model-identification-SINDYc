@@ -29,6 +29,7 @@ def prepare_data(path_to_data_file, V_test_data=None, Torque=False, UMP=False, p
 
     # load numpy file
     dataset = dict(np.load(path_to_data_file)) # should be a dictionary
+
     # crop dataset to desired amount of simulations (random_idx)
     for key in dataset.keys():
         dataset[key] = dataset[key][:, :, random_idx]
@@ -76,8 +77,11 @@ def prepare_data(path_to_data_file, V_test_data=None, Torque=False, UMP=False, p
                         dataset['omega_rot'],
                         np.repeat(freqs, dataset['omega_rot'].shape[0], axis=0)))
 
-    u_names = [r'$v_d$', r'$v_q$', r'$v_0$', r'$I_d$', r'$I_q$', r'$I_0$', r'$V_d$', r'$V_q$', r'$V_0$',
-               r'$\gamma$', r'$\omega$', r'$f$']
+    feature_names = [r'$i_d$',r'$i_q$',r'$i_0$',
+                     r'$v_d$', r'$v_q$', r'$v_0$',
+                     r'$I_d$', r'$I_q$', r'$I_0$',
+                     r'$V_d$', r'$V_q$', r'$V_0$',
+                     r'$\gamma$', r'$\omega$', r'$f$']
 
     # Now, stack data on top of each other and shuffle! (Note that the transpose is needed otherwise the reshape is wrong)
     DATA['x'] = x_data.transpose(0, 2, 1).reshape(x_data.shape[0]*x_data.shape[-1],x_data.shape[1])
@@ -117,10 +121,11 @@ def prepare_data(path_to_data_file, V_test_data=None, Torque=False, UMP=False, p
         # todo think about it
         raise NotImplementedError('Visualisation of training data is not yet implemented')
 
-    if path_to_test_file is not None:  # prepare the TESTDATA if a test file is present todo clean up
-       pass
+    if path_to_test_file is not None:
+        testset = dict(np.load(path_to_test_file))
+        pass
 
-    TESTDATA['u_names'] = u_names  # Save the names of u_data for SINDy
+    TESTDATA['feature_names'] = feature_names  # Save the names of u_data for SINDy
     if Torque:
         return T_em_train, x_train, u_train, T_em_val, x_val, u_val, TESTDATA
     elif UMP:

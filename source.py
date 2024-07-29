@@ -34,10 +34,10 @@ def reference_dq0_to_abc(coord_array: np.array):
     """
     # Clarke inverse transformation: power invariant
     T = (
-        np.sqrt(2 / 3)
-        * np.array(
-            [[1, -0.5, -0.5], [0, np.sqrt(3) / 2, -np.sqrt(3) / 2], [1 / np.sqrt(2), 1 / np.sqrt(2), 1 / np.sqrt(2)]]
-        ).T
+            np.sqrt(2 / 3)
+            * np.array(
+        [[1, -0.5, -0.5], [0, np.sqrt(3) / 2, -np.sqrt(3) / 2], [1 / np.sqrt(2), 1 / np.sqrt(2), 1 / np.sqrt(2)]]
+    ).T
     )
     return np.dot(T, coord_array.swapaxes(0, 1), axes=([1], [0])).swapaxes(0, 1)
 
@@ -160,13 +160,13 @@ def save_simulation_data(motor_path: str, save_path: str, extra_dict: dict = Non
 
 
 def create_and_save_immec_data(
-    timestep: float,
-    t_end: float,
-    path_to_motor: str,
-    save_path: str,
-    V: float = 400,
-    mode: str = "linear",
-    solving_tolerance: float = 1e-4,
+        timestep: float,
+        t_end: float,
+        path_to_motor: str,
+        save_path: str,
+        V: float = 400,
+        mode: str = "linear",
+        solving_tolerance: float = 1e-4,
 ):
     """
     Creates and saves data for the IMMEC project, TO BE REMOVED
@@ -253,14 +253,14 @@ def create_and_save_immec_data(
 
 
 def create_immec_data(
-    timestep: float,
-    t_end: float,
-    path_to_motor: str,
-    V: float = 400,
-    mode: str = "linear",
-    solving_tolerance: float = 1e-4,
-    load: float = 3.7,
-    ecc: np.array = np.zeros(2),
+        timestep: float,
+        t_end: float,
+        path_to_motor: str,
+        V: float = 400,
+        mode: str = "linear",
+        solving_tolerance: float = 1e-4,
+        load: float = 3.7,
+        ecc: np.array = np.zeros(2),
 ):
     """
     Creates data from the IMMEC model
@@ -294,13 +294,14 @@ def create_immec_data(
 
     # data_logger.pre_allocate(steps_total)
 
-    # initial load
+    # initial params
     start_load = 0.0
     end_load = load
-    start_time = 1.7
-    print("Applied load only after 1.0 sec") # debug
+    start_time = 0.0
     close_to_steady_state = False
-    dt_load = 1.0
+    dt_load = 0.2 # first applied load for 1 second
+    Vfmode = "chirp"
+    print('Mode: ', Vfmode)
     for n in tqdm(range(steps_total)):
         # I. Generate the input
 
@@ -312,51 +313,36 @@ def create_immec_data(
         # Here, no torque is applied
         # T_l = 0
         if close_to_steady_state:
-            start_load = end_load
+            #start_load = end_load #continuous
+            start_load = change_load(start_load, end_load, n * timestep, start_time, start_time + dt_load)
             end_load = int(np.random.randint(0, 370) * (V / 400.0)) / 100  # choose new load
             print("New applied load: ", end_load, "Nm")
             start_time = n * timestep  # apply now
-            close_to_steady_state = False # change back
-            dt_load = .2 #apply faster
+            close_to_steady_state = False  # change back
+            dt_load = .2  # apply faster
 
         T_l = change_load(start_load, end_load, n * timestep, start_time, start_time + dt_load)
-        #print("I think the problem is the .2 seconds, the motor cannot deal with the load, applied to fast")
-
+        # print("I think the problem is the .2 seconds, the motor cannot deal with the load, applied to fast")
 
         # I.B Applied voltage
         # 400 V_RMS symmetrical line voltages are used
-        mode = "chirp"
-        if mode == "constant_freq":
-            v_u = V * np.sqrt(2) * np.sin(2 * np.pi * V / Vf_ratio * n * timestep)
-            v_v = V * np.sqrt(2) * np.sin(2 * np.pi * V / Vf_ratio * n * timestep - 2 * np.pi / 3)
-            v_w = V * np.sqrt(2) * np.sin(2 * np.pi * V / Vf_ratio * n * timestep - 4 * np.pi / 3)
-            v_uvw = np.array([v_u, v_v, v_w])
+        if Vfmode == "constant_freq":
+            V_amp = V
+            f_amp = V/Vf_ratio*n*timestep
+        elif Vfmode == "chirp_linear":
+            V_amp = linear_runup(V, n * timestep, 1.5)
+            f_amp = linear_runup_freq(V / Vf_ratio, n * timestep, 1.5)
+        elif Vfmode == "chirp":
+            V_amp = smooth_runup(V, n * timestep, 0.0, 1.5)
+            f_amp = chirp_freq(V / Vf_ratio, n * timestep, 1.5)
+
+        v_u = V_amp * np.sqrt(2) * np.sin(2 * np.pi * f_amp)
+        v_v = V_amp * np.sqrt(2) * np.sin(2 * np.pi * f_amp - 2 * np.pi / 3)
+        v_w = V_amp * np.sqrt(2) * np.sin(2 * np.pi * f_amp - 4 * np.pi / 3)
+        v_uvw = np.array([v_u, v_v, v_w])
+
+        if Vfmode == "constant_freq":
             v_uvw = smooth_runup(v_uvw, n * timestep, 0.0, 1.5)  # change amplitude of voltage
-
-        if mode == "sweep":
-            V_amp = smooth_runup(V, n * timestep, 0.0, 1.5)  # SWEEP runup, also varying the frequency
-
-            v_u = V_amp * np.sqrt(2) * np.sin(2 * np.pi * V_amp / Vf_ratio * n * timestep)
-            v_v = V_amp * np.sqrt(2) * np.sin(2 * np.pi * V_amp / Vf_ratio * n * timestep - 2 * np.pi / 3*V_amp/V)
-            v_w = V_amp * np.sqrt(2) * np.sin(2 * np.pi * V_amp / Vf_ratio * n * timestep - 4 * np.pi / 3*V_amp/V)
-            v_uvw = np.array([v_u, v_v, v_w])
-        if mode == "chirp":
-            V_amp = linear_runup(V, n * timestep, 0.0, 1.5)  # linear, also chirp the frequency
-            f_amp = linear_runup_freq(V/Vf_ratio, n * timestep, 0.0, 1.5)
-
-            v_u = V_amp * np.sqrt(2) * np.sin(2 * np.pi * f_amp)
-            v_v = V_amp * np.sqrt(2) * np.sin(2 * np.pi * f_amp - 2 * np.pi / 3 * V_amp / V)
-            v_w = V_amp * np.sqrt(2) * np.sin(2 * np.pi * f_amp- 4 * np.pi / 3 * V_amp / V)
-            v_uvw = np.array([v_u, v_v, v_w])
-
-        if mode == "sweep_constantV":
-            V_amp = smooth_runup(V, n * timestep, 0.0, 1.5)  # runup but only for frequency
-            v_u = V * np.sqrt(2) * np.sin(2 * np.pi * V_amp / Vf_ratio * n * timestep)
-            v_v = V * np.sqrt(2) * np.sin(2 * np.pi * V_amp / Vf_ratio * n * timestep - 2 * np.pi / 3)
-            v_w = V * np.sqrt(2) * np.sin(2 * np.pi * V_amp / Vf_ratio * n * timestep - 4 * np.pi / 3)
-            v_uvw = np.array([v_u, v_v, v_w])
-
-        # v_uvw = smooth_runup(v_uvw, n * timestep, 0.0, 1.5) #change amplitude of voltage
 
         # I.C Rotor eccentricity
         ecc = ecc * motordict["d_air"]
@@ -385,12 +371,12 @@ def create_immec_data(
                 except NoConvergenceException:
                     tuner.jump()
 
-        # check if the steady state is reached, every .2 seconds
-        if n % int(0.2 / timestep) == 0:
+        # check if the steady state is reached, every .1 seconds
+        if n % int(0.1 / timestep) == 0:
             close_to_steady_state = check_steady_state(
                 T_em=data_logger.quantities["T_em"],
                 speed=data_logger.quantities["omega_rot"],
-                nmbr_of_steps=int(0.1 / timestep),
+                nmbr_of_steps=int(0.15 / timestep),
             )
 
     return data_logger
@@ -412,24 +398,38 @@ plt.plot(y)
 plt.show()
 """
 
-def linear_runup_freq(values, time:float, start_time:float, end_time:float):
+
+def linear_runup_freq(values, time: float, end_time:float, start_time: float = 0.0):
     f_0 = 0
-    c = (values-f_0)/(end_time-start_time)
+    c = (values - f_0) / (end_time - start_time)
     if time < start_time:
-        return values
+        return values*time
     elif start_time <= time < end_time:
-        return 0.5*c*(time)**2 + f_0*time
+        return 0.5 * c * (time) ** 2 + f_0 * time
     else:
-        return values
+        phi_add = 0.5 * c * (end_time) ** 2 + f_0 * end_time
+        return values * (time-end_time) + phi_add
 
 
-def linear_runup(values, time:float, start_time:float, end_time:float):
+def linear_runup(values, time: float, end_time: float, start_time: float = 0.0):
     if time < start_time:
         return np.zeros_like(values)
     elif start_time <= time < end_time:
         return values * (time - start_time) / (end_time - start_time)
     else:
         return values
+
+
+def chirp_freq(values, time: float, end_time: float, start_time: float = 0.0):
+    duration = end_time - start_time
+    if time < start_time:
+        return values * time
+    elif start_time <= time < end_time:
+        return 1/2 * (time - np.sin(np.pi*time/duration)*duration/np.pi)*values
+
+    else:
+        phi_add = 1/2 * (end_time - np.sin(np.pi*end_time/duration)*duration/np.pi)*values
+        return values * (time-end_time) + phi_add
 
 
 def check_steady_state(T_em, speed, nmbr_of_steps):
@@ -442,10 +442,7 @@ def check_steady_state(T_em, speed, nmbr_of_steps):
 
     # all points should be within 5% of the mean
     if np.all(np.abs(T_em - meanT) < 0.05 * meanT) and np.all(np.abs(speed - meanS) < 0.05 * meanS):
-        print("no")
-        return False
         return True
-
     return False
 
 
@@ -510,10 +507,10 @@ def v_abc_exact(data_logger: dict, path_to_motor_info: str):
     print("dt : " + str(5e-5))
     dt = 5e-5
     dphi = (
-        1 / dt * np.diff(data_logger["flux_st_yoke"].swapaxes(0, 1), axis=1)
+            1 / dt * np.diff(data_logger["flux_st_yoke"].swapaxes(0, 1), axis=1)
     )  # forward euler, flux_st_yoke, this array is one shorter
     di = (
-        1 / dt * np.diff(data_logger["i_st"].swapaxes(0, 1), axis=1)
+            1 / dt * np.diff(data_logger["i_st"].swapaxes(0, 1), axis=1)
     )  # forward euler, flux_st_yoke, !!! this array is one shorter !!!
 
     ist = data_logger["i_st"][:-1]  # remove the last value of i_st
@@ -579,7 +576,7 @@ def calculate_xdot(x: np.array, t: np.array):
 
 
 def save_plot_data(
-    save_name: str, xydata: list, title: str, xlab, ylab, legend=None, plot_now=False, specs=None, sindy_model=None
+        save_name: str, xydata: list, title: str, xlab, ylab, legend=None, plot_now=False, specs=None, sindy_model=None
 ):
     # xydata contains the data to plot, but if multiple axis should be plotted, xy data should be a list of arrays
     # if it is only one x,y then [np.array([x,y])] should be the input
@@ -613,8 +610,8 @@ def plot_data(path="plotdata.pkl", show=True, figure=True, limits=None):
         paths = path
         suppres_title = True
 
-    linetypes = ["-","--",":"]
-    for j,path in enumerate(paths):
+    linetypes = ["-", "--", ":"]
+    for j, path in enumerate(paths):
         with open(path, "rb") as file:
             data = pkl.load(file)
 
@@ -622,18 +619,18 @@ def plot_data(path="plotdata.pkl", show=True, figure=True, limits=None):
             print("Multiple axis plot detected.")
             print("loglog ax1 and semilogx ax2.")
             # if subplot exist, dont' create a new subplot
-            figure = plt.fignum_exists(1) # check if figure exists
+            figure = plt.fignum_exists(1)  # check if figure exists
             if not figure:
                 fig, ax1 = plt.subplots()
 
             ax1.set_xlabel(data["xlab"])
 
             ax1.set_ylabel(data["ylab"][0], color="r")
-            ax1.loglog(data["plots"]["0"][:, 0], data["plots"]["0"][:, 1:], "r"+linetypes[j])
+            ax1.loglog(data["plots"]["0"][:, 0], data["plots"]["0"][:, 1:], "r" + linetypes[j])
 
             ax2 = ax1.twinx()
             ax2.set_ylabel(data["ylab"][1], color="b")
-            ax2.semilogx(data["plots"]["1"][:, 0], data["plots"]["1"][:, 1:], "b"+linetypes[j])
+            ax2.semilogx(data["plots"]["1"][:, 0], data["plots"]["1"][:, 1:], "b" + linetypes[j])
 
             if not suppres_title:
                 plt.title(data["title"])
@@ -734,7 +731,7 @@ def save_model(model, name):
     lib = {
         "coefs": model.coefficients(),
         "features": model.feature_names,
-        "library": model.feature_library,
+        "library": "empty",                 # todo; custom lirary from libs
         "shapes": [(1, x), (1, u), (1, x)],
     }
     with open(path, "wb") as file:

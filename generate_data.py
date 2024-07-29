@@ -59,7 +59,7 @@ if __name__ == "__main__":
 
     motor_path = os.path.join(os.getcwd(), "Cantoni.pkl")
 
-    t_end = 3.0 #debug
+    t_end = 5.0 #debug
     ecc = np.zeros(2)
     eccname = "0"
     numbr_of_simulations = 50  # number of train simulations (of 5sec)
@@ -135,11 +135,10 @@ if __name__ == "__main__":
         print("Generating test data")
         save_path = os.path.join(os.getcwd(), "test-data/", date.today().strftime("%m-%d"))
         # choose V and (initial) load somewhere between 0.0 and 3.7, but scale with V (so 3.7 is for V=400)
-        # V = np.random.randint(40, 400)
-        V = 400 #debug
-        load = 1 / 100 * np.random.randint(0.0, 370) * (V / 400.0)
-        #load = 0.0
-        #print("No load")
+        V = np.random.randint(40, 400)
+
+        #load = 1 / 100 * np.random.randint(0.0, 370) * (V / 400.0)
+        load = 0.0
 
         if not os.path.exists(save_path):
             os.makedirs(save_path)
