@@ -25,11 +25,11 @@ def do_old_simulation(V_applied, motor_path, save_path, t_end=1.0, test_name="")
     return
 
 
-def do_simulation(V_applied, motor_path, load=3.7, ecc=np.zeros(2), t_end=1.0):
+def do_simulation(V_applied, motor_path, load=3.7, ecc=np.zeros(2), t_end=1.0, mode="linear"):
     dt = 5e-5  # default
 
     datalogger = create_immec_data(
-        mode="linear",
+        mode=mode,
         timestep=dt,
         t_end=t_end,
         path_to_motor=motor_path,
@@ -59,10 +59,11 @@ if __name__ == "__main__":
 
     motor_path = os.path.join(os.getcwd(), "Cantoni.pkl")
 
-    t_end = 5.0
+    t_end = 3.0 #debug
     ecc = np.zeros(2)
     eccname = "0"
-    numbr_of_simulations = 1  # always 1 for test data
+    numbr_of_simulations = 50  # number of train simulations (of 5sec)
+    mode = 'linear'
 
     if generate_traindata:
         print("Generating training data")
@@ -74,7 +75,7 @@ if __name__ == "__main__":
         V_ranges = np.random.randint(40, 400, numbr_of_simulations)  # randomly generated V values
         load_ranges = (
             1 / 100 * np.random.randint(0.0, 370, numbr_of_simulations) * (V_ranges / 400.0)
-        )  # randomly generated load values, scaled according to V
+        )  # randomly generated (initial) load values, scaled according to V
 
         save_simulation_data(motor_path, save_path, extra_dict={"V": V_ranges, "load": load_ranges})  # save motor data
         """
@@ -85,8 +86,8 @@ if __name__ == "__main__":
         """
 
         print("Starting simulation")
-        p = multiprocessing.Pool(processes=5)
-        input_data = [(V, motor_path, load_ranges[i], ecc, t_end) for i, V in enumerate(V_ranges)]
+        p = multiprocessing.Pool(processes=10)
+        input_data = [(V, motor_path, load_ranges[i], ecc, t_end, mode) for i, V in enumerate(V_ranges)]
         output_list = p.starmap(do_simulation, input_data)
         p.close()
         p.join()
@@ -135,17 +136,17 @@ if __name__ == "__main__":
         save_path = os.path.join(os.getcwd(), "test-data/", date.today().strftime("%m-%d"))
         # choose V and (initial) load somewhere between 0.0 and 3.7, but scale with V (so 3.7 is for V=400)
         # V = np.random.randint(40, 400)
-        V = 400
-        print("The root mean squared voltage for this simulation of the test-data is equal to" + str(V) + "Volt !!")
+        V = 400 #debug
         load = 1 / 100 * np.random.randint(0.0, 370) * (V / 400.0)
-        load = 0.0
-        print("No load")
+        #load = 0.0
+        #print("No load")
 
-        save_simulation_data(motor_path, save_path, extra_dict={"V": V, "load": load})  # save motor data
         if not os.path.exists(save_path):
             os.makedirs(save_path)
+        save_simulation_data(motor_path, save_path, extra_dict={"V": V, "load": load})  # save motor data
+
         print("Starting simulation")
-        simulation = do_simulation(V, motor_path, t_end=t_end, ecc=ecc, load=load)
+        simulation = do_simulation(V, motor_path, t_end=t_end, ecc=ecc, load=load, mode=mode)
         dataset = {
             "i_st": simulation[0],  # shape t, 3, simulations
             "omega_rot": simulation[1],  # shape t, simulations

@@ -1,6 +1,4 @@
-import os
-
-from prepare_data import *
+from prepare_data_system import *
 from libs import *
 
 def optimize_currents_simulation(path_to_data_files, nmbr_models=20, loglwrbnd=None, loguprbnd=None):
@@ -17,19 +15,24 @@ def optimize_currents_simulation(path_to_data_files, nmbr_models=20, loglwrbnd=N
     if loglwrbnd is None:
         loglwrbnd = [-12, -12]
 
+    # now, the xdot_train contains i and V and I,
+
     xdot_train, x_train, u_train, xdot_val, x_val, u_val, _ = prepare_data(path_to_data_files,
                                                                            t_end=1.0,
                                                                            number_of_trainfiles=40)
-    library = get_custom_library_funcs("exp")
+    library = get_custom_library_funcs("default")
     print("using custom library: ", library)
+
     print("SR3_L1 optimisation")
     parameter_search(np.logspace(loglwrbnd[0], loguprbnd[0], nmbr_models),
                      train_and_validation_data=[xdot_train, x_train, u_train, xdot_val, x_val, u_val],
                      method="SR3_L1", name="currents_sr3", plot_now=False, library=library)
+
     print("Lasso optimisation")
     parameter_search(np.logspace(loglwrbnd[1], loguprbnd[1], nmbr_models),
                      train_and_validation_data=[xdot_train, x_train, u_train, xdot_val, x_val, u_val],
                      method="Lasso", name="currents_lasso", plot_now=False, library=library)
+
     path = os.path.join(os.getcwd(), "plot_data")
     for p in ["\\currents_sr3", "\\currents_lasso"]:
         plot_data(path+p+'.pkl')
@@ -122,23 +125,12 @@ if __name__ == "__main__":
     path_to_data_files = os.path.join(os.getcwd(), 'data\\07-24-default-5e-5')
 
     ### OPTIMIZE ALPHA
-    #optimize_currents_simulation(path_to_data_files, nmbr_models=20, loglwrbnd=[-7, -7], loguprbnd=[3, 3])
+    optimize_currents_simulation(path_to_data_files, nmbr_models=1, loglwrbnd=[-7, -7], loguprbnd=[3, 3])
 
     ### PLOT MSE FOR DIFFERENT ALPHA
-    plot_data([os.getcwd()+"\\plot_data"+p+".pkl" for p in ["\\currents_sr3", "\\currents_lasso"]], show = False, limits=[[1e0,5e2], [0,150]])
-
+    #for p in ["\\currents_sr3", "\\currents_lasso"]:
+    #    plot_data(os.getcwd() + "\\plot_data" + p + ".pkl", show=False, limits=[[1e0,5e2],[0,150]])
 
     ### SIMULATE CURRENTS
     #simulate_currents(path_to_data_files, alpha=1e-1, optimizer='sr3', do_time_simulation=False)
     #plt.show()
-
-    # TEST WITH NEW DATAFILES
-    #path_to_data_files = os.path.join(os.getcwd(), 'train-data','07-25','IMMEC_0ecc_1.0sec.npz')
-    #simulate_currents(path_to_data_files, alpha=1e1, optimizer='lasso', do_time_simulation=False)
-    plt.show()
-
-
-
-# todo add non linear to immec model (and try to solve that with sindy)
-# todo add static ecc
-# todo add dynamic ecc

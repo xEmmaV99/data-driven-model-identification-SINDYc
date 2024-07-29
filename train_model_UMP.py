@@ -1,3 +1,5 @@
+import os
+
 from prepare_data import *
 from libs import *
 
@@ -89,10 +91,10 @@ if __name__ == "__main__":
     #optimise_UMP_simulation(path_to_data_files, nmbr_models=20, loglwrbnd=[-7, -7], loguprbnd=[3, 3])
 
     ### PLOT MSE AND SPARSITY FOR UMP
-    for p in ["\\UMP_sr3", "\\UMP_lasso"]:
-        plot_data(os.getcwd() + "\\plots" + p + ".pkl", show=False, limits=[[1e1,1e3],[0,200]])
+
+    plot_data([os.getcwd()+"\\plots_2607_presentation"+p+".pkl" for p in ["\\UMP_sr3", "\\UMP_lasso"]], show=False, limits=[[1e1,1e3],[0,200]])
 
     ### SIMULATE UMP WITH SHOWEN METHOD AND ALPHA
-    simulate_UMP(path_to_data_files, alpha=0.05, optimizer='lasso')
+    #simulate_UMP(path_to_data_files, alpha=0.05, optimizer='lasso')
     #simulate_UMP(path_to_data_files, alpha=1e1, optimizer='lasso')
     plt.show()

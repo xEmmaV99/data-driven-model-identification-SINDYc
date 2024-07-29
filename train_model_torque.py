@@ -117,10 +117,13 @@ if __name__ == "__main__":
     # optimise_torque_simulation(path_to_data_files, nmbr_models=20, loglwrbnd=[-12, -12], loguprbnd=[0, 0])
 
     ### PLOT MSE FOR TORQUE SIMULATION
-    for p in ["\\torque_SR3_", "\\torque_lasso"]:
-        plot_data(os.getcwd() + "\\plots" + p + ".pkl", show=False, limits=[[1e-6, 1], [0, 100]])
+    #for p in ["\\torque_SR3_", "\\torque_lasso"]:
+    #    plot_data(os.getcwd() + "\\plots" + p + ".pkl", show=False, limits=[[1e-6, 1], [0, 100]])
+
+    plot_data([os.getcwd()+"\\plots_2607_presentation"+p+".pkl" for p in ["\\torque_SR3_", "\\torque_lasso"]], show=False, limits=[[1e-6, 1], [0, 100]])
+
 
     plt.show()
     ### SIMULATE TORQUE WITH CHOSEN ALPHA AND OPTIMIZER
-    simulate_torque(path_to_data_files, alpha=1e-4, optimizer='lasso')
-    plt.show()
+    #simulate_torque(path_to_data_files, alpha=1e-4, optimizer='lasso')
+    #plt.show()
