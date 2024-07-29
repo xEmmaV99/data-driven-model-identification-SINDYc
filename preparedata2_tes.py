@@ -66,6 +66,15 @@ def prepare_data(path_to_data_file,
     x_data = x_data[:-1]  # update x_data
     t_data = dataset['time']  # update t_data
 
+    if np.ndim(x_data) <= 2: #expand such that the code works for both 2D and 3D data
+        x_data = np.expand_dims(x_data, axis=2)
+        xdots = np.expand_dims(xdots, axis=2)
+        v_stator = np.expand_dims(v_stator, axis=2)
+        t_data = np.expand_dims(t_data, axis=2)
+        dataset['T_em'] = np.expand_dims(dataset['T_em'], axis=2)
+        dataset['F_em'] = np.expand_dims(dataset['F_em'], axis=2)
+
+
     # get u data: potentials_st, i_st, omega_rot, gamma_rot, and the integrals.
     for simul in range(number_of_trainfiles):
         if simul == 0: #initiliaze
@@ -79,8 +88,11 @@ def prepare_data(path_to_data_file,
     freqs = V_range * 50 / 400  # constant proportion
 
     freqs = freqs.reshape(1,1,len(freqs)) #along third axis
-    u_data = np.hstack((v_stator, I, V, dataset['gamma_rot'] % (2 * np.pi),
-                        dataset['omega_rot'],
+    u_data = np.hstack((v_stator,
+                        I.reshape(v_stator.shape),
+                        V.reshape(v_stator.shape),
+                        dataset['gamma_rot'].reshape(t_data.shape) % (2 * np.pi),
+                        dataset['omega_rot'].reshape(t_data.shape),
                         np.repeat(freqs, dataset['omega_rot'].shape[0], axis=0)))
 
     feature_names = [r'$i_d$',r'$i_q$',r'$i_0$',
@@ -120,8 +132,6 @@ def prepare_data(path_to_data_file,
         T_em_val = DATA['T_em'][cutidx:]
         UMP_val = DATA['UMP'][cutidx:]
 
-
-    #DATA['feature_names'] = feature_names  # Save the names of u_data for SINDy
     if Torque:
         if not test_data:
             return T_em_train, x_train, u_train, T_em_val, x_val, u_val, feature_names
@@ -137,10 +147,12 @@ def prepare_data(path_to_data_file,
     else: return DATA['xdot'], DATA['x'], DATA['u'], feature_names
 
 if __name__ == "__main__":
-    path = os.path.join(os.getcwd(), 'test-data', '07-29', 'IMMEC_0ecc_1.0sec.npz')
-    data = prepare_data(path,
+    path = os.path.join(os.getcwd(), 'test-data', '07-29', 'IMMEC_0ecc_5.0sec.npz')
+    xdot, x,u, _ = prepare_data(path,
                  test_data=True,
                  Torque=False,
                  UMP=False,
                  number_of_trainfiles='all',
                  use_estimate_for_v=False)
+    plt.plot(xdot)
+    plt.show()
