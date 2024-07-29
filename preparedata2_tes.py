@@ -1,16 +1,11 @@
 import random
-
-import matplotlib.pyplot as plt
 import scipy
-
 from source import *
 
 
 # todo consider multithreading here, as one CPU might be the bottleneck
 def prepare_data(path_to_data_file,
                  test_data=False,
-                 Torque=False,
-                 UMP=False,
                  number_of_trainfiles='all',
                  use_estimate_for_v=False):
 
@@ -32,7 +27,7 @@ def prepare_data(path_to_data_file,
 
     # initialise data
     DATA = {'x': np.array([]), 'u': np.array([]), 'xdot': np.array([]),
-            'T_em': np.array([]), 'UMP': np.array([]), 'features' : np.array([])}
+            'T_em': np.array([]), 'UMP': np.array([]), 'feature_names' : np.array([])}
 
 
     # crop dataset to desired amount of simulations (random_idx)
@@ -95,11 +90,11 @@ def prepare_data(path_to_data_file,
                         dataset['omega_rot'].reshape(t_data.shape),
                         np.repeat(freqs, dataset['omega_rot'].shape[0], axis=0)))
 
-    feature_names = [r'$i_d$',r'$i_q$',r'$i_0$',
-                     r'$v_d$', r'$v_q$', r'$v_0$',
-                     r'$I_d$', r'$I_q$', r'$I_0$',
-                     r'$V_d$', r'$V_q$', r'$V_0$',
-                     r'$\gamma$', r'$\omega$', r'$f$']
+    DATA['feature_names'] = [r'$i_d$',r'$i_q$',r'$i_0$',
+                             r'$v_d$', r'$v_q$', r'$v_0$',
+                             r'$I_d$', r'$I_q$', r'$I_0$',
+                             r'$V_d$', r'$V_q$', r'$V_0$',
+                             r'$\gamma$', r'$\omega$', r'$f$']
 
     # Now, stack data on top of each other and shuffle! (Note that the transpose is needed otherwise the reshape is wrong)
     DATA['x'] = x_data.transpose(0, 2, 1).reshape(x_data.shape[0]*x_data.shape[-1],x_data.shape[1])
@@ -108,51 +103,40 @@ def prepare_data(path_to_data_file,
     DATA['T_em'] = dataset["T_em"].transpose(0, 2, 1).reshape(dataset["T_em"].shape[0]*dataset["T_em"].shape[-1])
     DATA['UMP'] = dataset["F_em"].transpose(0, 2, 1).reshape(dataset["F_em"].shape[0]*dataset["F_em"].shape[-1],dataset["F_em"].shape[1])
 
-    if not test_data:
-        # shuffle the DATA entirely, but according to the same shuffle
-        shuffled_indices = np.random.permutation(DATA['x'].shape[0])
-        DATA['x'] = DATA['x'][shuffled_indices] #debug
-        DATA['u'] = DATA['u'][shuffled_indices]
-        DATA['xdot'] = DATA['xdot'][shuffled_indices]
-        DATA['T_em'] = DATA['T_em'][shuffled_indices]
-        DATA['UMP'] = DATA['UMP'][shuffled_indices]
+    if test_data:
+        DATA['V'] = V_range
+        return DATA
 
-        # split the data into train and validation data
-        p = 0.8  # percentage of data to be used for training
-        cutidx = int(p * DATA['x'].shape[0])
+    # shuffle the DATA entirely, but according to the same shuffle
+    shuffled_indices = np.random.permutation(DATA['x'].shape[0])
+    DATA['x'] = DATA['x'][shuffled_indices]
+    DATA['u'] = DATA['u'][shuffled_indices]
+    DATA['xdot'] = DATA['xdot'][shuffled_indices]
+    DATA['T_em'] = DATA['T_em'][shuffled_indices]
+    DATA['UMP'] = DATA['UMP'][shuffled_indices]
 
-        x_train = DATA['x'][:cutidx]
-        u_train = DATA['u'][:cutidx]
-        xdot_train = DATA['xdot'][:cutidx]
-        T_em_train = DATA['T_em'][:cutidx]
-        UMP_train = DATA['UMP'][:cutidx]
-        x_val = DATA['x'][cutidx:]
-        u_val = DATA['u'][cutidx:]
-        xdot_val = DATA['xdot'][cutidx:]
-        T_em_val = DATA['T_em'][cutidx:]
-        UMP_val = DATA['UMP'][cutidx:]
+    # split the data into train and validation data
+    p = 0.8  # percentage of data to be used for training
+    cutidx = int(p * DATA['x'].shape[0])
 
-    if Torque:
-        if not test_data:
-            return T_em_train, x_train, u_train, T_em_val, x_val, u_val, feature_names
-        return DATA['T_em'], DATA['x'], DATA['u'], feature_names
+    DATA['x_train'] = DATA['x'][:cutidx]
+    DATA['u_train'] = DATA['u'][:cutidx]
+    DATA['xdot_train'] = DATA['xdot'][:cutidx]
+    DATA['T_em_train'] = DATA['T_em'][:cutidx]
+    DATA['UMP_train'] = DATA['UMP'][:cutidx]
+    DATA['x_val'] = DATA['x'][cutidx:]
+    DATA['u_val'] = DATA['u'][cutidx:]
+    DATA['xdot_val'] = DATA['xdot'][cutidx:]
+    DATA['T_em_val'] = DATA['T_em'][cutidx:]
+    DATA['UMP_val'] = DATA['UMP'][cutidx:]
 
-    elif UMP:
-        if not test_data:
-            return UMP_train, x_train, u_train, UMP_val, x_val, u_val, feature_names
-        return DATA['UMP'], DATA['x'], DATA['u'], feature_names
-
-    elif not test_data:
-        return xdot_train, x_train, u_train, xdot_val, x_val, u_val, feature_names
-    else: return DATA['xdot'], DATA['x'], DATA['u'], feature_names
+    return DATA
 
 if __name__ == "__main__":
     path = os.path.join(os.getcwd(), 'test-data', '07-29', 'IMMEC_0ecc_5.0sec.npz')
-    xdot, x,u, _ = prepare_data(path,
+    data = prepare_data(path,
                  test_data=True,
-                 Torque=False,
-                 UMP=False,
                  number_of_trainfiles='all',
                  use_estimate_for_v=False)
-    plt.plot(xdot)
+    plt.plot(data['xdot'])
     plt.show()

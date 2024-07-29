@@ -64,7 +64,7 @@ def prepare_data(path_to_data_files, V_test_data=None, Torque=False, UMP=False, 
 
         # remove last timestep from datafile
         for key_to_crop in ['time', 'omega_rot', 'gamma_rot', 'T_em']:  # note that v_stator is already cropped
-            dataset[key_to_crop] = dataset[key_to_crop][:-1]  # todo how does this work for i_st as it has 3 dimensions?
+            dataset[key_to_crop] = dataset[key_to_crop][:-1]  # how does this work for i_st as it has 3 dimensions?
         for key_to_crop in ['i_st', 'F_em']:
             dataset[key_to_crop] = dataset[key_to_crop][:-1, :]
 

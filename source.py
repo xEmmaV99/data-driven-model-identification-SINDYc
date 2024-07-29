@@ -504,14 +504,15 @@ def v_abc_exact(data_logger: dict, path_to_motor_info: str):
     Nt = motorinfo["N_abc_T"]  # model.N_abc
     L_s = motorinfo["stator_leakage_inductance"]  # model.stator_leakage_inductance
 
-    print("dt : " + str(5e-5))
+    #print("dt : " + str(5e-5)) # DEBUG
     dt = 5e-5
     dphi = (
             1 / dt * np.diff(data_logger["flux_st_yoke"].swapaxes(0, 1), axis=1)
     )  # forward euler, flux_st_yoke, this array is one shorter
     di = (
             1 / dt * np.diff(data_logger["i_st"].swapaxes(0, 1), axis=1)
-    )  # forward euler, flux_st_yoke, !!! this array is one shorter !!!
+    )  # forward euler, flux_st_yoke, !!! this array is one shorter !!
+    print('FORWARD EULER USED FOR DIFFERENTIATION IN v_abc_exact()')
 
     ist = data_logger["i_st"][:-1]  # remove the last value of i_st
     v_abc = np.tensordot(R, ist.swapaxes(0, 1), axes=([1], [0])) + np.tensordot(Nt, dphi, axes=([1], [0])) + L_s * di
@@ -566,7 +567,7 @@ def calculate_xdot(x: np.array, t: np.array):
     :param t: array of shape (N , 1) or (N, )
     :return: array of shape (N , 3) with the time derivative of x, pySINDy does not remove one value.
     """
-    print('debug, 4th order of xdot')
+    #print('debug, 4th order of xdot')
     if np.ndim(t) == 3:
         print("Assume all t_vec are equal")
         t_ = t[:, 0, 0].reshape(t.shape[0])
@@ -604,7 +605,7 @@ def save_plot_data(
 
 def plot_data(path="plotdata.pkl", show=True, figure=True, limits=None):
     suppres_title = False
-    if path == str:
+    if type(path) == str:
         paths = [path]
     else:
         paths = path
@@ -770,7 +771,7 @@ def parameter_search(parameter_array, train_and_validation_data, method="lasso",
     for i, para in enumerate(parameter_array):
         print(i)
         if method[:3] == "sr3":
-            optimizer = ps.SR3(thresholder=method[-2:], threshold=para)
+            optimizer = ps.SR3(thresholder=method[-2:], nu=para, threshold=1e-12)
         elif method == "lasso":
             optimizer = Lasso(alpha=para, fit_intercept=False)
         elif method == "stlsq":
@@ -822,6 +823,48 @@ def parameter_search(parameter_array, train_and_validation_data, method="lasso",
         method,
     )
     return best_model
+
+
+def parameter_search_2D(param_nu, param_lambda, train_and_validation_data, name="", plot_now=True):
+    variable = {
+        "param_nu": param_nu,
+        "param_lambda": param_lambda,
+        "MSE": np.zeros((len(param_nu), len(param_lambda))),
+        "SPAR": np.zeros((len(param_nu), len(param_lambda))),
+    }
+
+    xdot_train, x_train, u_train, xdot_val, x_val, u_val = train_and_validation_data
+
+    for i, nu in enumerate(param_nu):
+
+        for j, lam in enumerate(param_lambda):
+            print(i, " and ", j)
+            optimizer = ps.SR3(thresholder='l1', nu=nu, threshold=np.sqrt(2*lam*nu)) #see https://arxiv.org/pdf/1906.10612
+            model = ps.SINDy(optimizer=optimizer, feature_library=ps.PolynomialLibrary(degree=2, include_interaction=True))
+            model.fit(x_train, u=u_train, t=None, x_dot=xdot_train)
+
+            variable["MSE"][i, j] = model.score(x_val, u=u_val, x_dot=xdot_val, t = None, metric=mean_squared_error)
+            variable["SPAR"][i, j] = np.count_nonzero(model.coefficients())
+
+
+    # plot the grid as a heatplot with MSE the color
+    plt.figure()
+    plt.imshow(variable["MSE"], cmap='hot', interpolation='nearest')
+    plt.colorbar()
+    plt.xlabel("Lambda")
+    plt.ylabel("Nu")
+    plt.title("MSE heatmap")
+    plt.figure()
+    plt.imshow(variable["SPAR"], cmap='hot', interpolation='nearest')
+    plt.colorbar()
+    plt.xlabel("Lambda")
+    plt.ylabel("Nu")
+    plt.title("Sparsity heatmap")
+    plt.show()
+
+    return
+
+
 
 
 def plot_everything(path_to_directory):
