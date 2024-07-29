@@ -105,6 +105,7 @@ def prepare_data(path_to_data_file,
 
     if test_data:
         DATA['V'] = V_range
+        DATA['t'] = t_data
         return DATA
 
     # shuffle the DATA entirely, but according to the same shuffle

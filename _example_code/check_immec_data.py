@@ -1,3 +1,5 @@
+import os.path
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -23,29 +25,60 @@ plt.show()
 #path = "C:/Users/emmav/PycharmProjects/SINDY_project/test-data/07-27/IMMEC_0ecc_5.0sec-nosweep.npz"
 path = "C:/Users/emmav/PycharmProjects/SINDY_project/test-data/07-29/IMMEC_0ecc_3.0sec.npz"
 path = "C:/Users/emmav/PycharmProjects/SINDY_project/test-data/07-29/IMMEC_0ecc_1.6sec.npz"
-dataset = np.load(path)
+#path = os.path.join(os.path.dirname(os.getcwd()), 'train-data', '07-25', 'IMMEC_0ecc_1.0sec.npz')
+dataset = dict(np.load(path))
+testdata = True
+traindata = False
+if testdata:
+    plt.subplot(2, 3, 1)
+    plt.title("omega_rot"), plt.xlabel("time (s)")
+    plt.plot(dataset["time"], dataset["omega_rot"])
 
-plt.subplot(2, 3, 1)
-plt.title("omega_rot"), plt.xlabel("time (s)")
-plt.plot(dataset["time"], dataset["omega_rot"])
+    plt.subplot(2, 3, 2)
+    plt.title("i_st"), plt.xlabel("time (s)")
+    plt.plot(dataset["time"], dataset["i_st"])
 
-plt.subplot(2, 3, 2)
-plt.title("i_st"), plt.xlabel("time (s)")
-plt.plot(dataset["time"], dataset["i_st"])
+    plt.subplot(2, 3, 3)
+    plt.title("T_em"), plt.xlabel("time (s)")
+    plt.plot(dataset["time"], dataset["T_em"])
 
-plt.subplot(2, 3, 3)
-plt.title("T_em"), plt.xlabel("time (s)")
-plt.plot(dataset["time"], dataset["T_em"])
+    plt.subplot(2, 3, 4)
+    plt.title("T_l"), plt.xlabel("time (s)")
+    plt.plot(dataset["time"], dataset["T_l"])
 
-plt.subplot(2, 3, 4)
-plt.title("T_l"), plt.xlabel("time (s)")
-plt.plot(dataset["time"], dataset["T_l"])
+    plt.subplot(2, 3, 5)
+    plt.title("V"), plt.xlabel("time (s)")
+    plt.plot(dataset["time"], dataset["v_applied"])
 
-plt.subplot(2, 3, 5)
-plt.title("V"), plt.xlabel("time (s)")
-plt.plot(dataset["time"], dataset["v_applied"])
+    # Add padding so title and labels dont overlap
+    plt.tight_layout()
 
-# Add padding so title and labels dont overlap
-plt.tight_layout()
+    plt.show()
 
-plt.show()
+if traindata:
+    simulation_number = 0
+    plt.subplot(2, 3, 1)
+    plt.title("omega_rot"), plt.xlabel("time (s)")
+    plt.plot(dataset["time"][:,0,simulation_number], dataset["omega_rot"][:,0,simulation_number])
+
+    plt.subplot(2, 3, 2)
+    plt.title("i_st"), plt.xlabel("time (s)")
+    plt.plot(dataset["time"][:,0,simulation_number], dataset["i_st"][:,:,simulation_number])
+
+    plt.subplot(2, 3, 3)
+    plt.title("T_em"), plt.xlabel("time (s)")
+    plt.plot(dataset["time"][:,0,simulation_number], dataset["T_em"][:,0,simulation_number])
+
+    plt.subplot(2, 3, 4)
+    plt.title("T_l"), plt.xlabel("time (s)")
+    plt.plot(dataset["time"][:,0,simulation_number], dataset["T_l"][:,0,simulation_number])
+
+    plt.subplot(2, 3, 5)
+    plt.title("V"), plt.xlabel("time (s)")
+    plt.plot(dataset["time"][:,0,simulation_number], dataset["v_applied"][:,:,simulation_number])
+
+    # Add padding so title and labels dont overlap
+    plt.tight_layout()
+
+    plt.show()
+

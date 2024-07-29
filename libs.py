@@ -11,13 +11,13 @@ def get_custom_library_funcs(type='default'):
     lib_higher_order = ps.PolynomialLibrary(degree=5, include_interaction=False)
 
 
-    if type == 'default':
+    if type == 'poly_2nd_order':
         inputs_per_library = [all_but_gam, [12]]
         custom_lib = ps.GeneralizedLibrary([lib_2nd_order,
-                                            ps.FourierLibrary(n_frequencies=10, include_cos=True, include_sin=True)], # does really nothing
+                                            ps.FourierLibrary(n_frequencies=10, include_cos=True, include_sin=True)],
                                            tensor_array=None,  # don't merge the libraries
                                            inputs_per_library=inputs_per_library)
-    elif type == 'exp':
+    elif type == 'not_exp':
         library_functions = [
             lambda x, y: np.cos(x * y),
             lambda x, y: np.sin(x * y),
