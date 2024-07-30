@@ -1,4 +1,6 @@
 import copy
+import multiprocessing
+
 import sklearn.utils
 from tqdm import tqdm
 from immec import *
@@ -649,7 +651,7 @@ def plot_data(path="plotdata.pkl", show=True, figure=True, limits=None):
                 ax1.set_ylim(limits[0])
                 ax2.set_ylim(limits[1])
 
-        else:
+        else: #only one axis
             plt.figure()
             plt.xlabel(data["xlab"]), plt.ylabel(data["ylab"])
             specs = data["specs"]
@@ -779,8 +781,7 @@ def parameter_search(parameter_array, train_and_validation_data, method="lasso",
 
     xdot_train, x_train, u_train, xdot_val, x_val, u_val = train_and_validation_data
 
-    for i, para in enumerate(parameter_array):
-        print(i)
+    for i, para in tqdm(enumerate(parameter_array)):
         if method[:3] == "sr3":
             optimizer = ps.SR3(thresholder=method[-2:], nu=para, threshold=1e-12)
         elif method == "lasso":
@@ -875,6 +876,31 @@ def parameter_search_2D(param_nu, param_lambda, train_and_validation_data, name=
 
     return
 
+
+def grid_search_sr3(lambda_minmax, nu_minmax, DATA, iter = 4):
+    def _grid_search_model(nu, threshold):
+        optimizer = ps.SR3(thresholder='l1', nu=nu,
+                           threshold= threshold)
+
+        model = ps.SINDy(optimizer=optimizer, feature_library=ps.PolynomialLibrary(degree=2, include_interaction=True))
+        model.fit(DATA["x_train"], u=DATA['u_train'], t=None, x_dot=DATA['xdot_train'])
+
+        MSE = model.score(DATA["x_val"], u=DATA["u_val"], x_dot=DATA["xdot_val"], t=None, metric=mean_squared_error)
+        SPAR = np.count_nonzero(model.coefficients())
+        return [MSE, SPAR, model]
+
+
+    # first iteration, calc 9 models
+    p = multiprocessing.Pool(processes=9)
+    MSE_list = p.map(_grid_search_model, )
+    p.close()
+    p.join()
+
+    # second iteration, choose around best, calc 8 more
+    p = multiprocessing.Pool(processes = 8)
+
+
+    return
 
 
 

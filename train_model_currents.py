@@ -18,23 +18,17 @@ def optimize_currents_simulation(path_to_data_files, nmbr_models=20, loglwrbnd=N
     if loglwrbnd is None:
         loglwrbnd = [-12, -12]
 
-    DATA = prepare_data(path_to_data_files, number_of_trainfiles=40)
+    DATA = prepare_data(path_to_data_files, number_of_trainfiles=20)
 
     lib = "best"
     library = get_custom_library_funcs(lib)
 
+    '''
     print("SR3_L1 optimisation")
-
-    ''' # doesn't work
-    parameter_search_2D(np.linspace(0.5,1.5, nmbr_models),
-                         np.linspace(1.5, 2.5, nmbr_models),
-                         train_and_validation_data=[xdot_train, x_train, u_train, xdot_val, x_val, u_val],
-                         name="currents_sr3", plot_now=False)'''
-
     parameter_search(np.logspace(loglwrbnd[0], loguprbnd[0], nmbr_models),
                      train_and_validation_data=[DATA["xdot_train"], DATA["x_train"], DATA["u_train"], DATA["xdot_val"],
                                                 DATA["x_val"], DATA["u_val"]],
-                     method="SR3_L1", name="currents_sr3", plot_now=False, library=library)
+                     method="SR3_L1", name="currents_sr3", plot_now=False, library=library)'''
 
     print("Lasso optimisation")
     parameter_search(np.logspace(loglwrbnd[1], loguprbnd[1], nmbr_models),
@@ -110,6 +104,7 @@ def simulate_currents(model_name, path_to_test_file, do_time_simulation=False):
     save_plot_data("currents", xydata, title, xlab, ylab, legend=leg, plot_now=True,
                    specs=specs)
 
+    print("MSE on testdata: "+ str(mean_squared_error(x_dot_test_predicted, xdot_test)))
     if do_time_simulation:
         simulation_time = 1.0
         plt.figure()
@@ -138,18 +133,19 @@ if __name__ == "__main__":
     path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
 
     ### OPTIMIZE ALPHA
-    #optimize_currents_simulation(path_to_data_files, nmbr_models=3, loglwrbnd=[-7, -7], loguprbnd=[3, 3])
+    optimize_currents_simulation(path_to_data_files, nmbr_models=10, loglwrbnd=[-7, -7], loguprbnd=[3, 3])
 
     ### PLOT MSE FOR DIFFERENT ALPHA
-    # plot_data([os.getcwd()+"\\plot_data"+p+".pkl" for p in ["\\currents_sr3", "\\currents_lasso"]], show = False, limits=[[1e0,5e2], [0,150]])
-    # plot_data(os.getcwd()+'\\plot_data\\currents_sr3.pkl', show = True)
+    #plot_data([os.getcwd()+"\\plot_data"+p+".pkl" for p in ["\\currents_sr3", "\\currents_lasso"]], show = False, limits=[[1e0,5e2], [0,150]])
+
+    plot_data(os.getcwd()+'\\plot_data\\currents_lasso.pkl', show = True)
 
     ### CREATE A MODEL
-    make_model_currents(path_to_data_files, alpha=0.1, optimizer='lasso', nmbr_of_train=20)
+    #make_model_currents(path_to_data_files, alpha=1, optimizer='lasso', nmbr_of_train=25)
 
-    # TEST WITH NEW DATAFILES
-    path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
-    path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29', 'IMMEC_0ecc_1.7sec-cos.npz')
-    simulate_currents('currents_model', path_to_test_file, do_time_simulation=False)
+    ### SIMULATE
+    #path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
+    #path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29', 'IMMEC_0ecc_5.0sec.npz')
+    #simulate_currents('currents_model', path_to_test_file, do_time_simulation=False)
 
-    plt.show()
+    #plt.show()

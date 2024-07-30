@@ -142,7 +142,7 @@ if __name__ == "__main__":
     path = os.path.join(os.getcwd(), 'test-data', '07-29', 'IMMEC_0ecc_5.0sec.npz')
     data = prepare_data(path,
                  test_data=True,
-                 number_of_trainfiles='all',
+                 number_of_trainfiles=-1,
                  use_estimate_for_v=False)
     plt.plot(data['xdot'])
     plt.show()
