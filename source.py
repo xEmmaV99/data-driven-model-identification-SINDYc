@@ -12,6 +12,8 @@ import os
 from libs import *  # import custom library functions
 from sklearn.linear_model import Lasso
 from sklearn.metrics import mean_squared_error
+import optuna
+
 
 
 def reference_abc_to_dq0(coord_array: np.array):
@@ -880,8 +882,34 @@ def parameter_search_2D(param_nu, param_lambda, train_and_validation_data, name=
     return
 
 
-def grid_search_sr3(lambda_minmax, nu_minmax, DATA, iter=4):
+def grid_search_sr3(DATA, l_minmax, n_minmax, iter=4):
+    #from https://optuna.readthedocs.io/en/stable/index.html
+    def objective(trial):
+        lambdas = trial.suggest_float('lambdas', l_minmax[0], l_minmax[1], log = True)
+        nus = trial.suggest_float('nus', n_minmax[0], n_minmax[1], log = True)
 
+        optimizer = ps.SR3(thresholder='l1', nu=nus,
+                           threshold=lambdas)
+        model = ps.SINDy(optimizer=optimizer,
+                         feature_library=ps.PolynomialLibrary(degree=2, include_interaction=True))
+        model.fit(DATA["x_train"], u=DATA["u_train"], t=None, x_dot=DATA["xdot_train"])
+
+        MSE = model.score(DATA["x_val"], u=DATA["u_val"], x_dot=DATA["xdot_val"],
+                          t=None, metric=mean_squared_error)
+        SPAR = np.count_nonzero(model.coefficients())
+
+        return MSE, SPAR
+
+    study_name = "example-study"  # Unique identifier of the study.
+    storage_name = "sqlite:///{}.db".format(study_name)
+    study = optuna.create_study(directions = ['minimize','minimize'],
+                                study_name=study_name,
+                                storage=storage_name,
+                                load_if_exists=True)
+
+    study.optimize(objective, n_trials=iter, n_jobs=1)
+
+    #optuna.visualization.plot_pareto_front(study, target_names= ["MSE","SPAR"]).show(renderer="browser")
 
     return
 

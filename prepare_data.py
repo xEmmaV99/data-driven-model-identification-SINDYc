@@ -11,8 +11,9 @@ def prepare_data(path_to_data_file,
                  usage_per_trainfile = 0.2):
 
     # load numpy file
+    print("Loading data")
     dataset = dict(np.load(path_to_data_file)) # should be a dictionary
-
+    print("Done loading data")
     path_to_simulation_data = os.path.join(os.path.dirname(path_to_data_file), 'SIMULATION_DATA.pkl')
     if not test_data:
         V_range, load_range = read_V_load_from_simulationdata(path_to_simulation_data)
@@ -41,8 +42,9 @@ def prepare_data(path_to_data_file,
     t_data = dataset['time']
 
     # first, calculate xdots and add to the data
+    print("Calculating xdots")
     xdots = calculate_xdot(x_data, t_data)
-
+    print("Done calculating xdots")
 
     # prepare v data
     if use_estimate_for_v:
