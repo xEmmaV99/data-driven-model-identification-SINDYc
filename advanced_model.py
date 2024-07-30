@@ -131,6 +131,6 @@ if __name__ == "__main__":
     #plot_data([os.getcwd() + "\\plot_data" + p + ".pkl" for p in ["\\currents_sr3", "\\currents_lasso"]], show=False, limits=[[1e0,5e2],[0,150]])
 
     ### SIMULATE CURRENTS
-    path_to_test_file = os.path.join(os.getcwd(), 'test-data', "07-25","IMMEC_0ecc_1.0sec.npz")
-    simulate_currents(path_to_data_files, alpha=1e-1, optimizer='sr3', do_time_simulation=False)
+    path_to_test_file = os.path.join(os.getcwd(), 'test-data', "07-29","IMMEC_0ecc_1.0sec.npz")
+    simulate_currents(path_to_data_files, path_to_test_file, alpha=1e-1, optimizer='sr3', do_time_simulation=False)
     plt.show()

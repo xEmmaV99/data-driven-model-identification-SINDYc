@@ -121,8 +121,8 @@ def prepare_data(path_to_data_file, V_test_data=None, Torque=False, UMP=False, p
         # todo think about it
         raise NotImplementedError('Visualisation of training data is not yet implemented')
 
-    if path_to_test_file is not None:  # prepare the TESTDATA if a test file is present todo clean up
-        #todo basically the same as above but dataset = testset and V = V_test_data
+    if path_to_test_file is not None:  # prepare the TESTDATA if a test file is present
+        # todo replace with prepare_data test
         testset = dict(np.load(path_to_test_file))
 
         if use_estimate_for_v:
