@@ -39,6 +39,26 @@ def get_custom_library_funcs(type='default'):
                                             ps.FourierLibrary(n_frequencies=1, include_cos=True, include_sin=True)],
                                            tensor_array=None,
                                            inputs_per_library=inputs_per_library)
+    elif type == "system":
+        library_functions = [
+            lambda x: np.sin(x),
+            lambda x: np.cos(x),
+            lambda x, y: np.cos(x * y),
+            lambda x, y: np.sin(x * y)]
+        function_names = [
+            lambda x: '\\sin{' + x + '}',
+            lambda x: '\\cos{' + x + '}',
+            lambda x, y: '\\cos{' + x + y + '}',
+            lambda x, y: '\\sin{' + x + y + '}']
+
+        inputs_per_library = [all_but_gam, [12], all_but_i0]
+        custom_lib = ps.GeneralizedLibrary([lib_2nd_order,
+                                            ps.FourierLibrary(n_frequencies=1, include_cos=True, include_sin=True),
+                                            ps.CustomLibrary(library_functions, function_names,
+                                                             interaction_only=False)],
+                                           tensor_array=None,  # don't merge the libraries
+                                           inputs_per_library=inputs_per_library)
+
     elif type == 'higher_order':
         custom_lib = ps.PolynomialLibrary(degree=8, include_interaction=False)
 
@@ -48,8 +68,8 @@ def get_custom_library_funcs(type='default'):
             lambda x: np.cos(x),
             lambda x, y: np.cos(x * y),
             lambda x, y: np.sin(x * y),
-            lambda x,y,z:  z*np.cos(x * y),
-            lambda x,y,z: z*np.sin(x*y)
+            #lambda x,y,z:  z*np.cos(x * y),
+            #lambda x,y,z: z*np.sin(x*y)
             # lambda x: np.log(np.abs(x + 1)),
             # lambda x: np.exp(np.abs(x)),
             # lambda x: np.exp(-np.abs(x)),
@@ -59,8 +79,8 @@ def get_custom_library_funcs(type='default'):
             lambda x: '\\cos{'+x+'}',
             lambda x, y: '\\cos{' + x + y + '}',
             lambda x, y: '\\sin{' + x + y + '}',
-            lambda x,y,z: z+'\\cos{'+x+y+'}',
-            lambda x,y,z: z+'\\cos{'+x+y+'}',
+            #lambda x,y,z: z+'\\cos{'+x+y+'}',
+            #lambda x,y,z: z+'\\cos{'+x+y+'}',
         ]
 
 
@@ -92,6 +112,7 @@ def get_custom_library_funcs(type='default'):
                                            inputs_per_library=[all_but_gam, all_but_i0+[12], fourier_terms])
 
     else:
+        raise ValueError('no')
         inputs_per_library = [all_but_gam, all_but_gam, [12]]
         custom_lib = ps.GeneralizedLibrary([lib_2nd_order, lib_higher_order,
                                             ps.FourierLibrary(n_frequencies=10, include_cos=True, include_sin=True)],

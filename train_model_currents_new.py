@@ -1,6 +1,6 @@
 import os
 from tqdm import tqdm
-from preparedata2_tes import *
+from prepare_data import *
 from libs import *
 
 
@@ -18,11 +18,11 @@ def optimize_currents_simulation(path_to_data_files, nmbr_models=20, loglwrbnd=N
     if loglwrbnd is None:
         loglwrbnd = [-12, -12]
 
-    xdot_train, x_train, u_train, xdot_val, x_val, u_val, _ = prepare_data(path_to_data_files,
-                                                                           t_end=1.0,
-                                                                           number_of_trainfiles=40)
-    library = get_custom_library_funcs("exp")
-    print("using custom library: ", library)
+    DATA = prepare_data(path_to_data_files, number_of_trainfiles=40)
+
+    lib = "best"
+    library = get_custom_library_funcs(lib)
+
     print("SR3_L1 optimisation")
 
     ''' # doesn't work
@@ -32,20 +32,21 @@ def optimize_currents_simulation(path_to_data_files, nmbr_models=20, loglwrbnd=N
                          name="currents_sr3", plot_now=False)'''
 
     parameter_search(np.logspace(loglwrbnd[0], loguprbnd[0], nmbr_models),
-                     train_and_validation_data=[xdot_train, x_train, u_train, xdot_val, x_val, u_val],
+                     train_and_validation_data=[DATA["xdot_train"], DATA["x_train"], DATA["u_train"], DATA["xdot_val"], DATA["x_val"], DATA["u_val"]],
                      method="SR3_L1", name="currents_sr3", plot_now=False, library=library)
 
-    # print("Lasso optimisation")
-    # parameter_search(np.logspace(loglwrbnd[1], loguprbnd[1], nmbr_models),
-    #                 train_and_validation_data=[xdot_train, x_train, u_train, xdot_val, x_val, u_val],
-    #                 method="Lasso", name="currents_lasso", plot_now=False, library=library)
+    print("Lasso optimisation")
+    parameter_search(np.logspace(loglwrbnd[1], loguprbnd[1], nmbr_models),
+                     train_and_validation_data=[DATA["xdot_train"], DATA["x_train"], DATA["u_train"], DATA["xdot_val"], DATA["x_val"], DATA["u_val"]],
+                     method="Lasso", name="currents_lasso", plot_now=False, library=library)
+
     # path = os.path.join(os.getcwd(), "plot_data")
     # for p in ["\\currents_sr3", "\\currents_lasso"]:
     #    plot_data(path+p+'.pkl')
     return
 
 
-def simulate_currents(path_to_data_files, alpha, optimizer='sr3', path_to_test_file=None, do_time_simulation=False):
+def make_model_currents(path_to_data_files, alpha, optimizer='sr3',  nmbr_of_train = 'all'):
     """
     Simulation for the currents and compared with testdata
     :param path_to_data_files:
@@ -55,14 +56,14 @@ def simulate_currents(path_to_data_files, alpha, optimizer='sr3', path_to_test_f
     :param do_time_simulation:
     :return:
     """
-    DATA = prepare_data(path_to_data_files, number_of_trainfiles='all')
-    TEST = prepare_data(path_to_test_file, test_data=True)
+    DATA = prepare_data(path_to_data_files, number_of_trainfiles=nmbr_of_train)
 
-    library = get_custom_library_funcs('poly_2nd_order')
+    lib = 'best'
+    library = get_custom_library_funcs(lib)
 
     if optimizer == 'sr3':
-        opt = ps.SR3(thresholder="l1", threshold=np.sqrt(2 * 2 * 0.001), nu=0.001)
-        print("SR3_L1 optimisation, with nu and lambda")
+        opt = ps.SR3(thresholder="l1", threshold=alpha, nu=0.1)
+        print("SR3_L1 optimisation, with nu = 0.1 ")
     elif optimizer == 'lasso':
         opt = Lasso(alpha=alpha, fit_intercept=False)
         print("Lasso optimisation")
@@ -71,14 +72,20 @@ def simulate_currents(path_to_data_files, alpha, optimizer='sr3', path_to_test_f
 
     model = ps.SINDy(optimizer=opt, feature_library=library,
                      feature_names=DATA['feature_names'])
+
     print("Fitting model")
     model.fit(DATA["x_train"], u=DATA["u_train"], t=None, x_dot=DATA['xdot_train'])
     model.print()
 
     print("MSE: " + str(model.score(DATA["x_val"], t=None, x_dot=DATA['xdot_val'], u=DATA['u_val'], metric=mean_squared_error)))
-    plot_coefs2(model, log=True)
+    #plot_coefs2(model, log=True)
 
-    save_model(model, "currents_model")
+    save_model(model, "currents_model", lib)
+
+def simulate_currents(model_name, path_to_test_file, do_time_simulation=False):
+    model = load_model(model_name)
+    model.print()
+    TEST = prepare_data(path_to_test_file, test_data=True)
 
     # Validate the best model, on testdata
     xdot_test = TEST['xdot']
@@ -114,7 +121,7 @@ def simulate_currents(path_to_data_files, alpha, optimizer='sr3', path_to_test_f
         save_plot_data("currents_simulation",
                        [np.hstack((t_value[:-1].reshape(len(t_value) - 1, 1), x_sim)),
                         np.hstack((t.reshape(len(t_value), 1), x_test))],
-                       "Simulated currents on test set V = " + str(testdata['V']),
+                       "Simulated currents on test set V = " + str(TEST['V']),
                        r"$t$", r"$x$", plot_now=True, specs=[None, "k--"],
                        legend=[r"$i_d$", r"$i_q$", r"$i_0$", "test data"])
 
@@ -132,12 +139,12 @@ if __name__ == "__main__":
     # plot_data([os.getcwd()+"\\plot_data"+p+".pkl" for p in ["\\currents_sr3", "\\currents_lasso"]], show = False, limits=[[1e0,5e2], [0,150]])
     # plot_data(os.getcwd()+'\\plot_data\\currents_sr3.pkl', show = True)
 
-    ### SIMULATE CURRENTS
-    # simulate_currents(path_to_data_files, alpha=1e-1, optimizer='lasso', do_time_simulation=False)
-    # plt.show()
+    ### create a model
+    make_model_currents(path_to_data_files, alpha = 0.1, optimizer = 'lasso', nmbr_of_train = 20)
+
 
     # TEST WITH NEW DATAFILES
-    path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-25', 'IMMEC_0ecc_1.0sec.npz')
-    path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29','IMMEC_0ecc_1.0sec.npz')
+    path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
+    path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29-default','IMMEC_0ecc_5.0sec.npz')
     simulate_currents(path_to_data_files, path_to_test_file=path_to_test_file, alpha=1e-1, optimizer='lasso', do_time_simulation=False)
     plt.show()

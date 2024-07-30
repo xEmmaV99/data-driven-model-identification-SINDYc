@@ -495,7 +495,6 @@ def v_abc_exact(data_logger: dict, path_to_motor_info: str):
     :param path_to_motor_info: str, path to the motor data file
     :return: np.array with shape (N, 3), abc voltages
     """
-
     with open(path_to_motor_info, "rb") as file:
         motorinfo = pkl.load(file)
 
@@ -504,18 +503,27 @@ def v_abc_exact(data_logger: dict, path_to_motor_info: str):
     Nt = motorinfo["N_abc_T"]  # model.N_abc
     L_s = motorinfo["stator_leakage_inductance"]  # model.stator_leakage_inductance
 
-    #print("dt : " + str(5e-5)) # DEBUG
-    dt = 5e-5
+    if np.ndim(data_logger['time']) > 2:
+        print("Also 4'th order now") # DEBUG
+        t = data_logger['time'][:,0,0]
+        dphi = ps.FiniteDifference(order=4, axis=0)._differentiate(data_logger["flux_st_yoke"], t)
+        di = ps.FiniteDifference(order=4, axis=0)._differentiate(data_logger["i_st"],t)
+    else:
+        t = data_logger['time'][:, 0]
+        dphi = ps.FiniteDifference(order=4, axis=0)._differentiate(data_logger["flux_st_yoke"], t)
+        di = ps.FiniteDifference(order=4, axis=0)._differentiate(data_logger["i_st"], t)
+
+    '''
     dphi = (
             1 / dt * np.diff(data_logger["flux_st_yoke"].swapaxes(0, 1), axis=1)
     )  # forward euler, flux_st_yoke, this array is one shorter
     di = (
             1 / dt * np.diff(data_logger["i_st"].swapaxes(0, 1), axis=1)
     )  # forward euler, flux_st_yoke, !!! this array is one shorter !!
-    print('FORWARD EULER USED FOR DIFFERENTIATION IN v_abc_exact()')
+    '''
 
-    ist = data_logger["i_st"][:-1]  # remove the last value of i_st
-    v_abc = np.tensordot(R, ist.swapaxes(0, 1), axes=([1], [0])) + np.tensordot(Nt, dphi, axes=([1], [0])) + L_s * di
+    ist = data_logger["i_st"]
+    v_abc = np.tensordot(R, ist.swapaxes(0, 1), axes=([1], [0])) + np.tensordot(Nt, dphi.swapaxes(0,1), axes=([1], [0])) + L_s * di.swapaxes(0,1)
 
     return v_abc.swapaxes(0, 1)
 
@@ -723,7 +731,7 @@ def plot_coefs2(model, normalize_values=False, show=False, log=False):
     return
 
 
-def save_model(model, name):
+def save_model(model, name, libstr):
     print("Saving model")
     path = "C:/Users/emmav/PycharmProjects/SINDY_project/models/" + name + ".pkl"
     x = model.n_features_in_ - model.n_control_features_
@@ -732,7 +740,7 @@ def save_model(model, name):
     lib = {
         "coefs": model.coefficients(),
         "features": model.feature_names,
-        "library": "empty",                 # todo; custom lirary from libs
+        "library": libstr,                 # todo; custom lirary from libs
         "shapes": [(1, x), (1, u), (1, x)],
     }
     with open(path, "wb") as file:
@@ -745,7 +753,10 @@ def load_model(name):
         model_data = pkl.load(file)
 
     # initialize pysindy model
-    new_model = ps.SINDy(optimizer=None, feature_names=model_data["features"], feature_library=model_data["library"])
+
+    lib = get_custom_library_funcs(model_data["library"])
+
+    new_model = ps.SINDy(optimizer=None, feature_names=model_data["features"], feature_library=lib)
 
     x_shape, u_shape, xdot_shape = model_data["shapes"]
     new_model.fit(np.zeros(x_shape), u=np.zeros(u_shape), t=None, x_dot=np.zeros(xdot_shape))

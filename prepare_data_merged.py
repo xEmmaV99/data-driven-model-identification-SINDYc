@@ -6,9 +6,9 @@ from source import *
 def prepare_data(path_to_data_file,
                  test_data=False,
                  number_of_trainfiles='all',
-                 use_estimate_for_v=False):
+                 use_estimate_for_v=False,
+                 usage_per_trainfile = 0.2):
     # todo consider multithreading here, as one CPU might be the bottleneck
-    # todo this code doens't work for a train file
 
     # load numpy file
     dataset = dict(np.load(path_to_data_file))  # should be a dictionary
@@ -31,6 +31,7 @@ def prepare_data(path_to_data_file,
             'T_em': np.array([]), 'UMP': np.array([]), 'feature_names': np.array([])}
 
     # crop dataset to desired amount of simulations (random_idx)
+    # also time_trim the arrays
     if not test_data:
         for key in dataset.keys():
             dataset[key] = dataset[key][:, :, random_idx]
@@ -44,11 +45,11 @@ def prepare_data(path_to_data_file,
         # v_stator is one shorter, so must the other data!
 
     # remove last timestep from datafile
-    for key_to_crop in ['time', 'omega_rot', 'gamma_rot', 'T_em']:  # note that v_stator is already cropped
-        dataset[key_to_crop] = dataset[key_to_crop][:-1]
+    #for key_to_crop in ['time', 'omega_rot', 'gamma_rot', 'T_em']:  # note that v_stator is already cropped
+    #    dataset[key_to_crop] = dataset[key_to_crop][:-1]
 
-    for key_to_crop in ['i_st', 'F_em']:
-        dataset[key_to_crop] = dataset[key_to_crop][:-1]
+    #for key_to_crop in ['i_st', 'F_em']:
+    #    dataset[key_to_crop] = dataset[key_to_crop][:-1]
 
     i_st = reference_abc_to_dq0(dataset['i_st'])
 
@@ -81,6 +82,19 @@ def prepare_data(path_to_data_file,
 
     # first, calculate xdots and add to the data
     xdots = calculate_xdot(x_data, t_data)
+
+    if not test_data: # trim times AFTER xdots calculation
+        print('time trim: ', usage_per_trainfile)
+        timepoints = len(dataset['time'][:,0,0])
+        time_trim = random.sample(range(timepoints),int(usage_per_trainfile*timepoints) )
+        for key in dataset.keys():
+            dataset[key] = dataset[key][time_trim]
+
+        v_stator = v_stator[time_trim]
+        x_data = x_data[time_trim]
+        t_data = t_data[time_trim]
+        xdots = xdots[time_trim]
+
 
     # u_data add supply frequency to the input data
     freqs = V_range * 50 / 400  # constant proportion

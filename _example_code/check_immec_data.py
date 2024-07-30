@@ -23,10 +23,16 @@ plt.show()
 """
 #path = "C:/Users/emmav/PycharmProjects/SINDY_project/test-data/07-27/IMMEC_0ecc_5.0sec-nosweep.npz"
 #path = "C:/Users/emmav/PycharmProjects/SINDY_project/test-data/07-27/IMMEC_0ecc_5.0sec-nosweep.npz"
-path = "C:/Users/emmav/PycharmProjects/SINDY_project/test-data/07-29/IMMEC_0ecc_3.0sec.npz"
-path = "C:/Users/emmav/PycharmProjects/SINDY_project/test-data/07-29/IMMEC_0ecc_1.6sec.npz"
+#path = "C:/Users/emmav/PycharmProjects/SINDY_project/test-data/07-29/IMMEC_0ecc_3.0sec.npz"
+#path = "C:/Users/emmav/PycharmProjects/SINDY_project/test-data/07-29/IMMEC_0ecc_1.6sec.npz"
 #path = os.path.join(os.path.dirname(os.getcwd()), 'train-data', '07-25', 'IMMEC_0ecc_1.0sec.npz')
-path = 'C:\\Users\\emmav\\PycharmProjects\\SINDY_project\\train-data\\07-29\\IMMEC_0ecc_5.0sec.npz'
+#path = '/train-data/07-29-default\\IMMEC_0ecc_5.0sec.npz'
+#path = os.path.join(os.path.dirname(os.getcwd()), 'test-data', "07-29-default","IMMEC_0ecc_5.0sec.npz")
+path = os.path.join(os.path.dirname(os.getcwd()), 'train-data', "07-29-default","IMMEC_0ecc_5.0sec.npz")
+#path = os.path.join(os.path.dirname(os.getcwd()), 'test-data', "07-29-nonlin","IMMEC_nonlin_0ecc_5.0sec.npz")
+#path = os.path.join(os.path.dirname(os.getcwd()), 'train-data', "07-29-nonlin","IMMEC_nonlin_0ecc_5.0sec.npz")
+
+
 dataset = dict(np.load(path))
 d_air = 0.000477 # for the Cantoni motor
 
@@ -68,7 +74,7 @@ if testdata:
     plt.show()
 
 if traindata:
-    simulation_number = 30
+    simulation_number =29
     plt.subplot(2, 3, 1)
     plt.title("omega_rot"), plt.xlabel("time (s)"), plt.ylabel("rad/s")
     plt.plot(dataset["time"][:,0,simulation_number], dataset["omega_rot"][:,0,simulation_number])

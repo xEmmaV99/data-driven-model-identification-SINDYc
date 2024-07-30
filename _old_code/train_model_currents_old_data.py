@@ -139,14 +139,4 @@ if __name__ == "__main__":
     ### SIMULATE CURRENTS
     #simulate_currents(path_to_data_files, alpha=1e-1, optimizer='lasso', do_time_simulation=False)
     #plt.show()
-
-    # TEST WITH NEW DATAFILES
-    path_to_data_files = os.path.join(os.getcwd(), 'train-data','07-25','IMMEC_0ecc_1.0sec.npz')
-    simulate_currents(path_to_data_files, alpha=1e1, optimizer='lasso', do_time_simulation=False)
-    plt.show()
-
-
-
-# todo add non linear to immec model (and try to solve that with sindy)
-# todo add static ecc
-# todo add dynamic ecc
+    pass

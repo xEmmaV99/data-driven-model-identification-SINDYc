@@ -59,7 +59,7 @@ if __name__ == "__main__":
 
     motor_path = os.path.join(os.getcwd(), "Cantoni.pkl")
 
-    t_end = 1.6 #debug
+    t_end = 5.0 #debug
     ecc = np.zeros(2)
     eccname = "0"
     numbr_of_simulations = 50  # number of train simulations (of 5sec)
@@ -73,9 +73,8 @@ if __name__ == "__main__":
             os.makedirs(save_path)
 
         V_ranges = np.random.randint(40, 400, numbr_of_simulations)  # randomly generated V values
-        load_ranges = (
-            1 / 100 * np.random.randint(0.0, 370, numbr_of_simulations) * (V_ranges / 400.0)
-        )  # randomly generated (initial) load values, scaled according to V
+        load_ranges = ( 0 * np.random.randint(0.0, 370, numbr_of_simulations))
+        # INITIAL LOAD IS ZERO
 
         save_simulation_data(motor_path, save_path, extra_dict={"V": V_ranges, "load": load_ranges})  # save motor data
         """

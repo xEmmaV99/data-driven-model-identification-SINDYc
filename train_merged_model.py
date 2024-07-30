@@ -1,6 +1,8 @@
 from prepare_data_system import *
 from libs import *
 
+# todo add constraints
+
 def optimize_currents_simulation(path_to_data_files, nmbr_models=20, loglwrbnd=None, loguprbnd=None):
     """
     Calculates for various parameters, plots MSE and Sparsity, for SR3 and Lasso optimisation
@@ -17,27 +19,25 @@ def optimize_currents_simulation(path_to_data_files, nmbr_models=20, loglwrbnd=N
 
     # now, the xdot_train contains i and V and I,
 
-    xdot_train, x_train, u_train, xdot_val, x_val, u_val, _ = prepare_data(path_to_data_files,
-                                                                           t_end=1.0,
-                                                                           number_of_trainfiles='all')
+    DATA = prepare_data(path_to_data_files, number_of_trainfiles=10)
+
     library = get_custom_library_funcs("default")
+
     print("using custom library: ", library)
 
     print("SR3_L1 optimisation")
     parameter_search(np.logspace(loglwrbnd[0], loguprbnd[0], nmbr_models),
-                     train_and_validation_data=[xdot_train, x_train, u_train, xdot_val, x_val, u_val],
-                     method="SR3_L1", name="currents_adv_sr3", plot_now=False, library=library)
+                     train_and_validation_data=[DATA["xdot_train"], DATA["x_train"], DATA["u_train"], DATA["xdot_val"], DATA["x_val"], DATA["u_val"]],
+                     method="SR3_L1", name="currents_merged_sr3", plot_now=False, library=library)
 
     print("Lasso optimisation")
     parameter_search(np.logspace(loglwrbnd[1], loguprbnd[1], nmbr_models),
-                     train_and_validation_data=[xdot_train, x_train, u_train, xdot_val, x_val, u_val],
-                     method="Lasso", name="currents_adv_lasso", plot_now=False, library=library)
-
-
+                     train_and_validation_data=[DATA["xdot_train"], DATA["x_train"], DATA["u_train"], DATA["xdot_val"], DATA["x_val"], DATA["u_val"]],
+                     method="Lasso", name="currents_merged_lasso", plot_now=False, library=library)
     return
 
 
-def simulate_currents(path_to_data_files, path_to_test_file, alpha, optimizer='sr3', do_time_simulation=False, nmbr_of_train = 'all'):
+def make_model_currents(path_to_data_files, alpha, optimizer='sr3',  nmbr_of_train = 'all'):
     """
     Simulation for the currents and compared with testdata
     :param path_to_data_files:
@@ -48,10 +48,12 @@ def simulate_currents(path_to_data_files, path_to_test_file, alpha, optimizer='s
     :return:
     """
     DATA = prepare_data(path_to_data_files, number_of_trainfiles=nmbr_of_train)
-    TEST = prepare_data(path_to_test_file, test_data=True)
 
     #library = ps.PolynomialLibrary(degree=2, interaction_only=True)
-    library = get_custom_library_funcs("exp")
+    #lib = "poly_2nd_order"
+    lib = "best"
+    library = get_custom_library_funcs(lib)
+    print(lib)
     #library = ps.PolynomialLibrary(degree=2, include_interaction=True)
 
     if optimizer == 'sr3':
@@ -70,14 +72,20 @@ def simulate_currents(path_to_data_files, path_to_test_file, alpha, optimizer='s
     model.fit(DATA['x_train'], u=DATA["u_train"], t=None, x_dot=DATA["xdot_train"])
     model.print()
 
-
     print("MSE: "+ str(model.score(DATA["x_val"], t=None, x_dot=DATA["xdot_val"], u=DATA["u_val"], metric=mean_squared_error)))
-    plot_coefs2(model, log = True)
 
-    save_model(model, "currents_model")
+    #plot_coefs2(model, log = True)
+
+    save_model(model, "model_merged", libstr = lib)
+    return
+
+def simulate_currents(model_name,path_to_test_file, do_time_simulation=False):
+    model = load_model(model_name)
+    model.print()
+    TEST = prepare_data(path_to_test_file, test_data=True)
 
     # Validate the best model, on testdata
-    xdot_test = TEST['xdot']
+    xdot_test = TEST['xdot'][:,:3]
     x_test = TEST['x']
     u_test = TEST['u']
     t = TEST['t']
@@ -85,7 +93,9 @@ def simulate_currents(path_to_data_files, path_to_test_file, alpha, optimizer='s
     # Predict derivatives using the learned model
     x_dot_test_predicted = model.predict(x_test, u_test)
 
-    xydata = [np.hstack((t.reshape(t.shape[0]), x_dot_test_predicted)), np.hstack((t.reshape(t.shape[0]), xdot_test))] #debug todo here
+    x_dot_test_predicted = x_dot_test_predicted[:,:3]
+
+    xydata = [np.hstack((t.reshape(t.shape[0],1), x_dot_test_predicted)), np.hstack((t.reshape(t.shape[0],1), xdot_test))]
     xlab = r"$t$"
     ylab = r'$\dot{x}$'
     title = 'Predicted vs computed derivatives on test set V = ' + str(TEST['V'])
@@ -120,19 +130,21 @@ def simulate_currents(path_to_data_files, path_to_test_file, alpha, optimizer='s
 
 if __name__ == "__main__":
 
-    path_to_data_files = os.path.join(os.getcwd(), 'train-data', "07-29","IMMEC_0ecc_5.0sec.npz")
+    path_to_data_files = os.path.join(os.getcwd(), 'train-data', "07-29-default","IMMEC_0ecc_5.0sec.npz")
 
     ### OPTIMIZE ALPHA
     #optimize_currents_simulation(path_to_data_files, nmbr_models=1, loglwrbnd=[-7, -7], loguprbnd=[3, 3])
 
     ### PLOT MSE FOR DIFFERENT ALPHA
-    #for p in ["\\currents_sr3", "\\currents_lasso"]:
-
     #plot_data([os.getcwd() + "\\plot_data" + p + ".pkl" for p in ["\\currents_sr3", "\\currents_lasso"]], show=False, limits=[[1e0,5e2],[0,150]])
 
-    ### SIMULATE CURRENTS
-    path_to_test_file = os.path.join(os.getcwd(), 'test-data', "07-29","corresp-to-train","IMMEC_0ecc_5.0sec.npz")
-    simulate_currents(path_to_data_files, path_to_test_file, alpha=1e-1,
-                      optimizer='sr3', do_time_simulation=False,
-                      nmbr_of_train= 10)
+    ### create a model
+    #make_model_currents(path_to_data_files, alpha = 0.001, optimizer='sr3', nmbr_of_train=20)
+    #make_model_currents(path_to_data_files, alpha=0.1, optimizer='lasso', nmbr_of_train=25)
+    ## SIMULATE CURRENTS
+    path_to_test_file = os.path.join(os.getcwd(), 'test-data', "07-29-default","IMMEC_0ecc_5.0sec.npz")
+    #path_to_test_file = os.path.join(os.getcwd(), 'test-data', "07-26","IMMEC_0ecc_5.0sec.npz")
+
+    simulate_currents('model_merged', path_to_test_file, do_time_simulation=False)
+
     plt.show()
