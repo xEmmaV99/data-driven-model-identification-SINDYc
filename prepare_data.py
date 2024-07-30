@@ -6,8 +6,9 @@ from source import *
 # todo consider multithreading here, as one CPU might be the bottleneck
 def prepare_data(path_to_data_file,
                  test_data=False,
-                 number_of_trainfiles='all',
-                 use_estimate_for_v=False):
+                 number_of_trainfiles=-1,
+                 use_estimate_for_v=False,
+                 usage_per_trainfile = 0.2):
 
     # load numpy file
     dataset = dict(np.load(path_to_data_file)) # should be a dictionary
@@ -19,7 +20,7 @@ def prepare_data(path_to_data_file,
         V_range = np.array([np.max(dataset['v_applied']) / np.sqrt(2)])
 
     # choose random V from V_range
-    if number_of_trainfiles == 'all':
+    if number_of_trainfiles == -1 or number_of_trainfiles == 'all':
         number_of_trainfiles = len(V_range)
 
     random_idx = random.sample(range(len(V_range)), number_of_trainfiles) # the simulations are shuffled
@@ -41,7 +42,7 @@ def prepare_data(path_to_data_file,
 
     # first, calculate xdots and add to the data
     xdots = calculate_xdot(x_data, t_data)
-    xdots = xdots[:-1]  # crop last datapoint
+
 
     # prepare v data
     if use_estimate_for_v:
@@ -65,6 +66,23 @@ def prepare_data(path_to_data_file,
             continue
         I = np.dstack((I,scipy.integrate.cumulative_trapezoid(x_data[:,:,simul], t_data[:,0,simul], axis=0, initial=0)))
         V = np.dstack((V, scipy.integrate.cumulative_trapezoid(v_stator[:,:,simul], t_data[:,0,simul], axis=0, initial=0)))
+
+
+    if not test_data: # trim times AFTER xdots calculation
+        print('time trim: ', usage_per_trainfile)
+        timepoints = len(dataset['time'][:,0,0])
+        time_trim = random.sample(range(timepoints),int(usage_per_trainfile*timepoints) )
+        for key in dataset.keys():
+            dataset[key] = dataset[key][time_trim]
+
+        v_stator = v_stator[time_trim]
+        x_data = x_data[time_trim]
+        t_data = t_data[time_trim]
+        xdots = xdots[time_trim]
+        I = I[time_trim]
+        V = V[time_trim]
+
+
 
     # u_data add supply frequency to the input data
     freqs = V_range * 50 / 400  # constant proportion

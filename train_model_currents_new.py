@@ -32,12 +32,14 @@ def optimize_currents_simulation(path_to_data_files, nmbr_models=20, loglwrbnd=N
                          name="currents_sr3", plot_now=False)'''
 
     parameter_search(np.logspace(loglwrbnd[0], loguprbnd[0], nmbr_models),
-                     train_and_validation_data=[DATA["xdot_train"], DATA["x_train"], DATA["u_train"], DATA["xdot_val"], DATA["x_val"], DATA["u_val"]],
+                     train_and_validation_data=[DATA["xdot_train"], DATA["x_train"], DATA["u_train"], DATA["xdot_val"],
+                                                DATA["x_val"], DATA["u_val"]],
                      method="SR3_L1", name="currents_sr3", plot_now=False, library=library)
 
     print("Lasso optimisation")
     parameter_search(np.logspace(loglwrbnd[1], loguprbnd[1], nmbr_models),
-                     train_and_validation_data=[DATA["xdot_train"], DATA["x_train"], DATA["u_train"], DATA["xdot_val"], DATA["x_val"], DATA["u_val"]],
+                     train_and_validation_data=[DATA["xdot_train"], DATA["x_train"], DATA["u_train"], DATA["xdot_val"],
+                                                DATA["x_val"], DATA["u_val"]],
                      method="Lasso", name="currents_lasso", plot_now=False, library=library)
 
     # path = os.path.join(os.getcwd(), "plot_data")
@@ -46,7 +48,7 @@ def optimize_currents_simulation(path_to_data_files, nmbr_models=20, loglwrbnd=N
     return
 
 
-def make_model_currents(path_to_data_files, alpha, optimizer='sr3',  nmbr_of_train = 'all'):
+def make_model_currents(path_to_data_files, alpha, optimizer='sr3', nmbr_of_train=-1):
     """
     Simulation for the currents and compared with testdata
     :param path_to_data_files:
@@ -56,6 +58,7 @@ def make_model_currents(path_to_data_files, alpha, optimizer='sr3',  nmbr_of_tra
     :param do_time_simulation:
     :return:
     """
+
     DATA = prepare_data(path_to_data_files, number_of_trainfiles=nmbr_of_train)
 
     lib = 'best'
@@ -77,10 +80,12 @@ def make_model_currents(path_to_data_files, alpha, optimizer='sr3',  nmbr_of_tra
     model.fit(DATA["x_train"], u=DATA["u_train"], t=None, x_dot=DATA['xdot_train'])
     model.print()
 
-    print("MSE: " + str(model.score(DATA["x_val"], t=None, x_dot=DATA['xdot_val'], u=DATA['u_val'], metric=mean_squared_error)))
-    #plot_coefs2(model, log=True)
+    print("MSE: " + str(
+        model.score(DATA["x_val"], t=None, x_dot=DATA['xdot_val'], u=DATA['u_val'], metric=mean_squared_error)))
+    # plot_coefs2(model, log=True)
 
     save_model(model, "currents_model", lib)
+
 
 def simulate_currents(model_name, path_to_test_file, do_time_simulation=False):
     model = load_model(model_name)
@@ -130,21 +135,21 @@ def simulate_currents(model_name, path_to_test_file, do_time_simulation=False):
 
 
 if __name__ == "__main__":
-    # path_to_data_files = os.path.join(os.getcwd(), 'data\\07-24-default-5e-5')
+    path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
 
     ### OPTIMIZE ALPHA
-    # optimize_currents_simulation(path_to_data_files, nmbr_models=3, loglwrbnd=[-7, -7], loguprbnd=[3, 3])
+    #optimize_currents_simulation(path_to_data_files, nmbr_models=3, loglwrbnd=[-7, -7], loguprbnd=[3, 3])
 
     ### PLOT MSE FOR DIFFERENT ALPHA
     # plot_data([os.getcwd()+"\\plot_data"+p+".pkl" for p in ["\\currents_sr3", "\\currents_lasso"]], show = False, limits=[[1e0,5e2], [0,150]])
     # plot_data(os.getcwd()+'\\plot_data\\currents_sr3.pkl', show = True)
 
-    ### create a model
-    make_model_currents(path_to_data_files, alpha = 0.1, optimizer = 'lasso', nmbr_of_train = 20)
-
+    ### CREATE A MODEL
+    make_model_currents(path_to_data_files, alpha=0.1, optimizer='lasso', nmbr_of_train=20)
 
     # TEST WITH NEW DATAFILES
-    path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
-    path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29-default','IMMEC_0ecc_5.0sec.npz')
-    simulate_currents(path_to_data_files, path_to_test_file=path_to_test_file, alpha=1e-1, optimizer='lasso', do_time_simulation=False)
+    path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
+    path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29', 'IMMEC_0ecc_1.7sec-cos.npz')
+    simulate_currents('currents_model', path_to_test_file, do_time_simulation=False)
+
     plt.show()

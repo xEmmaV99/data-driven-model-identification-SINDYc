@@ -5,7 +5,7 @@ from source import *
 
 def prepare_data(path_to_data_file,
                  test_data=False,
-                 number_of_trainfiles='all',
+                 number_of_trainfiles=-1,
                  use_estimate_for_v=False,
                  usage_per_trainfile = 0.2):
     # todo consider multithreading here, as one CPU might be the bottleneck
@@ -19,7 +19,7 @@ def prepare_data(path_to_data_file,
     else:
         V_range = np.array([np.max(dataset['v_applied'])/np.sqrt(2)])
 
-    if number_of_trainfiles == 'all':
+    if number_of_trainfiles == 'all' or number_of_trainfiles == -1:
         number_of_trainfiles = len(V_range)
 
     # choose random V from V_range

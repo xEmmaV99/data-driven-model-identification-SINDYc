@@ -1,4 +1,4 @@
-from prepare_data_system import *
+from prepare_data_merged import *
 from libs import *
 
 # todo add constraints
