@@ -34,28 +34,37 @@ testdata = False
 traindata = True
 if testdata:
     plt.subplot(2, 3, 1)
-    plt.title("omega_rot"), plt.xlabel("time (s)")
+    plt.title("omega_rot"), plt.xlabel("time (s)"), plt.ylabel("rad/s")
     plt.plot(dataset["time"], dataset["omega_rot"])
 
     plt.subplot(2, 3, 2)
-    plt.title("i_st"), plt.xlabel("time (s)")
+    plt.title("i_st"), plt.xlabel("time (s)"), plt.ylabel("A") #debug
     plt.plot(dataset["time"], dataset["i_st"])
 
     plt.subplot(2, 3, 3)
-    plt.title("T_em"), plt.xlabel("time (s)")
+    plt.title("T_l and T_em"), plt.xlabel("time (s)"), plt.ylabel("Nm")
+    #plt.title("T_em"), plt.xlabel("time (s)")
     plt.plot(dataset["time"], dataset["T_em"])
 
-    plt.subplot(2, 3, 4)
-    plt.title("T_l"), plt.xlabel("time (s)")
-    plt.plot(dataset["time"], dataset["T_l"])
+    #plt.subplot(2, 3, 4)
+    #plt.title("T_l"), plt.xlabel("time (s)")
+    plt.plot(dataset["time"], dataset["T_l"], "k--")
+    plt.legend(["T_em", "T_l"])
 
     plt.subplot(2, 3, 5)
-    plt.title("V"), plt.xlabel("time (s)")
+    plt.title("V"), plt.xlabel("time (s)"), plt.ylabel("V")
     plt.plot(dataset["time"], dataset["v_applied"])
+
+    plt.subplot(2, 3, 4)
+    plt.title("UMP"), plt.xlabel("time (s)"), plt.ylabel("N")
+    plt.plot(dataset["time"], dataset["F_em"])
+
+    plt.subplot(2, 3, 6)
+    plt.title("Eccentricity"), plt.xlabel("time (s)"), plt.ylabel("% airgap")
+    plt.plot(dataset["time"], dataset["ecc"] / d_air)
 
     # Add padding so title and labels dont overlap
     plt.tight_layout()
-
     plt.show()
 
 if traindata:
@@ -65,7 +74,7 @@ if traindata:
     plt.plot(dataset["time"][:,0,simulation_number], dataset["omega_rot"][:,0,simulation_number])
 
     plt.subplot(2, 3, 2)
-    plt.title("i_st"), plt.xlabel("time (s)"), plt.ylabel("A/m") #debug
+    plt.title("i_st"), plt.xlabel("time (s)"), plt.ylabel("A") #debug
     plt.plot(dataset["time"][:,0,simulation_number], dataset["i_st"][:,:,simulation_number])
 
     plt.subplot(2, 3, 3)
