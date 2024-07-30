@@ -301,7 +301,7 @@ def create_immec_data(
     end_load = load
     start_time = 0.0
     close_to_steady_state = False
-    dt_load = 0.2 # first applied load for 1 second
+    dt_load = 0.2  # first applied load for 1 second
     Vfmode = "chirp"
     print('Mode: ', Vfmode)
     for n in tqdm(range(steps_total)):
@@ -315,7 +315,7 @@ def create_immec_data(
         # Here, no torque is applied
         # T_l = 0
         if close_to_steady_state:
-            #start_load = end_load #continuous
+            # start_load = end_load #continuous
             start_load = change_load(start_load, end_load, n * timestep, start_time, start_time + dt_load)
             end_load = int(np.random.randint(0, 370) * (V / 400.0)) / 100  # choose new load
             print("New applied load: ", end_load, "Nm")
@@ -330,7 +330,7 @@ def create_immec_data(
         # 400 V_RMS symmetrical line voltages are used
         if Vfmode == "constant_freq":
             V_amp = V
-            f_amp = V/Vf_ratio*n*timestep
+            f_amp = V / Vf_ratio * n * timestep
         elif Vfmode == "chirp_linear":
             V_amp = linear_runup(V, n * timestep, 1.5)
             f_amp = linear_runup_freq(V / Vf_ratio, n * timestep, 1.5)
@@ -401,16 +401,16 @@ plt.show()
 """
 
 
-def linear_runup_freq(values, time: float, end_time:float, start_time: float = 0.0):
+def linear_runup_freq(values, time: float, end_time: float, start_time: float = 0.0):
     f_0 = 0
     c = (values - f_0) / (end_time - start_time)
     if time < start_time:
-        return values*time
+        return values * time
     elif start_time <= time < end_time:
         return 0.5 * c * (time) ** 2 + f_0 * time
     else:
         phi_add = 0.5 * c * (end_time) ** 2 + f_0 * end_time
-        return values * (time-end_time) + phi_add
+        return values * (time - end_time) + phi_add
 
 
 def linear_runup(values, time: float, end_time: float, start_time: float = 0.0):
@@ -427,11 +427,11 @@ def chirp_freq(values, time: float, end_time: float, start_time: float = 0.0):
     if time < start_time:
         return values * time
     elif start_time <= time < end_time:
-        return 1/2 * (time - np.sin(np.pi*time/duration)*duration/np.pi)*values
+        return 1 / 2 * (time - np.sin(np.pi * time / duration) * duration / np.pi) * values
 
     else:
-        phi_add = 1/2 * (end_time - np.sin(np.pi*end_time/duration)*duration/np.pi)*values
-        return values * (time-end_time) + phi_add
+        phi_add = 1 / 2 * (end_time - np.sin(np.pi * end_time / duration) * duration / np.pi) * values
+        return values * (time - end_time) + phi_add
 
 
 def check_steady_state(T_em, speed, nmbr_of_steps):
@@ -506,10 +506,10 @@ def v_abc_exact(data_logger: dict, path_to_motor_info: str):
     L_s = motorinfo["stator_leakage_inductance"]  # model.stator_leakage_inductance
 
     if np.ndim(data_logger['time']) > 2:
-        print("Also 4'th order now") # DEBUG
-        t = data_logger['time'][:,0,0]
+        print("Also 4'th order now")  # DEBUG
+        t = data_logger['time'][:, 0, 0]
         dphi = ps.FiniteDifference(order=4, axis=0)._differentiate(data_logger["flux_st_yoke"], t)
-        di = ps.FiniteDifference(order=4, axis=0)._differentiate(data_logger["i_st"],t)
+        di = ps.FiniteDifference(order=4, axis=0)._differentiate(data_logger["i_st"], t)
     else:
         t = data_logger['time'][:, 0]
         dphi = ps.FiniteDifference(order=4, axis=0)._differentiate(data_logger["flux_st_yoke"], t)
@@ -525,7 +525,9 @@ def v_abc_exact(data_logger: dict, path_to_motor_info: str):
     '''
 
     ist = data_logger["i_st"]
-    v_abc = np.tensordot(R, ist.swapaxes(0, 1), axes=([1], [0])) + np.tensordot(Nt, dphi.swapaxes(0,1), axes=([1], [0])) + L_s * di.swapaxes(0,1)
+    v_abc = np.tensordot(R, ist.swapaxes(0, 1), axes=([1], [0])) + np.tensordot(Nt, dphi.swapaxes(0, 1),
+                                                                                axes=([1], [0])) + L_s * di.swapaxes(0,
+                                                                                                                     1)
 
     return v_abc.swapaxes(0, 1)
 
@@ -577,7 +579,7 @@ def calculate_xdot(x: np.array, t: np.array):
     :param t: array of shape (N , 1) or (N, )
     :return: array of shape (N , 3) with the time derivative of x, pySINDy does not remove one value.
     """
-    #print('debug, 4th order of xdot')
+    # print('debug, 4th order of xdot')
     if np.ndim(t) == 3:
         print("Assume all t_vec are equal")
         t_ = t[:, 0, 0].reshape(t.shape[0])
@@ -651,7 +653,7 @@ def plot_data(path="plotdata.pkl", show=True, figure=True, limits=None):
                 ax1.set_ylim(limits[0])
                 ax2.set_ylim(limits[1])
 
-        else: #only one axis
+        else:  # only one axis
             plt.figure()
             plt.xlabel(data["xlab"]), plt.ylabel(data["ylab"])
             specs = data["specs"]
@@ -742,7 +744,7 @@ def save_model(model, name, libstr):
     lib = {
         "coefs": model.coefficients(),
         "features": model.feature_names,
-        "library": libstr,                 # todo; custom lirary from libs
+        "library": libstr,  # todo; custom lirary from libs
         "shapes": [(1, x), (1, u), (1, x)],
     }
     with open(path, "wb") as file:
@@ -851,13 +853,14 @@ def parameter_search_2D(param_nu, param_lambda, train_and_validation_data, name=
 
         for j, lam in enumerate(param_lambda):
             print(i, " and ", j)
-            optimizer = ps.SR3(thresholder='l1', nu=nu, threshold=np.sqrt(2*lam*nu)) #see https://arxiv.org/pdf/1906.10612
-            model = ps.SINDy(optimizer=optimizer, feature_library=ps.PolynomialLibrary(degree=2, include_interaction=True))
+            optimizer = ps.SR3(thresholder='l1', nu=nu,
+                               threshold=np.sqrt(2 * lam * nu))  # see https://arxiv.org/pdf/1906.10612
+            model = ps.SINDy(optimizer=optimizer,
+                             feature_library=ps.PolynomialLibrary(degree=2, include_interaction=True))
             model.fit(x_train, u=u_train, t=None, x_dot=xdot_train)
 
-            variable["MSE"][i, j] = model.score(x_val, u=u_val, x_dot=xdot_val, t = None, metric=mean_squared_error)
+            variable["MSE"][i, j] = model.score(x_val, u=u_val, x_dot=xdot_val, t=None, metric=mean_squared_error)
             variable["SPAR"][i, j] = np.count_nonzero(model.coefficients())
-
 
     # plot the grid as a heatplot with MSE the color
     plt.figure()
@@ -877,31 +880,10 @@ def parameter_search_2D(param_nu, param_lambda, train_and_validation_data, name=
     return
 
 
-def grid_search_sr3(lambda_minmax, nu_minmax, DATA, iter = 4):
-    def _grid_search_model(nu, threshold):
-        optimizer = ps.SR3(thresholder='l1', nu=nu,
-                           threshold= threshold)
-
-        model = ps.SINDy(optimizer=optimizer, feature_library=ps.PolynomialLibrary(degree=2, include_interaction=True))
-        model.fit(DATA["x_train"], u=DATA['u_train'], t=None, x_dot=DATA['xdot_train'])
-
-        MSE = model.score(DATA["x_val"], u=DATA["u_val"], x_dot=DATA["xdot_val"], t=None, metric=mean_squared_error)
-        SPAR = np.count_nonzero(model.coefficients())
-        return [MSE, SPAR, model]
-
-
-    # first iteration, calc 9 models
-    p = multiprocessing.Pool(processes=9)
-    MSE_list = p.map(_grid_search_model, )
-    p.close()
-    p.join()
-
-    # second iteration, choose around best, calc 8 more
-    p = multiprocessing.Pool(processes = 8)
+def grid_search_sr3(lambda_minmax, nu_minmax, DATA, iter=4):
 
 
     return
-
 
 
 def plot_everything(path_to_directory):
