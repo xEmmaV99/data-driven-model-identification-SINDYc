@@ -37,7 +37,7 @@ def optimize_currents_simulation(path_to_data_files, nmbr_models=20, loglwrbnd=N
     return
 
 
-def simulate_currents(path_to_data_files, path_to_test_file, alpha, optimizer='sr3', do_time_simulation=False):
+def simulate_currents(path_to_data_files, path_to_test_file, alpha, optimizer='sr3', do_time_simulation=False, nmbr_of_train = 'all'):
     """
     Simulation for the currents and compared with testdata
     :param path_to_data_files:
@@ -47,9 +47,8 @@ def simulate_currents(path_to_data_files, path_to_test_file, alpha, optimizer='s
     :param do_time_simulation:
     :return:
     """
-    xdot_train, x_train, u_train, xdot_val, x_val, u_val, testdata = prepare_data(path_to_data_files,
-                                                                                  path_to_test_file=path_to_test_file,
-                                                                                  t_end=1.0, number_of_trainfiles='all')
+    DATA = prepare_data(path_to_data_files, number_of_trainfiles=nmbr_of_train)
+    TEST = prepare_data(path_to_test_file, test_data=True)
 
     #library = ps.PolynomialLibrary(degree=2, interaction_only=True)
     library = get_custom_library_funcs("exp")
@@ -65,30 +64,31 @@ def simulate_currents(path_to_data_files, path_to_test_file, alpha, optimizer='s
         raise ValueError("Unknown optimizer")
 
     model = ps.SINDy(optimizer=opt, feature_library=library,
-                     feature_names=testdata['feature_names'])
+                     feature_names=DATA['feature_names'])
+
     print("Fitting model")
-    model.fit(x_train, u=u_train, t=None, x_dot=xdot_train)
+    model.fit(DATA['x_train'], u=DATA["u_train"], t=None, x_dot=DATA["xdot_train"])
     model.print()
 
 
-    print("MSE: "+ str(model.score(x_val, t=None, x_dot=xdot_val, u=u_val, metric=mean_squared_error)))
+    print("MSE: "+ str(model.score(DATA["x_val"], t=None, x_dot=DATA["xdot_val"], u=DATA["u_val"], metric=mean_squared_error)))
     plot_coefs2(model, log = True)
 
     save_model(model, "currents_model")
 
     # Validate the best model, on testdata
-    xdot_test = testdata['xdot']
-    x_test = testdata['x']
-    u_test = testdata['u']
-    t = testdata['t']
+    xdot_test = TEST['xdot']
+    x_test = TEST['x']
+    u_test = TEST['u']
+    t = TEST['t']
 
     # Predict derivatives using the learned model
     x_dot_test_predicted = model.predict(x_test, u_test)
 
-    xydata = [np.hstack((t, x_dot_test_predicted)), np.hstack((t, xdot_test))]
+    xydata = [np.hstack((t.reshape(t.shape[0]), x_dot_test_predicted)), np.hstack((t.reshape(t.shape[0]), xdot_test))] #debug todo here
     xlab = r"$t$"
     ylab = r'$\dot{x}$'
-    title = 'Predicted vs computed derivatives on test set V = ' + str(testdata['V'])
+    title = 'Predicted vs computed derivatives on test set V = ' + str(TEST['V'])
     leg = [r"$\partial_t{i_d}$", r"$\partial_t{i_q}$", r"$\partial_t{i_0}$", "computed"]
     specs = [None, "k--"]
     save_plot_data("currents", xydata, title, xlab, ylab, legend=leg, plot_now=True,
@@ -110,7 +110,7 @@ def simulate_currents(path_to_data_files, path_to_test_file, alpha, optimizer='s
         save_plot_data("currents_simulation",
                        [np.hstack((t_value[:-1].reshape(len(t_value) - 1, 1), x_sim)),
                         np.hstack((t.reshape(len(t_value), 1), x_test))],
-                       "Simulated currents on test set V = " + str(testdata['V']),
+                       "Simulated currents on test set V = " + str(TEST['V']),
                        r"$t$", r"$x$", plot_now=True, specs=[None, "k--"],
                        legend=[r"$i_d$", r"$i_q$", r"$i_0$", "test data"])
 
@@ -120,7 +120,7 @@ def simulate_currents(path_to_data_files, path_to_test_file, alpha, optimizer='s
 
 if __name__ == "__main__":
 
-    path_to_data_files = os.path.join(os.getcwd(), 'train-data', "07-25","IMMEC_0ecc_1.0sec.npz")
+    path_to_data_files = os.path.join(os.getcwd(), 'train-data', "07-29","IMMEC_0ecc_5.0sec.npz")
 
     ### OPTIMIZE ALPHA
     #optimize_currents_simulation(path_to_data_files, nmbr_models=1, loglwrbnd=[-7, -7], loguprbnd=[3, 3])
@@ -131,6 +131,8 @@ if __name__ == "__main__":
     #plot_data([os.getcwd() + "\\plot_data" + p + ".pkl" for p in ["\\currents_sr3", "\\currents_lasso"]], show=False, limits=[[1e0,5e2],[0,150]])
 
     ### SIMULATE CURRENTS
-    path_to_test_file = os.path.join(os.getcwd(), 'test-data', "07-29","IMMEC_0ecc_1.0sec.npz")
-    simulate_currents(path_to_data_files, path_to_test_file, alpha=1e-1, optimizer='sr3', do_time_simulation=False)
+    path_to_test_file = os.path.join(os.getcwd(), 'test-data', "07-29","corresp-to-train","IMMEC_0ecc_5.0sec.npz")
+    simulate_currents(path_to_data_files, path_to_test_file, alpha=1e-1,
+                      optimizer='sr3', do_time_simulation=False,
+                      nmbr_of_train= 10)
     plt.show()
