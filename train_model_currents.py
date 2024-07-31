@@ -2,7 +2,7 @@ import os
 from tqdm import tqdm
 from prepare_data import *
 from libs import *
-
+import optuna
 
 def optimize_currents_simulation(path_to_data_files, nmbr_models=20, loglwrbnd=None, loguprbnd=None):
     """
@@ -23,13 +23,18 @@ def optimize_currents_simulation(path_to_data_files, nmbr_models=20, loglwrbnd=N
     lib = "best"
     library = get_custom_library_funcs(lib)
 
+
     print("SR3_L1 optimisation")
-    with multiprocessing.Pool(4) as pool:
-        pool.starmap(grid_search_sr3, [[DATA, [1e-5,1e2],[1e-11,1e-5], library, 10] for i in range(4) ])
+
+    n = 8
+    trials = 5000
+    with multiprocessing.Pool(n) as pool:
+        pool.starmap(grid_search_sr3, [[DATA, [1e-5, 1e2], [1e-11, 1e-5], trials] for _ in range(n)])
     pool.join()
 
-    stud = optuna.load_study(study_name="example-study", storage="sqlite:///example-study.db")
+    stud = optuna.load_study(study_name="example-study", storage="sqlite:///example-study-with-libs.db")
     optuna.visualization.plot_pareto_front(stud, target_names=["MSE", "SPAR"]).show(renderer="browser")
+    print(f"Trial count: {len(stud.trials)}")
 
     # only one parameter optimalisation :(
     #parameter_search(np.logspace(loglwrbnd[0], loguprbnd[0], nmbr_models),
