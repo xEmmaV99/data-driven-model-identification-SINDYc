@@ -1,13 +1,16 @@
 from source import *
 import os
-from param_optimizer import optimize_parameters
 from prepare_data import prepare_data
-from param_optimizer import parameter_search
+from param_optimizer import parameter_search, optimize_parameters, plot_optuna_data
+from sklearn.linear_model import Lasso
+from sklearn.metrics import mean_squared_error
 
 # Can optionally be merged with currents, only difference is xdot and plots
 
 def optimize_simulation(path_to_data_files, nmbr_models=-1, loglwrbnd=None, loguprbnd=None, Torque=False, UMP=False):
     """
+    OLD TO BE REMOVED
+
     Calculates for various parameters, plots MSE and Sparsity, for SR3 and Lasso optimisation
     :param path_to_data_files:
     :param nmbr_models:
@@ -51,7 +54,6 @@ def optimize_simulation(path_to_data_files, nmbr_models=-1, loglwrbnd=None, logu
                                                 DATA['u_val']],
                      method="lasso", name=name+"_lasso", plot_now=False, library=library)
     return
-
 
 
 def make_model(path_to_data_files, alpha, optimizer, nmbr_of_train=-1, Torque = False, UMP = False):
@@ -176,15 +178,17 @@ if __name__ == "__main__":
     optimize_parameters(path_to_data_files, mode = 'torque')
     #optimize_parameters(path_to_data_files, mode = 'ump')
 
-    ### PLOT MSE FOR TORQUE SIMULATION
-    # plot_data([os.getcwd() + "\\plots_2607_presentation" + p + ".pkl" for p in ["\\torque_SR3_", "\\torque_lasso"]],
-    # show=False, limits=[[1e-6, 1], [0, 100]])
+
+    ### PLOT MSE AND SPARSITY FOR TORQUE AND UMP SIMULATION
+    #plot_optuna_data('torque-lasso-study')
+    plot_optuna_data('UMP-lasso-study')
+
 
     ### MAKE A MODEL
     #make_model(path_to_data_files, alpha=1e-5, optimizer="lasso", nmbr_of_train=20)
     #make_model(path_to_data_files, alpha = 1e-1, optimizer="sr3", nmbr_of_train=30)
-    #make_model(path_to_data_files, alpha = 1e-5, optimizer="lasso", nmbr_of_train=25, Torque=True)
+    make_model(path_to_data_files, alpha = 1e-5, optimizer="lasso", nmbr_of_train=25, Torque=True)
 
     ### SIMULATE TORQUE WITH CHOSEN ALPHA AND OPTIMIZER
-    #simulate("Torque-UMP_model", path_to_test_file, Torque=True)
+    simulate("Torque-UMP_model", path_to_test_file, Torque=True)
     #simulate("torque_model", path_to_test_file, Torque=True)

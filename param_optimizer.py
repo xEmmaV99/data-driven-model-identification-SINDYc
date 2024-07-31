@@ -38,7 +38,7 @@ def optimize_parameters(path_to_data_files, mode='torque'):
         pool.starmap(optuna_search_sr3, [[DATA, XDOT, l_range, n_range, namestr, trials] for _ in range(n)])
     pool.join()
     pool.close()
-    plot_optuna_data(name=namestr + "-sr3-study")
+    #plot_optuna_data(name=namestr + "-sr3-study")
 
     print("Lasso optimisation")
 
@@ -50,7 +50,7 @@ def optimize_parameters(path_to_data_files, mode='torque'):
 
     pool.join()
     pool.close()
-    plot_optuna_data(name=namestr + "-lasso-study")
+    #plot_optuna_data(name=namestr + "-lasso-study")
 
     return
 
@@ -66,7 +66,7 @@ def optuna_search_lasso(DATA, XDOT, minmax, studyname, iter):
 
         lib = get_custom_library_funcs(lib_choice)
 
-        optimizer = Lasso(alpha=alphas, fit_intercept=False)
+        optimizer = ps.WrappedOptimizer(Lasso(alpha=alphas, fit_intercept=False))
 
         model = ps.SINDy(optimizer=optimizer,
                          feature_library=lib)

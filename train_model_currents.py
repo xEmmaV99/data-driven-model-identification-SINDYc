@@ -1,5 +1,9 @@
-from param_optimizer import *
+from param_optimizer import parameter_search, optimize_parameters, plot_optuna_data
 from source import *
+from prepare_data import prepare_data
+from sklearn.linear_model import Lasso
+from sklearn.metrics import mean_squared_error
+
 
 def make_model_currents(path_to_data_files, alpha, optimizer='sr3', nmbr_of_train=-1):
     """
@@ -94,18 +98,16 @@ if __name__ == "__main__":
     ### OPTIMIZE ALPHA
     optimize_parameters(path_to_data_files, mode = "currents")
 
-    ### PLOT MSE FOR DIFFERENT ALPHA
-    #plot_data([os.getcwd()+"\\plot_data"+p+".pkl" for p in ["\\currents_sr3", "\\currents_lasso"]], show = False, limits=[[1e0,5e2], [0,150]])
-
-
-    #plot_data(os.getcwd()+'\\plot_data\\currents_lasso.pkl', show = True)
+    ### PLOT MSE AND SPARSEITY FOR DIFFERENT PARAMETERS
+    plot_optuna_data('currents-lasso-study')
+    plot_optuna_data('currents-sr3-study')
 
     ### CREATE A MODEL
-    #make_model_currents(path_to_data_files, alpha=1, optimizer='lasso', nmbr_of_train=25)
+    make_model_currents(path_to_data_files, alpha=1, optimizer='lasso', nmbr_of_train=25)
 
     ### SIMULATE
     #path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
-    #path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29', 'IMMEC_0ecc_5.0sec.npz')
-    #simulate_currents('currents_model', path_to_test_file, do_time_simulation=False)
+    path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29', 'IMMEC_0ecc_5.0sec.npz')
+    simulate_currents('currents_model', path_to_test_file, do_time_simulation=False)
 
     #plt.show()
