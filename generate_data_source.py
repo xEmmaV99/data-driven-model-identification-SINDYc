@@ -179,7 +179,6 @@ def create_immec_data(
 
         # check if the steady state is reached, every .1 seconds
         if n % int(0.1 / timestep) == 0 and n*timestep > 0.5: #only check after .5 seconds
-            print('chekcing load')
             close_to_steady_state = check_steady_state(
                     T_em=data_logger.quantities["T_em"],
                     speed=data_logger.quantities["omega_rot"],
