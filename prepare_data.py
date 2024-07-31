@@ -3,7 +3,11 @@ import scipy
 import numpy as np
 import os
 import pickle as pkl
-from pysindy import FiniteDifference
+try:
+    from pysindy import FiniteDifference
+except ImportError:
+    print("Skipping import of pysindy")
+
 import matplotlib.pyplot as plt
 
 
