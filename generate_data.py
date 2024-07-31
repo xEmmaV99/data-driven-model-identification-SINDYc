@@ -16,7 +16,7 @@ def do_simulation(V_applied, motor_path, load=3.7, ecc=np.zeros(2), t_end=1.0, m
         t_end=t_end,
         path_to_motor=motor_path,
         load=load,
-        ecc=ecc,
+        initial_ecc=ecc,
         V=V_applied,
         solving_tolerance=1e-5,
     )
