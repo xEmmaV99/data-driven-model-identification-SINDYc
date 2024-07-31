@@ -68,7 +68,7 @@ def create_immec_data(
         mode: str = "linear",
         solving_tolerance: float = 1e-4,
         load: float = 3.7,
-        ecc: np.array = np.zeros(2),
+        initial_ecc: np.array = np.zeros(2),
 ):
     """
     Creates data from the IMMEC model
@@ -154,7 +154,7 @@ def create_immec_data(
             v_uvw = immec.smooth_runup(v_uvw, n * timestep, 0.0, 1.5)  # change amplitude of voltage
 
         # I.C Rotor eccentricity
-        ecc = ecc * motordict["d_air"]
+        ecc = initial_ecc * motordict["d_air"]
 
         # I.D The inputs are concatenated to a single vector
         inputs = np.concatenate([v_uvw, [T_l], ecc])
@@ -182,11 +182,17 @@ def create_immec_data(
 
         # check if the steady state is reached, every .1 seconds
         if n % int(0.1 / timestep) == 0:
-            close_to_steady_state = check_steady_state(
-                T_em=data_logger.quantities["T_em"],
-                speed=data_logger.quantities["omega_rot"],
-                nmbr_of_steps=int(0.15 / timestep),
-            )
+            if mode == "nonlinear" and n * timestep < .5:
+                # for the nonlinear case, somehow a load got applied, therefore i am forcing it to
+                # only apply after 0.5 second
+                close_to_steady_state = False
+            else:
+                close_to_steady_state = check_steady_state(
+                    T_em=data_logger.quantities["T_em"],
+                    speed=data_logger.quantities["omega_rot"],
+                    nmbr_of_steps=int(0.15 / timestep),
+                    mode=mode
+                )
 
     return data_logger
 
@@ -269,10 +275,12 @@ def chirp_freq(values, time: float, end_time: float, start_time: float = 0.0):
         return values * (time - end_time) + phi_add
 
 
-def check_steady_state(T_em, speed, nmbr_of_steps):
+def check_steady_state(T_em, speed, nmbr_of_steps, mode="linear"):
     """
     Checks whether steady state is close to reached, when T_em *and* omega are nearly constant
     True is returned when the last values of T_em and omega are whitin 5% marge of the mean of the last values
+
+    if the mode is nonlinear, only check omega
     :param T_em: Electromagnetic torque
     :param speed: omega, rotation speed
     :param nmbr_of_steps: number of steps taken into account for the convergence
@@ -284,6 +292,9 @@ def check_steady_state(T_em, speed, nmbr_of_steps):
 
     meanT = np.mean(T_em)
     meanS = np.mean(speed)
+    if mode == "nonlinear":
+        # only check the speed
+        return np.all(np.abs(speed - meanS) < 0.05 * meanS)
 
     # all points should be within 5% of the mean
     if np.all(np.abs(T_em - meanT) < 0.05 * meanT) and np.all(np.abs(speed - meanS) < 0.05 * meanS):
@@ -356,12 +367,6 @@ if __name__ == "__main__":
         # INITIAL LOAD IS ZERO
 
         save_simulation_data(motor_path, save_path, extra_dict={"V": V_ranges, "load": load_ranges})  # save motor data
-        """
-        dict_keys(
-            ['potentials_st', 'potentials_rot', 'flux_st_tooth', 'flux_st_yoke', 'flux_rot_tooth', 'flux_rot_yoke',
-             'i_st', 'i_rot', 'alpha_rot', 'omega_rot', 'gamma_rot', 'T_em', 'F_em', 'v_applied', 'T_l', 'ecc',
-             'iterations', 'time'])
-        """
 
         print("Starting simulation")
         p = multiprocessing.Pool(processes=10)
