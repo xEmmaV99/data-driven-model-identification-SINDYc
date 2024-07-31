@@ -55,7 +55,7 @@ def prepare_data(path_to_data_file,
 
     # prepare v data
     if use_estimate_for_v:
-        v_stator = reference_abc_to_dq0(v_abc_estimate(dataset)) #debug
+        v_stator = reference_abc_to_dq0(v_abc_estimate(dataset["v_applied"])) #debug
     else:
         v_stator = reference_abc_to_dq0(v_abc_exact(dataset, path_to_motor_info=path_to_simulation_data)) #debug
 
@@ -210,7 +210,7 @@ def reference_abc_to_dq0(coord_array: np.array):
     )
     return np.tensordot(T, coord_array.swapaxes(0, 1), axes=([1], [0])).swapaxes(0, 1)
 
-#@nb.njit(cache = True)
+@nb.njit(cache = True)
 def reference_abc_to_dq0_CP(coord_array: np.array, gamma):
     nd = 3
     if np.ndim(gamma) <= 2:
@@ -230,7 +230,7 @@ def reference_abc_to_dq0_CP(coord_array: np.array, gamma):
             )
             newcoord[j, :, simul] = np.dot(CP, coord_array[j, :, simul].T).T
 
-    return newcoord[:, :, 0] if nd== 2 else newcoord
+    return newcoord[:, :, 0] if nd == 2 else newcoord
 
 
 def reference_dq0_to_abc(coord_array: np.array):
@@ -285,7 +285,7 @@ def v_abc_exact(data_logger: dict, path_to_motor_info: str):
 def v_abc_estimate(v_line: np.array):
     """
     This function estimates the abc voltages from the line voltages, using a transformation
-    :param data_logger: HistoryDataLogger object containing the data
+    :param v_line: the line voltages
     :return: np.array with shape (N, 3), abc voltages
     """
     # actually, only data_logger['v_applied'] is needed here

@@ -286,8 +286,10 @@ def plot_immec_data(path, simulation_number=None):
         plt.subplot(2, 3, 5)
         plt.title("Applied line Voltages"), plt.xlabel("time (s)"), plt.ylabel("V")
 
-        #v_new = reference_abc_to_dq0(v_abc_estimate(dataset['v_applied']))#, dataset['gamma_rot'])
-        plt.plot(dataset["time"], dataset['v_applied'])
+        #plt.plot(dataset["time"], dataset['v_applied'])
+        #debug
+        v_new = reference_abc_to_dq0_CP(v_abc_estimate(dataset['v_applied']), dataset['gamma_rot'])
+        plt.plot(dataset["time"], v_new)
 
         plt.subplot(2, 3, 4)
         plt.title("UMP"), plt.xlabel("time (s)"), plt.ylabel("N")
