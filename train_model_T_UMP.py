@@ -1,8 +1,9 @@
+from source import *
 import os
-
+from param_optimizer import optimize_parameters
 import matplotlib.pyplot as plt
-from prepare_data import *
-from libs import *
+from prepare_data import prepare_data
+from sklearn.linear_model import Lasso
 
 
 # Can optionally be merged with currents, only difference is xdot and plots
@@ -52,6 +53,7 @@ def optimize_simulation(path_to_data_files, nmbr_models=-1, loglwrbnd=None, logu
                                                 DATA['u_val']],
                      method="lasso", name=name+"_lasso", plot_now=False, library=library)
     return
+
 
 
 def make_model(path_to_data_files, alpha, optimizer, nmbr_of_train=-1, Torque = False, UMP = False):

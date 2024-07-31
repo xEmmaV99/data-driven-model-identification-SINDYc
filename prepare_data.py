@@ -1,6 +1,10 @@
 import random
 import scipy
-from source import *
+import numpy as np
+import os
+import pickle as pkl
+from pysindy import FiniteDifference
+import matplotlib.pyplot as plt
 
 
 # todo consider multithreading here, as one CPU might be the bottleneck
@@ -8,11 +12,10 @@ def prepare_data(path_to_data_file,
                  test_data=False,
                  number_of_trainfiles=-1,
                  use_estimate_for_v=False,
-                 usage_per_trainfile = 0.2):
-
+                 usage_per_trainfile=0.2):
     # load numpy file
     print("Loading data")
-    dataset = dict(np.load(path_to_data_file)) # should be a dictionary
+    dataset = dict(np.load(path_to_data_file))  # should be a dictionary
     print("Done loading data")
     path_to_simulation_data = os.path.join(os.path.dirname(path_to_data_file), 'SIMULATION_DATA.pkl')
     if not test_data:
@@ -24,13 +27,12 @@ def prepare_data(path_to_data_file,
     if number_of_trainfiles == -1 or number_of_trainfiles == 'all':
         number_of_trainfiles = len(V_range)
 
-    random_idx = random.sample(range(len(V_range)), number_of_trainfiles) # the simulations are shuffled
+    random_idx = random.sample(range(len(V_range)), number_of_trainfiles)  # the simulations are shuffled
     V_range = V_range[random_idx]
 
     # initialise data
     DATA = {'x': np.array([]), 'u': np.array([]), 'xdot': np.array([]),
-            'T_em': np.array([]), 'UMP': np.array([]), 'feature_names' : np.array([])}
-
+            'T_em': np.array([]), 'UMP': np.array([]), 'feature_names': np.array([])}
 
     # crop dataset to desired amount of simulations (random_idx)
     if not test_data:
@@ -52,7 +54,7 @@ def prepare_data(path_to_data_file,
     else:
         v_stator = reference_abc_to_dq0(v_abc_exact(dataset, path_to_motor_info=path_to_simulation_data))
 
-    if np.ndim(x_data) <= 2: #expand such that the code works for both 2D and 3D data
+    if np.ndim(x_data) <= 2:  # expand such that the code works for both 2D and 3D data
         x_data = np.expand_dims(x_data, axis=2)
         xdots = np.expand_dims(xdots, axis=2)
         v_stator = np.expand_dims(v_stator, axis=2)
@@ -62,18 +64,19 @@ def prepare_data(path_to_data_file,
 
     # get u data: potentials_st, i_st, omega_rot, gamma_rot, and the integrals.
     for simul in range(number_of_trainfiles):
-        if simul == 0: #initiliaze
-            I = scipy.integrate.cumulative_trapezoid(x_data[:,:,simul], t_data[:,0,simul], axis=0, initial=0)
-            V = scipy.integrate.cumulative_trapezoid(v_stator[:,:,simul], t_data[:,0,simul], axis=0, initial=0)
+        if simul == 0:  # initiliaze
+            I = scipy.integrate.cumulative_trapezoid(x_data[:, :, simul], t_data[:, 0, simul], axis=0, initial=0)
+            V = scipy.integrate.cumulative_trapezoid(v_stator[:, :, simul], t_data[:, 0, simul], axis=0, initial=0)
             continue
-        I = np.dstack((I,scipy.integrate.cumulative_trapezoid(x_data[:,:,simul], t_data[:,0,simul], axis=0, initial=0)))
-        V = np.dstack((V, scipy.integrate.cumulative_trapezoid(v_stator[:,:,simul], t_data[:,0,simul], axis=0, initial=0)))
+        I = np.dstack(
+            (I, scipy.integrate.cumulative_trapezoid(x_data[:, :, simul], t_data[:, 0, simul], axis=0, initial=0)))
+        V = np.dstack(
+            (V, scipy.integrate.cumulative_trapezoid(v_stator[:, :, simul], t_data[:, 0, simul], axis=0, initial=0)))
 
-
-    if not test_data: # trim times AFTER xdots calculation
+    if not test_data:  # trim times AFTER xdots calculation
         print('time trim: ', usage_per_trainfile)
-        timepoints = len(dataset['time'][:,0,0])
-        time_trim = random.sample(range(timepoints),int(usage_per_trainfile*timepoints) )
+        timepoints = len(dataset['time'][:, 0, 0])
+        time_trim = random.sample(range(timepoints), int(usage_per_trainfile * timepoints))
         for key in dataset.keys():
             dataset[key] = dataset[key][time_trim]
 
@@ -84,12 +87,10 @@ def prepare_data(path_to_data_file,
         I = I[time_trim]
         V = V[time_trim]
 
-
-
     # u_data add supply frequency to the input data
     freqs = V_range * 50 / 400  # constant proportion
 
-    freqs = freqs.reshape(1,1,len(freqs)) #along third axis
+    freqs = freqs.reshape(1, 1, len(freqs))  # along third axis
     u_data = np.hstack((v_stator,
                         I.reshape(v_stator.shape),
                         V.reshape(v_stator.shape),
@@ -97,18 +98,19 @@ def prepare_data(path_to_data_file,
                         dataset['omega_rot'].reshape(t_data.shape),
                         np.repeat(freqs, dataset['omega_rot'].shape[0], axis=0)))
 
-    DATA['feature_names'] = [r'$i_d$',r'$i_q$',r'$i_0$',
+    DATA['feature_names'] = [r'$i_d$', r'$i_q$', r'$i_0$',
                              r'$v_d$', r'$v_q$', r'$v_0$',
                              r'$I_d$', r'$I_q$', r'$I_0$',
                              r'$V_d$', r'$V_q$', r'$V_0$',
                              r'$\gamma$', r'$\omega$', r'$f$']
 
     # Now, stack data on top of each other and shuffle! (Note that the transpose is needed otherwise the reshape is wrong)
-    DATA['x'] = x_data.transpose(0, 2, 1).reshape(x_data.shape[0]*x_data.shape[-1],x_data.shape[1])
-    DATA['u'] = u_data.transpose(0, 2, 1).reshape(u_data.shape[0]*u_data.shape[-1],u_data.shape[1])
-    DATA['xdot'] = xdots.transpose(0, 2, 1).reshape(xdots.shape[0]*xdots.shape[-1],xdots.shape[1])
-    DATA['T_em'] = dataset["T_em"].transpose(0, 2, 1).reshape(dataset["T_em"].shape[0]*dataset["T_em"].shape[-1])
-    DATA['UMP'] = dataset["F_em"].transpose(0, 2, 1).reshape(dataset["F_em"].shape[0]*dataset["F_em"].shape[-1],dataset["F_em"].shape[1])
+    DATA['x'] = x_data.transpose(0, 2, 1).reshape(x_data.shape[0] * x_data.shape[-1], x_data.shape[1])
+    DATA['u'] = u_data.transpose(0, 2, 1).reshape(u_data.shape[0] * u_data.shape[-1], u_data.shape[1])
+    DATA['xdot'] = xdots.transpose(0, 2, 1).reshape(xdots.shape[0] * xdots.shape[-1], xdots.shape[1])
+    DATA['T_em'] = dataset["T_em"].transpose(0, 2, 1).reshape(dataset["T_em"].shape[0] * dataset["T_em"].shape[-1])
+    DATA['UMP'] = dataset["F_em"].transpose(0, 2, 1).reshape(dataset["F_em"].shape[0] * dataset["F_em"].shape[-1],
+                                                             dataset["F_em"].shape[1])
 
     if test_data:
         DATA['V'] = V_range
@@ -140,11 +142,115 @@ def prepare_data(path_to_data_file,
 
     return DATA
 
+
+def reference_abc_to_dq0(coord_array: np.array):
+    """
+    Changes reference system from abc to dq0. Note that if dimension is (N, 3, k)
+     then for each k, the (N, 3) will be transformed
+    :param coord_array: array with shape (N, 3) with N the number of samples
+    :return: transformed array with shape (N, 3)
+    """
+    # Clarke transformation: power invariant
+    T = np.sqrt(2 / 3) * np.array(
+        [[1, -0.5, -0.5], [0, np.sqrt(3) / 2, -np.sqrt(3) / 2], [1 / np.sqrt(2), 1 / np.sqrt(2), 1 / np.sqrt(2)]]
+    )
+    return np.tensordot(T, coord_array.swapaxes(0, 1), axes=([1], [0])).swapaxes(0, 1)
+
+
+def reference_dq0_to_abc(coord_array: np.array):
+    """
+    Changes reference system from dq0 to abc
+    :param coord_array: array with shape (N, 3) with N the number of samples
+    :return: transformed array with shape (N, 3)
+    """
+    # Clarke inverse transformation: power invariant
+    T = (
+            np.sqrt(2 / 3)
+            * np.array(
+        [[1, -0.5, -0.5], [0, np.sqrt(3) / 2, -np.sqrt(3) / 2], [1 / np.sqrt(2), 1 / np.sqrt(2), 1 / np.sqrt(2)]]
+    ).T
+    )
+    return np.dot(T, coord_array.swapaxes(0, 1), axes=([1], [0])).swapaxes(0, 1)
+
+
+def v_abc_exact(data_logger: dict, path_to_motor_info: str):
+    """
+    This function calculates the exact abc voltages from the line voltages
+    :param data_logger: HistoryDataLogger object or dict, containing the data
+    :param path_to_motor_info: str, path to the motor data file
+    :return: np.array with shape (N, 3), abc voltages
+    """
+    with open(path_to_motor_info, "rb") as file:
+        motorinfo = pkl.load(file)
+
+    # input the entire data_logger
+    R = motorinfo["R_st"]
+    Nt = motorinfo["N_abc_T"]  # model.N_abc
+    L_s = motorinfo["stator_leakage_inductance"]  # model.stator_leakage_inductance
+
+    if np.ndim(data_logger['time']) > 2:
+        print("Also 4'th order now")  # DEBUG
+        t = data_logger['time'][:, 0, 0]
+        dphi = FiniteDifference(order=4, axis=0)._differentiate(data_logger["flux_st_yoke"], t)
+        di = FiniteDifference(order=4, axis=0)._differentiate(data_logger["i_st"], t)
+    else:
+        t = data_logger['time'][:, 0]
+        dphi = FiniteDifference(order=4, axis=0)._differentiate(data_logger["flux_st_yoke"], t)
+        di = FiniteDifference(order=4, axis=0)._differentiate(data_logger["i_st"], t)
+
+    ist = data_logger["i_st"]
+    v_abc = np.tensordot(R, ist.swapaxes(0, 1), axes=([1], [0])) + np.tensordot(Nt, dphi.swapaxes(0, 1),
+                                                                                axes=([1], [0])) + L_s * di.swapaxes(0,
+                                                                                                                     1)
+
+    return v_abc.swapaxes(0, 1)
+
+
+def v_abc_estimate(data_logger: dict):
+    """
+    This function estimates the abc voltages from the line voltages, using a transformation
+    :param data_logger: HistoryDataLogger object containing the data
+    :return: np.array with shape (N, 3), abc voltages
+    """
+    # actually, only data_logger['v_applied'] is needed here
+    # outputs Nx3 array
+    T = np.array([[1, -1, 0], [1, 2, 0], [-2, -1, 0]])
+    return 1 / 3 * np.dot(T, data_logger["v_applied"].T).T
+
+
+def read_V_load_from_simulationdata(path_to_simulation_data: str):
+    """
+    This function reads the voltage and load from the simulation data
+    :param path_to_simulation_data: str, path to the simulation data file
+    :return: np.array, np.array of the voltage and load
+    """
+    # read the load torque from the simulation data
+    with open(path_to_simulation_data, "rb") as file:
+        data = pkl.load(file)
+    return data["V"], data["load"]
+
+
+def calculate_xdot(x: np.array, t: np.array):
+    """
+    Calculate the time derivative of the state x at time t, by using pySINDy
+    :param x: array of shape (N , 3)
+    :param t: array of shape (N , 1) or (N, )
+    :return: array of shape (N , 3) with the time derivative of x, pySINDy does not remove one value.
+    """
+    # print('debug, 4th order of xdot')
+    if np.ndim(t) == 3:
+        print("Assume all t_vec are equal")
+        t_ = t[:, 0, 0].reshape(t.shape[0])
+        return FiniteDifference(order=4, axis=0)._differentiate(x, t_)
+        # t should have shape (N, )
+    return FiniteDifference(order=4, axis=0)._differentiate(x, t.reshape(t.shape[0]))  # Default order is two.
+
+
 if __name__ == "__main__":
     path = os.path.join(os.getcwd(), 'test-data', '07-29', 'IMMEC_0ecc_5.0sec.npz')
     data = prepare_data(path,
-                 test_data=True,
-                 number_of_trainfiles=-1,
-                 use_estimate_for_v=False)
+                        test_data=True,
+                        number_of_trainfiles=-1,
+                        use_estimate_for_v=False)
     plt.plot(data['xdot'])
     plt.show()

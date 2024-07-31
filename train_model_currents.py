@@ -1,47 +1,5 @@
-import os
-from tqdm import tqdm
-from prepare_data import *
-from libs import *
-import optuna
-
-def optimize_currents_simulation(path_to_data_files):
-    """
-    Calculates for various parameters, plots MSE and Sparsity, for SR3 and Lasso optimisation
-    :param path_to_data_files:
-    :param nmbr_models:
-    :param loglwrbnd:
-    :param loguprbnd:
-    :return:
-    """
-
-    DATA = prepare_data(path_to_data_files, number_of_trainfiles=20)
-
-    print("SR3_L1 optimisation")
-
-    n = 4
-    trials = 1
-    l_range = [1e-5, 1e2]
-    n_range = [1e-11, 1e-5]
-    with multiprocessing.Pool(n) as pool:
-        pool.starmap(optuna_search_sr3, [[DATA, l_range , n_range, "currents", trials] for _ in range(n)])
-    pool.join()
-    pool.close()
-    plot_optuna_data(name = "currents-sr3-study")
-
-    print("Lasso optimisation")
-
-    n = 4
-    trials = 1
-    a_range = [1e-5, 1e2]
-    with multiprocessing.Pool(n) as pool:
-        pool.starmap(optuna_search_lasso, [[DATA, a_range, "currents", trials] for _ in range(n)])
-
-    pool.join()
-    pool.close()
-    plot_optuna_data(name = "currents-lasso-study")
-
-    return
-
+from param_optimizer import *
+from source import *
 
 def make_model_currents(path_to_data_files, alpha, optimizer='sr3', nmbr_of_train=-1):
     """
@@ -134,7 +92,7 @@ if __name__ == "__main__":
     path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
 
     ### OPTIMIZE ALPHA
-    optimize_currents_simulation(path_to_data_files)
+    optimize_parameters(path_to_data_files, mode = "currents")
 
     ### PLOT MSE FOR DIFFERENT ALPHA
     #plot_data([os.getcwd()+"\\plot_data"+p+".pkl" for p in ["\\currents_sr3", "\\currents_lasso"]], show = False, limits=[[1e0,5e2], [0,150]])
