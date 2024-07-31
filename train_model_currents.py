@@ -23,21 +23,21 @@ def optimize_currents_simulation(path_to_data_files, nmbr_models=20, loglwrbnd=N
     lib = "best"
     library = get_custom_library_funcs(lib)
 
-
     print("SR3_L1 optimisation")
-
     with multiprocessing.Pool(4) as pool:
-        pool.starmap(grid_search_sr3, [[DATA, [1e-5,1e2],[1e-11,1e-5], 10] for i in range(4) ])
+        pool.starmap(grid_search_sr3, [[DATA, [1e-5,1e2],[1e-11,1e-5], library, 10] for i in range(4) ])
     pool.join()
 
     stud = optuna.load_study(study_name="example-study", storage="sqlite:///example-study.db")
     optuna.visualization.plot_pareto_front(stud, target_names=["MSE", "SPAR"]).show(renderer="browser")
 
-    '''
-    parameter_search(np.logspace(loglwrbnd[0], loguprbnd[0], nmbr_models),
-                     train_and_validation_data=[DATA["xdot_train"], DATA["x_train"], DATA["u_train"], DATA["xdot_val"],
-                                                DATA["x_val"], DATA["u_val"]],
-                     method="SR3_L1", name="currents_sr3", plot_now=False, library=library)'''
+    # only one parameter optimalisation :(
+    #parameter_search(np.logspace(loglwrbnd[0], loguprbnd[0], nmbr_models),
+    #                 train_and_validation_data=[DATA["xdot_train"], DATA["x_train"], DATA["u_train"], DATA["xdot_val"],
+    #                                            DATA["x_val"], DATA["u_val"]],
+    #                 method="SR3_L1", name="currents_sr3", plot_now=False, library=library)
+
+
     '''
     print("Lasso optimisation")
     parameter_search(np.logspace(loglwrbnd[1], loguprbnd[1], nmbr_models),

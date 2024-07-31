@@ -162,7 +162,7 @@ def save_simulation_data(motor_path: str, save_path: str, extra_dict: dict = Non
         pkl.dump(dictionary, file)
     return
 
-
+''' #TO BE REMOVED
 def create_and_save_immec_data(
         timestep: float,
         t_end: float,
@@ -254,6 +254,7 @@ def create_and_save_immec_data(
 
         data_logger.save_history(save_path)  # debug here for data_logger.model.R_st
     return
+'''
 
 
 def create_immec_data(
@@ -306,10 +307,11 @@ def create_immec_data(
     dt_load = 0.2  # first applied load for 1 second
     Vfmode = "chirp"
     print('Mode: ', Vfmode)
+
     for n in tqdm(range(steps_total)):
         # I. Generate the input
 
-        # I.A Load torque todo: change this!
+        # I.A Load torque
 
         # The IMMEC function smooth_runup is called.
         # Here, it runs up to 3.7 Nm (load) between 1.5 seconds and 1.7 seconds
@@ -386,7 +388,7 @@ def create_immec_data(
     return data_logger
 
 
-"""
+""" # testing code #
 x = np.arange(0,2,0.0001)
 y=np.array([0,0,0])
 Vf_ratio = 400/5 # should be 400/50 but this is more visible
@@ -404,18 +406,36 @@ plt.show()
 
 
 def linear_runup_freq(values, time: float, end_time: float, start_time: float = 0.0):
-    f_0 = 0
+    """
+    Increase the frequency, chirp wave, for a linear runup
+    :param values: Maximum frequency
+    :param time: Current timestep (often n*dt)
+    :param end_time: Time at which `values` is reached
+    :param start_time: Time to start the increase
+    :return: The current value
+    """
+    f_0 = 0 # start from 0 frequency
     c = (values - f_0) / (end_time - start_time)
     if time < start_time:
         return values * time
     elif start_time <= time < end_time:
+        # integrate the linear function from 0 to t
         return 0.5 * c * (time) ** 2 + f_0 * time
     else:
         phi_add = 0.5 * c * (end_time) ** 2 + f_0 * end_time
+        # calculate the additional phaseshift
         return values * (time - end_time) + phi_add
 
 
 def linear_runup(values, time: float, end_time: float, start_time: float = 0.0):
+    """
+    The linear runup for the voltages
+    :param values: Maximum voltage to be reached
+    :param time: current time, often n*dt
+    :param end_time: end time of the runup
+    :param start_time: start time of the runup
+    :return: the current value of the voltage
+    """
     if time < start_time:
         return np.zeros_like(values)
     elif start_time <= time < end_time:
@@ -425,18 +445,36 @@ def linear_runup(values, time: float, end_time: float, start_time: float = 0.0):
 
 
 def chirp_freq(values, time: float, end_time: float, start_time: float = 0.0):
+    """
+    Function to find the correct value of the frequency (chirpwave) for 1-cos runup
+    :param values: Maximum frequency
+    :param time:  current time, often n*dt
+    :param end_time: end time of the runup
+    :param start_time: start time of the runup
+    :return: the current value of the frequency
+    """
     duration = end_time - start_time
     if time < start_time:
         return values * time
     elif start_time <= time < end_time:
+        #this is the integral of the 1-cos function
         return 1 / 2 * (time - np.sin(np.pi * time / duration) * duration / np.pi) * values
 
     else:
+        #additional phaseshift
         phi_add = 1 / 2 * (end_time - np.sin(np.pi * end_time / duration) * duration / np.pi) * values
         return values * (time - end_time) + phi_add
 
 
 def check_steady_state(T_em, speed, nmbr_of_steps):
+    """
+    Checks whether steady state is close to reached, when T_em *and* omega are nearly constant
+    True is returned when the last values of T_em and omega are whitin 5% marge of the mean of the last values
+    :param T_em: Electromagnetic torque
+    :param speed: omega, rotation speed
+    :param nmbr_of_steps: number of steps taken into account for the convergence
+    :return: boolean
+    """
     # steady state  is when T_em and speed is constant
     T_em = T_em[-nmbr_of_steps:]
     speed = speed[-nmbr_of_steps:]
@@ -591,8 +629,28 @@ def calculate_xdot(x: np.array, t: np.array):
 
 
 def save_plot_data(
-        save_name: str, xydata: list, title: str, xlab, ylab, legend=None, plot_now=False, specs=None, sindy_model=None
+        save_name: str,
+        xydata: list,
+        title: str,
+        xlab, ylab,
+        legend=None,
+        plot_now=False,
+        specs=None,
+        sindy_model=None
 ):
+    """
+    Saves the plot data in a .pkl file such that it can be plotted later
+    :param save_name:
+    :param xydata:
+    :param title:
+    :param xlab:
+    :param ylab:
+    :param legend:
+    :param plot_now:
+    :param specs:
+    :param sindy_model:
+    :return:
+    """
     # xydata contains the data to plot, but if multiple axis should be plotted, xy data should be a list of arrays
     # if it is only one x,y then [np.array([x,y])] should be the input
     # create the dictionary to save as is
@@ -603,7 +661,7 @@ def save_plot_data(
         "legend": legend,
         "plots": {},
         "specs": specs,
-        "model": sindy_model,
+        "model": sindy_model, #todo wtf?
     }
     for i, xy_array in enumerate(xydata):
         pltdata["plots"][str(i)] = xy_array
@@ -712,7 +770,7 @@ def plot_coefs2(model, normalize_values=False, show=False, log=False):
     coefs = copy.deepcopy(model.coefficients())
 
     if normalize_values:
-        raise NotImplementedError("This function is not implemented yet.")  # todo
+        raise NotImplementedError("This function is not implemented yet.")  # todo, unsure how to
 
     if log:
         plt.yscale("log", base=10)
@@ -746,7 +804,7 @@ def save_model(model, name, libstr):
     lib = {
         "coefs": model.coefficients(),
         "features": model.feature_names,
-        "library": libstr,  # todo; custom lirary from libs
+        "library": libstr,
         "shapes": [(1, x), (1, u), (1, x)],
     }
     with open(path, "wb") as file:
@@ -773,6 +831,7 @@ def load_model(name):
 
 
 def parameter_search(parameter_array, train_and_validation_data, method="lasso", name="", plot_now=True, library=None):
+    #todo use SMAC3 for this too?
     if name == "":
         name = method
     method = method.lower()
@@ -840,7 +899,7 @@ def parameter_search(parameter_array, train_and_validation_data, method="lasso",
     )
     return best_model
 
-
+''' #this code is bad and unused
 def parameter_search_2D(param_nu, param_lambda, train_and_validation_data, name="", plot_now=True):
     variable = {
         "param_nu": param_nu,
@@ -880,9 +939,10 @@ def parameter_search_2D(param_nu, param_lambda, train_and_validation_data, name=
     plt.show()
 
     return
+    '''
 
 
-def grid_search_sr3(DATA, l_minmax, n_minmax, iter=4):
+def grid_search_sr3(DATA, l_minmax, n_minmax, lib, iter=4):
     #from https://optuna.readthedocs.io/en/stable/index.html
     def objective(trial):
         lambdas = trial.suggest_float('lambdas', l_minmax[0], l_minmax[1], log = True)
@@ -891,7 +951,7 @@ def grid_search_sr3(DATA, l_minmax, n_minmax, iter=4):
         optimizer = ps.SR3(thresholder='l1', nu=nus,
                            threshold=lambdas)
         model = ps.SINDy(optimizer=optimizer,
-                         feature_library=ps.PolynomialLibrary(degree=2, include_interaction=True))
+                         feature_library=lib)
         model.fit(DATA["x_train"], u=DATA["u_train"], t=None, x_dot=DATA["xdot_train"])
 
         MSE = model.score(DATA["x_val"], u=DATA["u_val"], x_dot=DATA["xdot_val"],
@@ -909,8 +969,82 @@ def grid_search_sr3(DATA, l_minmax, n_minmax, iter=4):
 
     study.optimize(objective, n_trials=iter, n_jobs=1)
 
+    #DON't turn on when multiprocessing
     #optuna.visualization.plot_pareto_front(study, target_names= ["MSE","SPAR"]).show(renderer="browser")
 
+    return
+
+
+def plot_immec_data(path, simulation_number = None):
+    dataset = dict(np.load(path))
+    d_air = 0.000477  # for the Cantoni motor
+
+    if simulation_number is None: #testfile
+        plt.subplot(2, 3, 1)
+        plt.title("omega_rot"), plt.xlabel("time (s)"), plt.ylabel("rad/s")
+        plt.plot(dataset["time"], dataset["omega_rot"])
+
+        plt.subplot(2, 3, 2)
+        plt.title("i_st"), plt.xlabel("time (s)"), plt.ylabel("A")  # debug
+        plt.plot(dataset["time"], dataset["i_st"])
+
+        plt.subplot(2, 3, 3)
+        plt.title("T_l and T_em"), plt.xlabel("time (s)"), plt.ylabel("Nm")
+        plt.plot(dataset["time"], dataset["T_em"])
+
+        plt.plot(dataset["time"], dataset["T_l"], "k--")
+        plt.legend(["T_em", "T_l"])
+
+        plt.subplot(2, 3, 5)
+        plt.title("V"), plt.xlabel("time (s)"), plt.ylabel("V")
+        plt.plot(dataset["time"], dataset["v_applied"])
+
+        plt.subplot(2, 3, 4)
+        plt.title("UMP"), plt.xlabel("time (s)"), plt.ylabel("N")
+        plt.plot(dataset["time"], dataset["F_em"])
+
+        plt.subplot(2, 3, 6)
+        plt.title("Eccentricity"), plt.xlabel("time (s)"), plt.ylabel("% airgap")
+        plt.plot(dataset["time"], dataset["ecc"] / d_air)
+
+        # Add padding so title and labels dont overlap
+        plt.tight_layout()
+        plt.show()
+    else: #train file
+        plt.subplot(2, 3, 1)
+        plt.title("omega_rot"), plt.xlabel("time (s)"), plt.ylabel("rad/s")
+
+        plt.plot(dataset["time"][:, 0, simulation_number], dataset["omega_rot"][:, 0, simulation_number])
+
+        plt.subplot(2, 3, 2)
+        plt.title("i_st"), plt.xlabel("time (s)"), plt.ylabel("A")  # debug
+        plt.plot(dataset["time"][:, 0, simulation_number], dataset["i_st"][:, :, simulation_number])
+
+        plt.subplot(2, 3, 3)
+        plt.title("T_l and T_em"), plt.xlabel("time (s)"), plt.ylabel("Nm")
+        # plt.title("T_em"), plt.xlabel("time (s)")
+        plt.plot(dataset["time"][:, 0, simulation_number], dataset["T_em"][:, 0, simulation_number])
+
+        # plt.subplot(2, 3, 3)
+        # plt.title("T_l"), plt.xlabel("time (s)")
+        plt.plot(dataset["time"][:, 0, simulation_number], dataset["T_l"][:, 0, simulation_number], 'k--')
+        plt.legend(["T_em", "T_l"])
+
+        plt.subplot(2, 3, 5)
+        plt.title("V"), plt.xlabel("time (s)"), plt.ylabel("V")
+        plt.plot(dataset["time"][:, 0, simulation_number], dataset["v_applied"][:, :, simulation_number])
+
+        plt.subplot(2, 3, 4)
+        plt.title("UMP"), plt.xlabel("time (s)"), plt.ylabel("N")
+        plt.plot(dataset["time"][:, 0, simulation_number], dataset["F_em"][:, :, simulation_number])
+
+        plt.subplot(2, 3, 6)
+        plt.title("Eccentricity"), plt.xlabel("time (s)"), plt.ylabel("% airgap")
+        plt.plot(dataset["time"][:, 0, simulation_number], dataset["ecc"][:, 0, simulation_number] / d_air)
+
+        # Add padding so title and labels dont overlap
+        plt.tight_layout()
+        plt.show()
     return
 
 
