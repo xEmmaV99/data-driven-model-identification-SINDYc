@@ -4,7 +4,7 @@ from prepare_data import *
 from libs import *
 import optuna
 
-def optimize_currents_simulation(path_to_data_files, nmbr_models=20, loglwrbnd=None, loguprbnd=None):
+def optimize_currents_simulation(path_to_data_files):
     """
     Calculates for various parameters, plots MSE and Sparsity, for SR3 and Lasso optimisation
     :param path_to_data_files:
@@ -13,46 +13,33 @@ def optimize_currents_simulation(path_to_data_files, nmbr_models=20, loglwrbnd=N
     :param loguprbnd:
     :return:
     """
-    if loguprbnd is None:
-        loguprbnd = [0, 0]
-    if loglwrbnd is None:
-        loglwrbnd = [-12, -12]
 
     DATA = prepare_data(path_to_data_files, number_of_trainfiles=20)
 
-    lib = "best"
-    library = get_custom_library_funcs(lib)
-
-
     print("SR3_L1 optimisation")
 
-    n = 8
-    trials = 5000
+    n = 4
+    trials = 1
+    l_range = [1e-5, 1e2]
+    n_range = [1e-11, 1e-5]
     with multiprocessing.Pool(n) as pool:
-        pool.starmap(grid_search_sr3, [[DATA, [1e-5, 1e2], [1e-11, 1e-5], trials] for _ in range(n)])
+        pool.starmap(optuna_search_sr3, [[DATA, l_range , n_range, "currents", trials] for _ in range(n)])
     pool.join()
+    pool.close()
+    plot_optuna_data(name = "currents-sr3-study")
 
-    stud = optuna.load_study(study_name="example-study", storage="sqlite:///example-study-with-libs.db")
-    optuna.visualization.plot_pareto_front(stud, target_names=["MSE", "SPAR"]).show(renderer="browser")
-    print(f"Trial count: {len(stud.trials)}")
-
-    # only one parameter optimalisation :(
-    #parameter_search(np.logspace(loglwrbnd[0], loguprbnd[0], nmbr_models),
-    #                 train_and_validation_data=[DATA["xdot_train"], DATA["x_train"], DATA["u_train"], DATA["xdot_val"],
-    #                                            DATA["x_val"], DATA["u_val"]],
-    #                 method="SR3_L1", name="currents_sr3", plot_now=False, library=library)
-
-
-    '''
     print("Lasso optimisation")
-    parameter_search(np.logspace(loglwrbnd[1], loguprbnd[1], nmbr_models),
-                     train_and_validation_data=[DATA["xdot_train"], DATA["x_train"], DATA["u_train"], DATA["xdot_val"],
-                                                DATA["x_val"], DATA["u_val"]],
-                     method="Lasso", name="currents_lasso", plot_now=False, library=library)'''
 
-    # path = os.path.join(os.getcwd(), "plot_data")
-    # for p in ["\\currents_sr3", "\\currents_lasso"]:
-    #    plot_data(path+p+'.pkl')
+    n = 4
+    trials = 1
+    a_range = [1e-5, 1e2]
+    with multiprocessing.Pool(n) as pool:
+        pool.starmap(optuna_search_lasso, [[DATA, a_range, "currents", trials] for _ in range(n)])
+
+    pool.join()
+    pool.close()
+    plot_optuna_data(name = "currents-lasso-study")
+
     return
 
 
@@ -147,10 +134,11 @@ if __name__ == "__main__":
     path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
 
     ### OPTIMIZE ALPHA
-    optimize_currents_simulation(path_to_data_files, nmbr_models=10, loglwrbnd=[-7, -7], loguprbnd=[3, 3])
+    optimize_currents_simulation(path_to_data_files)
 
     ### PLOT MSE FOR DIFFERENT ALPHA
     #plot_data([os.getcwd()+"\\plot_data"+p+".pkl" for p in ["\\currents_sr3", "\\currents_lasso"]], show = False, limits=[[1e0,5e2], [0,150]])
+
 
     #plot_data(os.getcwd()+'\\plot_data\\currents_lasso.pkl', show = True)
 

@@ -15,7 +15,6 @@ from sklearn.metrics import mean_squared_error
 import optuna
 
 
-
 def reference_abc_to_dq0(coord_array: np.array):
     """
     Changes reference system from abc to dq0. Note that if dimension is (N, 3, k)
@@ -161,6 +160,7 @@ def save_simulation_data(motor_path: str, save_path: str, extra_dict: dict = Non
     with open(save_path + "/SIMULATION_DATA.pkl", "wb") as file:
         pkl.dump(dictionary, file)
     return
+
 
 ''' #TO BE REMOVED
 def create_and_save_immec_data(
@@ -414,7 +414,7 @@ def linear_runup_freq(values, time: float, end_time: float, start_time: float = 
     :param start_time: Time to start the increase
     :return: The current value
     """
-    f_0 = 0 # start from 0 frequency
+    f_0 = 0  # start from 0 frequency
     c = (values - f_0) / (end_time - start_time)
     if time < start_time:
         return values * time
@@ -457,11 +457,11 @@ def chirp_freq(values, time: float, end_time: float, start_time: float = 0.0):
     if time < start_time:
         return values * time
     elif start_time <= time < end_time:
-        #this is the integral of the 1-cos function
+        # this is the integral of the 1-cos function
         return 1 / 2 * (time - np.sin(np.pi * time / duration) * duration / np.pi) * values
 
     else:
-        #additional phaseshift
+        # additional phaseshift
         phi_add = 1 / 2 * (end_time - np.sin(np.pi * end_time / duration) * duration / np.pi) * values
         return values * (time - end_time) + phi_add
 
@@ -661,7 +661,7 @@ def save_plot_data(
         "legend": legend,
         "plots": {},
         "specs": specs,
-        "model": sindy_model, #todo wtf?
+        "model": sindy_model,  # todo wtf?
     }
     for i, xy_array in enumerate(xydata):
         pltdata["plots"][str(i)] = xy_array
@@ -831,7 +831,7 @@ def load_model(name):
 
 
 def parameter_search(parameter_array, train_and_validation_data, method="lasso", name="", plot_now=True, library=None):
-    #todo use SMAC3 for this too?
+    # todo use SMAC3 for this too?
     if name == "":
         name = method
     method = method.lower()
@@ -899,6 +899,7 @@ def parameter_search(parameter_array, train_and_validation_data, method="lasso",
     )
     return best_model
 
+
 ''' #this code is bad and unused
 def parameter_search_2D(param_nu, param_lambda, train_and_validation_data, name="", plot_now=True):
     variable = {
@@ -942,12 +943,50 @@ def parameter_search_2D(param_nu, param_lambda, train_and_validation_data, name=
     '''
 
 
-def grid_search_sr3(DATA, l_minmax, n_minmax, lib, iter=4):
-    #from https://optuna.readthedocs.io/en/stable/index.html
+def optuna_search_lasso(DATA, minmax, studyname, iter):
+    # from https://optuna.readthedocs.io/en/stable/index.html
+    def objective(trial):
+        alphas = trial.suggest_float('lambdas', minmax[0], minmax[1], log=True)
+        # todo maybe leave out this?
+        lib_choice = trial.suggest_categorical('lib_choice',
+                                               ['poly_2nd_order', 'best'])  # 'best' eats all the memory
+
+        lib = get_custom_library_funcs(lib_choice)
+
+        optimizer = Lasso(alpha=alphas, fit_intercept=False)
+
+        model = ps.SINDy(optimizer=optimizer,
+                         feature_library=lib)
+
+        model.fit(DATA["x_train"], u=DATA["u_train"], t=None, x_dot=DATA["xdot_train"])
+
+        MSE = model.score(DATA["x_val"], u=DATA["u_val"], x_dot=DATA["xdot_val"],
+                          t=None, metric=mean_squared_error)
+        SPAR = np.count_nonzero(model.coefficients())
+
+        return MSE, SPAR
+
+    study_name = studyname + "-lasso-study"  # Unique identifier of the study.
+    storage_name = "sqlite:///{}.db".format(study_name)
+    study = optuna.create_study(directions=['minimize', 'minimize'],
+                                study_name=study_name,
+                                storage=storage_name,
+                                load_if_exists=True)
+
+    study.optimize(objective, n_trials=iter, n_jobs=1)
+
+    return
+
+
+def optuna_search_sr3(DATA, l_minmax, n_minmax, studyname, iter=4):
+    # from https://optuna.readthedocs.io/en/stable/index.html
     def objective(trial):
         lambdas = trial.suggest_float('lambdas', l_minmax[0], l_minmax[1], log=True)
         nus = trial.suggest_float('nus', n_minmax[0], n_minmax[1], log=True)
-        lib_choice = trial.suggest_categorical('lib_choice', ['poly_2nd_order', 'sincos_cross', 'system', 'higher_order', 'pure_poly_2dn_order']) # 'best' eats all the memory
+
+        # todo maybe leave out this?
+        lib_choice = trial.suggest_categorical('lib_choice',
+                                               ['poly_2nd_order', 'best'])  # 'best' eats all the memory
 
         lib = get_custom_library_funcs(lib_choice)
 
@@ -963,7 +1002,7 @@ def grid_search_sr3(DATA, l_minmax, n_minmax, lib, iter=4):
 
         return MSE, SPAR
 
-    study_name = "example-study"  # Unique identifier of the study.
+    study_name = studyname + "-sr3-study"  # Unique identifier of the study.
     storage_name = "sqlite:///{}.db".format(study_name)
     study = optuna.create_study(directions=['minimize', 'minimize'],
                                 study_name=study_name,
@@ -972,17 +1011,24 @@ def grid_search_sr3(DATA, l_minmax, n_minmax, lib, iter=4):
 
     study.optimize(objective, n_trials=iter, n_jobs=1)
 
-    #DON't turn on when multiprocessing
-    #optuna.visualization.plot_pareto_front(study, target_names= ["MSE","SPAR"]).show(renderer="browser")
+    # DON't turn on when multiprocessing
+    # optuna.visualization.plot_pareto_front(study, target_names= ["MSE","SPAR"]).show(renderer="browser")
 
     return
 
 
-def plot_immec_data(path, simulation_number = None):
+def plot_optuna_data(name):
+    stud = optuna.load_study(study_name=name, storage="sqlite:///" + name + ".db")
+    optuna.visualization.plot_pareto_front(stud, target_names=["MSE", "SPAR"]).show(renderer="browser")
+    print(f"Trial count: {len(stud.trials)}")
+    return
+
+
+def plot_immec_data(path, simulation_number=None):
     dataset = dict(np.load(path))
     d_air = 0.000477  # for the Cantoni motor
 
-    if simulation_number is None: #testfile
+    if simulation_number is None:  # testfile
         plt.subplot(2, 3, 1)
         plt.title("omega_rot"), plt.xlabel("time (s)"), plt.ylabel("rad/s")
         plt.plot(dataset["time"], dataset["omega_rot"])
@@ -1013,7 +1059,7 @@ def plot_immec_data(path, simulation_number = None):
         # Add padding so title and labels dont overlap
         plt.tight_layout()
         plt.show()
-    else: #train file
+    else:  # train file
         plt.subplot(2, 3, 1)
         plt.title("omega_rot"), plt.xlabel("time (s)"), plt.ylabel("rad/s")
 
