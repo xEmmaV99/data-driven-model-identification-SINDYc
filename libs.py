@@ -68,8 +68,8 @@ def get_custom_library_funcs(type='default'):
             lambda x, y: y * np.cos(x),
             lambda x, y: np.cos(x * y),
             lambda x, y: np.sin(x * y),
-            lambda x, y, z: z * np.sin(x * y),
-            lambda x, y ,z: z * np.cos(x*y),
+            #lambda x, y, z: z * np.sin(x * y),
+            #lambda x, y ,z: z * np.cos(x * y),
         ]
         function_names = [
             lambda x: '\\sin{' + x + '}',
@@ -78,8 +78,8 @@ def get_custom_library_funcs(type='default'):
             lambda x, y: y + '\\cos{' + x + '}',
             lambda x, y: '\\cos{' + x + y + '}',
             lambda x, y: '\\sin{' + x + y + '}',
-            lambda x, y,z: z+'\\sin{' + x + y + '}',
-            lambda x, y,z: z+'\\cos{' + x + y + '}',
+            #lambda x, y,z: z+'\\sin{' + x + y + '}',
+            #lambda x, y,z: z+'\\cos{' + x + y + '}',
 
         ]
 

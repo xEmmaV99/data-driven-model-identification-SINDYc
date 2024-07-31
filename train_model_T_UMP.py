@@ -1,11 +1,12 @@
+from source import *
 import os
-
+from param_optimizer import optimize_parameters
 import matplotlib.pyplot as plt
-from prepare_data import *
-from libs import *
+from prepare_data import prepare_data
+from sklearn.linear_model import Lasso
 
 
-# todo = can both be merged with currents -> only difference is xdot
+# Can optionally be merged with currents, only difference is xdot and plots
 
 def optimize_simulation(path_to_data_files, nmbr_models=-1, loglwrbnd=None, loguprbnd=None, Torque=False, UMP=False):
     """
@@ -39,17 +40,20 @@ def optimize_simulation(path_to_data_files, nmbr_models=-1, loglwrbnd=None, logu
         val = np.hstack((DATA['T_em_val'], DATA['UMP_val']))
         name = 'umptorque'
 
+    #todo smac3
     print("SR3_L1 optimisation")
     parameter_search(np.logspace(loglwrbnd[0], loguprbnd[0], nmbr_models),
                      train_and_validation_data=[train, DATA['x_train'], DATA['u_train'], val, DATA['x_val'],
                                                 DATA['u_val']],
                      method="SR3_L1", name=name +"_sr3", plot_now=False, library=library)
+
     print("Lasso optimisation")
     parameter_search(np.logspace(loglwrbnd[1], loguprbnd[1], nmbr_models),
                      train_and_validation_data=[train, DATA['x_train'], DATA['u_train'], val, DATA['x_val'],
                                                 DATA['u_val']],
                      method="lasso", name=name+"_lasso", plot_now=False, library=library)
     return
+
 
 
 def make_model(path_to_data_files, alpha, optimizer, nmbr_of_train=-1, Torque = False, UMP = False):

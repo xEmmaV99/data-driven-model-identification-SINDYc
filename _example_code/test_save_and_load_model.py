@@ -1,4 +1,4 @@
-from preparedata2_tes import *
+from prepare_data import *
 path_to_data_files = 'C:/Users/emmav/PycharmProjects/SINDY_project/data/Combined/07-20-load'
 
 # make a model
