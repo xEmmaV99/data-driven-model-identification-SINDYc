@@ -3,6 +3,7 @@ import scipy
 import numpy as np
 import os
 import pickle as pkl
+import numba as nb
 try:
     from pysindy import FiniteDifference
 except ImportError:
@@ -54,9 +55,9 @@ def prepare_data(path_to_data_file,
 
     # prepare v data
     if use_estimate_for_v:
-        v_stator = reference_abc_to_dq0(v_abc_estimate(dataset))
+        v_stator = reference_abc_to_dq0(v_abc_estimate(dataset)) #debug
     else:
-        v_stator = reference_abc_to_dq0(v_abc_exact(dataset, path_to_motor_info=path_to_simulation_data))
+        v_stator = reference_abc_to_dq0(v_abc_exact(dataset, path_to_motor_info=path_to_simulation_data)) #debug
 
     if np.ndim(x_data) <= 2:  # expand such that the code works for both 2D and 3D data
         x_data = np.expand_dims(x_data, axis=2)
@@ -156,9 +157,33 @@ def reference_abc_to_dq0(coord_array: np.array):
     """
     # Clarke transformation: power invariant
     T = np.sqrt(2 / 3) * np.array(
-        [[1, -0.5, -0.5], [0, np.sqrt(3) / 2, -np.sqrt(3) / 2], [1 / np.sqrt(2), 1 / np.sqrt(2), 1 / np.sqrt(2)]]
+        [[1, -0.5, -0.5],
+         [0, np.sqrt(3) / 2, -np.sqrt(3) / 2],
+         [1 / np.sqrt(2), 1 / np.sqrt(2), 1 / np.sqrt(2)]]
     )
     return np.tensordot(T, coord_array.swapaxes(0, 1), axes=([1], [0])).swapaxes(0, 1)
+
+#@nb.njit(cache = True)
+def reference_abc_to_dq0_CP(coord_array: np.array, gamma):
+    nd = 3
+    if np.ndim(gamma) <= 2:
+        nd = 2
+        gamma = gamma.reshape((gamma.shape[0], 1, 1))
+        coord_array = coord_array.reshape((coord_array.shape[0], coord_array.shape[1], 1))
+
+    newcoord = np.ones_like(coord_array)
+    for simul in range(coord_array.shape[-1]):
+        for j in range(len(gamma[:, 0, simul])):
+            g = gamma[j, 0, simul]
+            # Clarck- Park transformation as a function of gamma
+            CP = np.sqrt(2 / 3) * np.array(
+                [[np.cos(g), np.cos(g-2/3*np.pi), np.cos(g+2/3*np.pi)],
+                 [-np.sin(g), -np.sin(g-2/3*np.pi/3), -np.sin(g+2/3*np.pi)],
+                 [1 / np.sqrt(2), 1 / np.sqrt(2), 1 / np.sqrt(2)]]
+            )
+            newcoord[j, :, simul] = np.dot(CP, coord_array[j, :, simul].T).T
+
+    return newcoord[:, :, 0] if nd== 2 else newcoord
 
 
 def reference_dq0_to_abc(coord_array: np.array):
@@ -210,7 +235,7 @@ def v_abc_exact(data_logger: dict, path_to_motor_info: str):
     return v_abc.swapaxes(0, 1)
 
 
-def v_abc_estimate(data_logger: dict):
+def v_abc_estimate(v_line: np.array):
     """
     This function estimates the abc voltages from the line voltages, using a transformation
     :param data_logger: HistoryDataLogger object containing the data
@@ -219,7 +244,7 @@ def v_abc_estimate(data_logger: dict):
     # actually, only data_logger['v_applied'] is needed here
     # outputs Nx3 array
     T = np.array([[1, -1, 0], [1, 2, 0], [-2, -1, 0]])
-    return 1 / 3 * np.dot(T, data_logger["v_applied"].T).T
+    return 1 / 3 * np.dot(T, v_line.T).T
 
 
 def read_V_load_from_simulationdata(path_to_simulation_data: str):

@@ -6,6 +6,7 @@ import pysindy as ps
 import seaborn as sns
 import os
 from libs import get_custom_library_funcs
+from prepare_data import *
 
 
 def show_data_keys(path_to_data_logger: str):
@@ -257,7 +258,13 @@ def load_model(name):
 
 
 def plot_immec_data(path, simulation_number=None):
-    dataset = dict(np.load(path))
+    # if path ends with pkl, load as pkl file
+    if path.endswith(".pkl"):
+        with open(path, "rb") as file:
+            dataset = pkl.load(file)
+    else:
+        dataset = dict(np.load(path))
+
     d_air = 0.000477  # for the Cantoni motor
 
     if simulation_number is None:  # testfile
@@ -266,8 +273,8 @@ def plot_immec_data(path, simulation_number=None):
         plt.plot(dataset["time"], dataset["omega_rot"])
 
         plt.subplot(2, 3, 2)
-        plt.title("i_st"), plt.xlabel("time (s)"), plt.ylabel("A")  # debug
-        plt.plot(dataset["time"], dataset["i_st"])
+        plt.title("i_st in dq0"), plt.xlabel("time (s)"), plt.ylabel("A")  # debug
+        plt.plot(dataset["time"], reference_abc_to_dq0(dataset["i_st"]))
 
         plt.subplot(2, 3, 3)
         plt.title("T_l and T_em"), plt.xlabel("time (s)"), plt.ylabel("Nm")
@@ -277,8 +284,10 @@ def plot_immec_data(path, simulation_number=None):
         plt.legend(["T_em", "T_l"])
 
         plt.subplot(2, 3, 5)
-        plt.title("V"), plt.xlabel("time (s)"), plt.ylabel("V")
-        plt.plot(dataset["time"], dataset["v_applied"])
+        plt.title("Applied line Voltages"), plt.xlabel("time (s)"), plt.ylabel("V")
+
+        #v_new = reference_abc_to_dq0(v_abc_estimate(dataset['v_applied']))#, dataset['gamma_rot'])
+        plt.plot(dataset["time"], dataset['v_applied'])
 
         plt.subplot(2, 3, 4)
         plt.title("UMP"), plt.xlabel("time (s)"), plt.ylabel("N")
@@ -298,8 +307,8 @@ def plot_immec_data(path, simulation_number=None):
         plt.plot(dataset["time"][:, 0, simulation_number], dataset["omega_rot"][:, 0, simulation_number])
 
         plt.subplot(2, 3, 2)
-        plt.title("i_st"), plt.xlabel("time (s)"), plt.ylabel("A")  # debug
-        plt.plot(dataset["time"][:, 0, simulation_number], dataset["i_st"][:, :, simulation_number])
+        plt.title("i_st in dq0"), plt.xlabel("time (s)"), plt.ylabel("A")  # debug
+        plt.plot(dataset["time"][:, 0, simulation_number], reference_abc_to_dq0(dataset["i_st"][:, :, simulation_number]))
 
         plt.subplot(2, 3, 3)
         plt.title("T_l and T_em"), plt.xlabel("time (s)"), plt.ylabel("Nm")
@@ -312,7 +321,7 @@ def plot_immec_data(path, simulation_number=None):
         plt.legend(["T_em", "T_l"])
 
         plt.subplot(2, 3, 5)
-        plt.title("V"), plt.xlabel("time (s)"), plt.ylabel("V")
+        plt.title("Applied line Voltages"), plt.xlabel("time (s)"), plt.ylabel("V")
         plt.plot(dataset["time"][:, 0, simulation_number], dataset["v_applied"][:, :, simulation_number])
 
         plt.subplot(2, 3, 4)

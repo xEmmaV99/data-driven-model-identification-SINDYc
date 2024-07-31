@@ -83,7 +83,7 @@ def simulate_currents(model_name, path_to_test_file, do_time_simulation=False):
 
         save_plot_data("currents_simulation",
                        [np.hstack((t_value[:-1].reshape(len(t_value) - 1, 1), x_sim)),
-                        np.hstack((t.reshape(len(t_value), 1), x_test))],
+                        np.hstack((t, x_test))],
                        "Simulated currents on test set V = " + str(TEST['V']),
                        r"$t$", r"$x$", plot_now=True, specs=[None, "k--"],
                        legend=[r"$i_d$", r"$i_q$", r"$i_0$", "test data"])
@@ -96,18 +96,18 @@ if __name__ == "__main__":
     path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
 
     ### OPTIMIZE ALPHA
-    optimize_parameters(path_to_data_files, mode = "currents")
+    #optimize_parameters(path_to_data_files, mode = "currents")
 
     ### PLOT MSE AND SPARSEITY FOR DIFFERENT PARAMETERS
     #plot_optuna_data('currents-lasso-study')
     #plot_optuna_data('currents-sr3-study')
 
     ### CREATE A MODEL
-    #make_model_currents(path_to_data_files, alpha=1, optimizer='lasso', nmbr_of_train=25)
+    make_model_currents(path_to_data_files, alpha=1, optimizer='lasso', nmbr_of_train=10)
 
     ### SIMULATE
-    #path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
+    path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
     #path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29', 'IMMEC_0ecc_5.0sec.npz')
-    #simulate_currents('currents_model', path_to_test_file, do_time_simulation=False)
+    simulate_currents('currents_model', path_to_test_file, do_time_simulation=True)
 
     #plt.show()
