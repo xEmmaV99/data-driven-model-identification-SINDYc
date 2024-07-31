@@ -113,7 +113,7 @@ def simulate_currents(model_name,path_to_test_file, do_time_simulation=False):
         x_sim = model.simulate(x_test[0, :],
                                u=u_test[(t < simulation_time).reshape(-1), :],
                                t=t_value.reshape(t_value.shape[0]),
-                               integrator_kws={'method': 'RK23'}) # todo : change integration method
+                               integrator_kws={'method': 'RK45'})
 
         print("Finished simulation")
 

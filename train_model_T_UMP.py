@@ -176,19 +176,19 @@ if __name__ == "__main__":
 
     ### OPTIMISE ALPHA FOR TORQUE SIMULATION
     optimize_parameters(path_to_data_files, mode = 'torque')
-    #optimize_parameters(path_to_data_files, mode = 'ump')
+    optimize_parameters(path_to_data_files, mode = 'ump')
 
 
     ### PLOT MSE AND SPARSITY FOR TORQUE AND UMP SIMULATION
     #plot_optuna_data('torque-lasso-study')
-    plot_optuna_data('UMP-lasso-study')
+    #plot_optuna_data('UMP-lasso-study')
 
 
     ### MAKE A MODEL
     #make_model(path_to_data_files, alpha=1e-5, optimizer="lasso", nmbr_of_train=20)
     #make_model(path_to_data_files, alpha = 1e-1, optimizer="sr3", nmbr_of_train=30)
-    make_model(path_to_data_files, alpha = 1e-5, optimizer="lasso", nmbr_of_train=25, Torque=True)
+    #make_model(path_to_data_files, alpha = 1e-5, optimizer="lasso", nmbr_of_train=25, Torque=True)
 
     ### SIMULATE TORQUE WITH CHOSEN ALPHA AND OPTIMIZER
-    simulate("Torque-UMP_model", path_to_test_file, Torque=True)
+    #simulate("Torque-UMP_model", path_to_test_file, Torque=True)
     #simulate("torque_model", path_to_test_file, Torque=True)

@@ -99,15 +99,15 @@ if __name__ == "__main__":
     optimize_parameters(path_to_data_files, mode = "currents")
 
     ### PLOT MSE AND SPARSEITY FOR DIFFERENT PARAMETERS
-    plot_optuna_data('currents-lasso-study')
-    plot_optuna_data('currents-sr3-study')
+    #plot_optuna_data('currents-lasso-study')
+    #plot_optuna_data('currents-sr3-study')
 
     ### CREATE A MODEL
-    make_model_currents(path_to_data_files, alpha=1, optimizer='lasso', nmbr_of_train=25)
+    #make_model_currents(path_to_data_files, alpha=1, optimizer='lasso', nmbr_of_train=25)
 
     ### SIMULATE
     #path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
-    path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29', 'IMMEC_0ecc_5.0sec.npz')
-    simulate_currents('currents_model', path_to_test_file, do_time_simulation=False)
+    #path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29', 'IMMEC_0ecc_5.0sec.npz')
+    #simulate_currents('currents_model', path_to_test_file, do_time_simulation=False)
 
     #plt.show()
