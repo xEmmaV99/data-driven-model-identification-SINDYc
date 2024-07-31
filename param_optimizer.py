@@ -139,7 +139,7 @@ def plot_optuna_data(name):
     return
 
 
-'''
+
 def parameter_search(parameter_array, train_and_validation_data, method="lasso", name="", plot_now=True, library=None):
     # todo use SMAC3 for this too?
     # THIS IS UNUSED, TO BE REMOVED
@@ -196,7 +196,7 @@ def parameter_search(parameter_array, train_and_validation_data, method="lasso",
         ),
     ]
     specs = ["r", "b"]
-    save_plot_data(name, xydata, title, xlab, [ylab1, ylab2], specs, plot_now=plot_now)
+    #save_plot_data(name, xydata, title, xlab, [ylab1, ylab2], specs, plot_now=plot_now)
 
     idx = np.where(np.min(variable["MSE"]))  # best model, lowest MSE
     best_model = variable["model"][idx[0][0]]
@@ -208,4 +208,4 @@ def parameter_search(parameter_array, train_and_validation_data, method="lasso",
         "for ",
         method,
     )
-    return best_model'''
+    return best_model

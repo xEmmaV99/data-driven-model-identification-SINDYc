@@ -1,10 +1,8 @@
 from source import *
 import os
 from param_optimizer import optimize_parameters
-import matplotlib.pyplot as plt
 from prepare_data import prepare_data
-from sklearn.linear_model import Lasso
-
+from param_optimizer import parameter_search
 
 # Can optionally be merged with currents, only difference is xdot and plots
 
@@ -175,7 +173,8 @@ if __name__ == "__main__":
     path_to_test_file = os.path.join(os.getcwd(), "test-data", "07-29-default", "IMMEC_0ecc_5.0sec.npz")
 
     ### OPTIMISE ALPHA FOR TORQUE SIMULATION
-    # optimise_simulation(path_to_data_files, nmbr_models='all', loglwrbnd=[-12, -12], loguprbnd=[0, 0])
+    optimize_parameters(path_to_data_files, mode = 'torque')
+    #optimize_parameters(path_to_data_files, mode = 'ump')
 
     ### PLOT MSE FOR TORQUE SIMULATION
     # plot_data([os.getcwd() + "\\plots_2607_presentation" + p + ".pkl" for p in ["\\torque_SR3_", "\\torque_lasso"]],
@@ -187,5 +186,5 @@ if __name__ == "__main__":
     #make_model(path_to_data_files, alpha = 1e-5, optimizer="lasso", nmbr_of_train=25, Torque=True)
 
     ### SIMULATE TORQUE WITH CHOSEN ALPHA AND OPTIMIZER
-    simulate("Torque-UMP_model", path_to_test_file, Torque=True)
-    simulate("torque_model", path_to_test_file, Torque=True)
+    #simulate("Torque-UMP_model", path_to_test_file, Torque=True)
+    #simulate("torque_model", path_to_test_file, Torque=True)
