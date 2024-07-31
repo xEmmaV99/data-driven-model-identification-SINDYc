@@ -885,13 +885,16 @@ def parameter_search_2D(param_nu, param_lambda, train_and_validation_data, name=
 def grid_search_sr3(DATA, l_minmax, n_minmax, iter=4):
     #from https://optuna.readthedocs.io/en/stable/index.html
     def objective(trial):
-        lambdas = trial.suggest_float('lambdas', l_minmax[0], l_minmax[1], log = True)
-        nus = trial.suggest_float('nus', n_minmax[0], n_minmax[1], log = True)
+        lambdas = trial.suggest_float('lambdas', l_minmax[0], l_minmax[1], log=True)
+        nus = trial.suggest_float('nus', n_minmax[0], n_minmax[1], log=True)
+        lib_choice = trial.suggest_categorical('lib_choice', ['poly_2nd_order', 'sincos_cross', 'system', 'higher_order', 'pure_poly_2dn_order']) # 'best' eats all the memory
+
+        lib = get_custom_library_funcs(lib_choice)
 
         optimizer = ps.SR3(thresholder='l1', nu=nus,
                            threshold=lambdas)
         model = ps.SINDy(optimizer=optimizer,
-                         feature_library=ps.PolynomialLibrary(degree=2, include_interaction=True))
+                         feature_library=lib)
         model.fit(DATA["x_train"], u=DATA["u_train"], t=None, x_dot=DATA["xdot_train"])
 
         MSE = model.score(DATA["x_val"], u=DATA["u_val"], x_dot=DATA["xdot_val"],
@@ -902,7 +905,7 @@ def grid_search_sr3(DATA, l_minmax, n_minmax, iter=4):
 
     study_name = "example-study"  # Unique identifier of the study.
     storage_name = "sqlite:///{}.db".format(study_name)
-    study = optuna.create_study(directions = ['minimize','minimize'],
+    study = optuna.create_study(directions=['minimize', 'minimize'],
                                 study_name=study_name,
                                 storage=storage_name,
                                 load_if_exists=True)
