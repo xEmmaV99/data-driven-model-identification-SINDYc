@@ -147,6 +147,53 @@ def prepare_data(path_to_data_file,
 
     return DATA
 
+def check_trapezoid_integration():
+    print("this doesn't work")
+    path = os.path.join(os.getcwd(), 'test-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
+    dataset = prepare_data(path, test_data=True)
+    I_end = dataset['u'][-1,3:6]
+    V_end = dataset['u'][-1,6:9]
+    i = dataset['x']
+    v = dataset['u'][:, 0:3]
+    dt = 5e-5
+    '''
+    I_d = scipy.fftpack.diff(i[:,0], order = -1)
+    I_q = scipy.fftpack.diff(i[:, 1], order=-1)
+    I_0 = scipy.fftpack.diff(i[:, 2], order=-1)
+    V_d = scipy.fftpack.diff(v[:, 0], order=-1)
+    V_q = scipy.fftpack.diff(v[:, 1], order=-1)
+    V_0 = scipy.fftpack.diff(v[:, 2], order=-1)
+    invi = np.fft.ifft(np.vstack((I_d, I_q, I_0)).T, axis=0)
+    invv = np.fft.ifft(np.vstack((V_d, V_q, V_0)).T, axis=0)
+    '''
+    # fourier transform i and v, integrate that and ifft it
+    i_f = np.fft.fft(i, axis=0)
+    v_f = np.fft.fft(v, axis=0)
+    # remove small values
+    i_f[np.abs(i_f) < 1e-10] = 0
+    v_f[np.abs(v_f) < 1e-10] = 0
+    # integrate by multiplying times omega i
+    with np.errstate(divide="ignore", invalid="ignore"):
+        i_f = i_f / (2 * np.pi * 1j * np.repeat(np.fft.fftfreq(i_f.shape[0], dt).reshape(-1,1), 3, axis = 1))
+        v_f = v_f / (2 * np.pi * 1j * np.repeat(np.fft.fftfreq(v_f.shape[0], dt).reshape(-1,1), 3, axis = 1))
+  
+    # set DC term to zero
+    i_f[0,:] = 0
+    v_f[0,:] = 0
+    # ifft
+    invi = np.fft.ifft(i_f, axis=0).real
+    invv = np.fft.ifft(v_f, axis=0).real
+
+    # check if the end values are the same
+    print(invi[-1,:])
+    print(invv[-1,:])
+    print(I_end)
+    print(V_end)
+
+
+    return
+
+
 
 def reference_abc_to_dq0(coord_array: np.array):
     """
@@ -276,6 +323,8 @@ def calculate_xdot(x: np.array, t: np.array):
 
 
 if __name__ == "__main__":
+    check_trapezoid_integration()
+    '''
     path = os.path.join(os.getcwd(), 'test-data', '07-29', 'IMMEC_0ecc_5.0sec.npz')
     data = prepare_data(path,
                         test_data=True,
@@ -283,3 +332,4 @@ if __name__ == "__main__":
                         use_estimate_for_v=False)
     plt.plot(data['xdot'])
     plt.show()
+    '''
