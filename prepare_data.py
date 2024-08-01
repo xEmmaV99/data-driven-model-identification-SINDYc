@@ -267,8 +267,8 @@ def v_abc_calculation(data_logger: dict, path_to_motor_info: str):
     if np.ndim(data_logger['time']) > 2:
         print("Also 4'th order now")  # DEBUG
         t = data_logger['time'][:, 0, 0]
-        dphi = FiniteDifference(order=10, axis=0)._differentiate(data_logger["flux_st_yoke"], t)
-        di = FiniteDifference(order=10, axis=0)._differentiate(data_logger["i_st"], t)
+        dphi = FiniteDifference(order=4, axis=0)._differentiate(data_logger["flux_st_yoke"], t)
+        di = FiniteDifference(order=4, axis=0)._differentiate(data_logger["i_st"], t)
     else:
         t = data_logger['time'][:, 0]
         dphi = FiniteDifference(order=4, axis=0)._differentiate(data_logger["flux_st_yoke"], t)
@@ -291,7 +291,7 @@ def v_abc_estimate_from_line(v_line: np.array):
     # actually, only data_logger['v_applied'] is needed here
     # outputs Nx3 array
     T = np.array([[1, -1, 0], [1, 2, 0], [-2, -1, 0]])
-    return 1 / 3 * np.dot(T, v_line.T).T
+    return 1 / 3 * np.tensordot(T, v_line.swapaxes(0,1), axes=([1], [0])).swapaxes(0,1)
 
 
 def read_V_load_from_simulationdata(path_to_simulation_data: str):

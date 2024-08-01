@@ -12,6 +12,7 @@ def optimize_parameters(path_to_data_files, mode='torque'):
     """
     Calculates for various parameters, plots MSE and Sparsity, for SR3 and Lasso optimisation
     """
+    both = True
 
     DATA = prepare_data(path_to_data_files, number_of_trainfiles=20)
     if mode == "currents":
@@ -28,30 +29,78 @@ def optimize_parameters(path_to_data_files, mode='torque'):
     else:
         raise ValueError("mode is either corrents, torque or ump")
 
-    print("SR3_L1 optimisation")
+    if not both:
+        print("SR3_L1 optimisation")
+        n = 1
+        trials = 1
+        l_range = [1e-5, 1e2]
+        n_range = [1e-11, 1e-5]
+        with multiprocessing.Pool(n) as pool:
+            pool.starmap(optuna_search_sr3, [[DATA, XDOT, l_range, n_range, namestr, trials] for _ in range(n)])
+        pool.join()
+        pool.close()
+        # plot_optuna_data(name=namestr + "-sr3-study")
 
-    n = 1
-    trials = 1
-    l_range = [1e-5, 1e2]
-    n_range = [1e-11, 1e-5]
-    with multiprocessing.Pool(n) as pool:
-        pool.starmap(optuna_search_sr3, [[DATA, XDOT, l_range, n_range, namestr, trials] for _ in range(n)])
-    pool.join()
-    pool.close()
-    #plot_optuna_data(name=namestr + "-sr3-study")
+        print("Lasso optimisation")
+        n = 1
+        trials = 1
+        a_range = [1e-5, 1e2]
+        with multiprocessing.Pool(n) as pool:
+            pool.starmap(optuna_search_lasso, [[DATA, XDOT, a_range, namestr, trials] for _ in range(n)])
 
-    print("Lasso optimisation")
+        pool.join()
+        pool.close()
+        # plot_optuna_data(name=namestr + "-lasso-study")
 
-    n = 1
-    trials = 1
-    a_range = [1e-5, 1e2]
-    with multiprocessing.Pool(n) as pool:
-        pool.starmap(optuna_search_lasso, [[DATA, XDOT, a_range, namestr, trials] for _ in range(n)])
+    elif both:
+        print("SR3_L1 and lasso optimisation")
+        n = 5
+        trials = 1
+        a_range = [1e-5, 1e2]
+        l_range = [1e-5, 1e2]
+        n_range = [1e-11, 1e-5]
+        with multiprocessing.Pool(n) as pool:
+            pool.starmap(optuna_search_both, [[DATA, XDOT, l_range, n_range, a_range, namestr, trials] for _ in range(n)])
+        pool.join()
+        pool.close()
+    return
 
-    pool.join()
-    pool.close()
-    #plot_optuna_data(name=namestr + "-lasso-study")
 
+def optuna_search_both(DATA, XDOT, lminmax, nminmax, aminmax, studyname, iter):
+    # from https://optuna.readthedocs.io/en/stable/index.html
+    # XDOT = f(DATA) with first element training, second validation
+    def objective(trial):
+        lib_choice = trial.suggest_categorical('lib_choice',
+                                               ['poly_2nd_order', 'custom'])
+        lib = get_custom_library_funcs(lib_choice)
+        optimizer_name = trial.suggest_categorical('optimizer', ['lasso', 'sr3'])
+        if optimizer_name == 'lasso':
+            alphas = trial.suggest_float('lambdas', aminmax[0], aminmax[1], log=True)
+            optimizer = ps.WrappedOptimizer(Lasso(alpha=alphas, fit_intercept=False))
+
+        elif optimizer_name == 'sr3':
+            lambdas = trial.suggest_float('lambdas', lminmax[0], lminmax[1], log=True)
+            nus = trial.suggest_float('nus', nminmax[0], nminmax[1], log=True)
+            optimizer = ps.SR3(thresholder='l1', nu=nus,
+                               threshold=lambdas)
+
+        model = ps.SINDy(optimizer=optimizer, feature_library=lib)
+        model.fit(DATA["x_train"], u=DATA["u_train"], t=None, x_dot=XDOT[0])
+
+        MSE = model.score(DATA["x_val"], u=DATA["u_val"], x_dot=XDOT[1],
+                          t=None, metric=mean_squared_error)
+        SPAR = np.count_nonzero(model.coefficients())
+
+        return MSE, SPAR
+
+    study_name = studyname + "-optuna-study"  # Unique identifier of the study.
+    storage_name = "sqlite:///{}.db".format(study_name)
+    study = optuna.create_study(directions=['minimize', 'minimize'],
+                                study_name=study_name,
+                                storage=storage_name,
+                                load_if_exists=True)
+
+    study.optimize(objective, n_trials=iter, n_jobs=1)
     return
 
 
@@ -62,7 +111,7 @@ def optuna_search_lasso(DATA, XDOT, minmax, studyname, iter):
         alphas = trial.suggest_float('lambdas', minmax[0], minmax[1], log=True)
         # todo maybe leave out this?
         lib_choice = trial.suggest_categorical('lib_choice',
-                                               ['poly_2nd_order', 'best'])  # 'best' eats all the memory
+                                               ['poly_2nd_order', 'custom'])  # 'best' eats all the memory
 
         lib = get_custom_library_funcs(lib_choice)
 
@@ -101,7 +150,7 @@ def optuna_search_sr3(DATA, XDOT, l_minmax, n_minmax, studyname, iter):
 
         # todo maybe leave out this?
         lib_choice = trial.suggest_categorical('lib_choice',
-                                               ['poly_2nd_order', 'best'])  # 'best' eats all the memory
+                                               ['poly_2nd_order', 'custom'])  # 'best' eats all the memory
 
         lib = get_custom_library_funcs(lib_choice)
 
@@ -139,9 +188,7 @@ def plot_optuna_data(name):
     return
 
 
-
 def parameter_search(parameter_array, train_and_validation_data, method="lasso", name="", plot_now=True, library=None):
-    # todo use SMAC3 for this too?
     # THIS IS UNUSED, TO BE REMOVED
     if name == "":
         name = method
@@ -196,7 +243,7 @@ def parameter_search(parameter_array, train_and_validation_data, method="lasso",
         ),
     ]
     specs = ["r", "b"]
-    #save_plot_data(name, xydata, title, xlab, [ylab1, ylab2], specs, plot_now=plot_now)
+    # save_plot_data(name, xydata, title, xlab, [ylab1, ylab2], specs, plot_now=plot_now)
 
     idx = np.where(np.min(variable["MSE"]))  # best model, lowest MSE
     best_model = variable["model"][idx[0][0]]

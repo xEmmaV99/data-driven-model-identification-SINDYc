@@ -3,7 +3,7 @@ import numpy as np
 
 # u names = v, I , V, gamma, omega, f
 def get_library_keys():
-    return ['poly_2nd_order', 'sincos_cross', 'system', 'higher_order', 'best', 'fourier']
+    return ['poly_2nd_order', 'sincos_cross', 'system', 'higher_order', 'custom', 'fourier']
 
 
 def get_custom_library_funcs(type='default'):
@@ -60,7 +60,7 @@ def get_custom_library_funcs(type='default'):
     elif type == 'higher_order':
         custom_lib = ps.PolynomialLibrary(degree=8, include_interaction=False)
 
-    elif type == 'best':
+    elif type == 'custom':
         library_functions = [
             lambda x: np.sin(x),
             lambda x: np.cos(x),
