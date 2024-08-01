@@ -111,6 +111,25 @@ def get_custom_library_funcs(type='default'):
                                            tensor_array=None,  # don't merge the libraries
                                            inputs_per_library=[all_but_gamma, fourier_terms])
 
+    elif type == 'torque':
+        library_functions = [
+            lambda x : x
+        ]
+        library_function_names = [
+            lambda x: x
+        ]
+        library_functions2 = [
+            lambda x,y: x*y
+        ]
+        library_function_names2 = [
+            lambda x,y: x+y
+        ]
+        # i i i v v v I I I V V V om gam f
+        input_per_library = [[9,10,0,1,6,7]]
+        custom_lib = ps.GeneralizedLibrary([ps.CustomLibrary(library_functions2, library_function_names2, interaction_only=False)],
+                                           tensor_array=None,  # don't merge the libraries
+                                           inputs_per_library=input_per_library)
+
     else:
         raise ValueError('Library unknown')
 

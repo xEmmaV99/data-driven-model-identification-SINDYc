@@ -14,7 +14,7 @@ def optimize_parameters(path_to_data_files, mode='torque'):
     """
     both = True
 
-    DATA = prepare_data(path_to_data_files, number_of_trainfiles=20)
+    DATA = prepare_data(path_to_data_files, number_of_trainfiles=50)
     if mode == "currents":
         XDOT = [DATA['xdot_train'], DATA['xdot_val']]
         namestr = "currents"
@@ -27,7 +27,7 @@ def optimize_parameters(path_to_data_files, mode='torque'):
         XDOT = [DATA['UMP_train'], DATA['UMP_val']]
         namestr = "ump"
     else:
-        raise ValueError("mode is either corrents, torque or ump")
+        raise ValueError("mode is either currents, torque or ump")
 
     if not both:
         print("SR3_L1 optimisation")
@@ -54,8 +54,8 @@ def optimize_parameters(path_to_data_files, mode='torque'):
 
     elif both:
         print("SR3_L1 and lasso optimisation")
-        n = 5
-        trials = 1
+        n = 1
+        trials = 200
         a_range = [1e-5, 1e2]
         l_range = [1e-5, 1e2]
         n_range = [1e-11, 1e-5]
@@ -71,12 +71,12 @@ def optuna_search_both(DATA, XDOT, lminmax, nminmax, aminmax, studyname, iter):
     # XDOT = f(DATA) with first element training, second validation
     def objective(trial):
         lib_choice = trial.suggest_categorical('lib_choice',
-                                               ['poly_2nd_order', 'custom'])
+                                               ['poly_2nd_order', 'custom', 'torque'])
         lib = get_custom_library_funcs(lib_choice)
         optimizer_name = trial.suggest_categorical('optimizer', ['lasso', 'sr3'])
         if optimizer_name == 'lasso':
-            alphas = trial.suggest_float('lambdas', aminmax[0], aminmax[1], log=True)
-            optimizer = ps.WrappedOptimizer(Lasso(alpha=alphas, fit_intercept=False))
+            alphas = trial.suggest_float('alphas', aminmax[0], aminmax[1], log=True)
+            optimizer = ps.WrappedOptimizer(Lasso(alpha=alphas, fit_intercept=False, precompute=True))
 
         elif optimizer_name == 'sr3':
             lambdas = trial.suggest_float('lambdas', lminmax[0], lminmax[1], log=True)
@@ -108,8 +108,7 @@ def optuna_search_lasso(DATA, XDOT, minmax, studyname, iter):
     # from https://optuna.readthedocs.io/en/stable/index.html
     # XDOT = f(DATA) with first element training, second validation
     def objective(trial):
-        alphas = trial.suggest_float('lambdas', minmax[0], minmax[1], log=True)
-        # todo maybe leave out this?
+        alphas = trial.suggest_float('alphas', minmax[0], minmax[1], log=True)
         lib_choice = trial.suggest_categorical('lib_choice',
                                                ['poly_2nd_order', 'custom'])  # 'best' eats all the memory
 
@@ -150,7 +149,7 @@ def optuna_search_sr3(DATA, XDOT, l_minmax, n_minmax, studyname, iter):
 
         # todo maybe leave out this?
         lib_choice = trial.suggest_categorical('lib_choice',
-                                               ['poly_2nd_order', 'custom'])  # 'best' eats all the memory
+                                               ['poly_2nd_order', 'custom', 'torque'])  # 'best' eats all the memory
 
         lib = get_custom_library_funcs(lib_choice)
 
