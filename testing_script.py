@@ -19,9 +19,9 @@ for i in range(6):
 #                simulation_number=19, title=' 90 ecc, different simulation')
 
 paretos = np.zeros(3, dtype=object)
-paretos[0] = 'torque-optuna-study'
+#paretos[0] = 'torque-optuna-study'
 paretos[1] = 'currents-optuna-study'
-paretos[2] = 'ump2-optuna-study'
+#paretos[2] = 'ump2-optuna-study'
 
 for i in range(3):
     plot_optuna_data(paretos[i])
