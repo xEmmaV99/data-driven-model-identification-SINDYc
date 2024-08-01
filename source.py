@@ -257,7 +257,7 @@ def load_model(name):
     return new_model
 
 
-def plot_immec_data(path, simulation_number=None):
+def plot_immec_data(path, simulation_number=None, title = None):
     # if path ends with pkl, load as pkl file
     if path.endswith(".pkl"):
         with open(path, "rb") as file:
@@ -298,10 +298,6 @@ def plot_immec_data(path, simulation_number=None):
         plt.subplot(2, 3, 6)
         plt.title("Eccentricity"), plt.xlabel("time (s)"), plt.ylabel("% airgap")
         plt.plot(dataset["time"], dataset["ecc"] / d_air)
-
-        # Add padding so title and labels dont overlap
-        plt.tight_layout()
-        plt.show()
     else:  # train file
         plt.subplot(2, 3, 1)
         plt.title("omega_rot"), plt.xlabel("time (s)"), plt.ylabel("rad/s")
@@ -332,11 +328,13 @@ def plot_immec_data(path, simulation_number=None):
 
         plt.subplot(2, 3, 6)
         plt.title("Eccentricity"), plt.xlabel("time (s)"), plt.ylabel("% airgap")
-        plt.plot(dataset["time"][:, 0, simulation_number], dataset["ecc"][:, 0, simulation_number] / d_air)
-
-        # Add padding so title and labels dont overlap
-        plt.tight_layout()
-        plt.show()
+        plt.plot(dataset["time"][:, 0, simulation_number], dataset["ecc"][:, :, simulation_number] / d_air)
+        plt.legend(["x","y"])
+    if title is not None:
+        plt.suptitle(title)
+    # Add padding so title and labels dont overlap
+    plt.tight_layout()
+    plt.show()
     return
 
 
