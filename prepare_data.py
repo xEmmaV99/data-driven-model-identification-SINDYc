@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 def prepare_data(path_to_data_file,
                  test_data=False,
                  number_of_trainfiles=-1,
-                 use_estimate_for_v=False,
+                 use_estimate_for_v=True, #this one is better actucally
                  usage_per_trainfile=0.2):
     # load numpy file
     print("Loading data")
@@ -55,9 +55,9 @@ def prepare_data(path_to_data_file,
 
     # prepare v data
     if use_estimate_for_v:
-        v_stator = reference_abc_to_dq0(v_abc_estimate(dataset["v_applied"])) #debug
+        v_stator = reference_abc_to_dq0(v_abc_estimate_from_line(dataset["v_applied"])) #debug
     else:
-        v_stator = reference_abc_to_dq0(v_abc_exact(dataset, path_to_motor_info=path_to_simulation_data)) #debug
+        v_stator = reference_abc_to_dq0(v_abc_calculation(dataset, path_to_motor_info=path_to_simulation_data)) #debug
 
     if np.ndim(x_data) <= 2:  # expand such that the code works for both 2D and 3D data
         x_data = np.expand_dims(x_data, axis=2)
@@ -249,7 +249,7 @@ def reference_dq0_to_abc(coord_array: np.array):
     return np.dot(T, coord_array.swapaxes(0, 1), axes=([1], [0])).swapaxes(0, 1)
 
 
-def v_abc_exact(data_logger: dict, path_to_motor_info: str):
+def v_abc_calculation(data_logger: dict, path_to_motor_info: str):
     """
     This function calculates the exact abc voltages from the line voltages
     :param data_logger: HistoryDataLogger object or dict, containing the data
@@ -267,8 +267,8 @@ def v_abc_exact(data_logger: dict, path_to_motor_info: str):
     if np.ndim(data_logger['time']) > 2:
         print("Also 4'th order now")  # DEBUG
         t = data_logger['time'][:, 0, 0]
-        dphi = FiniteDifference(order=4, axis=0)._differentiate(data_logger["flux_st_yoke"], t)
-        di = FiniteDifference(order=4, axis=0)._differentiate(data_logger["i_st"], t)
+        dphi = FiniteDifference(order=10, axis=0)._differentiate(data_logger["flux_st_yoke"], t)
+        di = FiniteDifference(order=10, axis=0)._differentiate(data_logger["i_st"], t)
     else:
         t = data_logger['time'][:, 0]
         dphi = FiniteDifference(order=4, axis=0)._differentiate(data_logger["flux_st_yoke"], t)
@@ -282,7 +282,7 @@ def v_abc_exact(data_logger: dict, path_to_motor_info: str):
     return v_abc.swapaxes(0, 1)
 
 
-def v_abc_estimate(v_line: np.array):
+def v_abc_estimate_from_line(v_line: np.array):
     """
     This function estimates the abc voltages from the line voltages, using a transformation
     :param v_line: the line voltages

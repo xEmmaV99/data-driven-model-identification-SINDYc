@@ -17,7 +17,7 @@ v_esti = data_esti["u"][:,:3]
 plt.figure()
 plt.plot(v_real, 'k--')
 plt.plot(v_esti, ':')
-plt.legend(["time-stepping","","", "estimated"])
+plt.legend(["exact","","", "from line"])
 
 v_diff = np.abs(v_real - v_esti)
 plt.figure()
