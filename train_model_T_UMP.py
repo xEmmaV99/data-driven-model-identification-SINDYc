@@ -191,7 +191,7 @@ if __name__ == "__main__":
     ### PLOT MSE AND SPARSITY FOR TORQUE AND UMP SIMULATION
     #plot_optuna_data('torque-lasso-study')
     #plot_optuna_data('UMP-lasso-study')
-    plot_optuna_data('torque-optuna-study')
+    plot_optuna_data('currents-optuna-study')
 
     ### MAKE A MODEL
     #make_model(path_to_data_files, alpha=0.01, optimizer="lasso", nmbr_of_train=50, lib = "torque",
