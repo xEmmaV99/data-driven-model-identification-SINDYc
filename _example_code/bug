@@ -1,0 +1,17 @@
+import pysindy as ps
+import numpy as np
+from sklearn.linear_model import Lasso
+
+x_train = np.array([0,1,1,0])
+u_train = np.array([1,0,0,1])
+xdot_train = np.array([1,1,1,1])
+
+optimizer = Lasso(alpha=0.01, fit_intercept=False)
+
+library = ps.PolynomialLibrary(degree=2, include_interaction=True)
+
+model = ps.SINDy(optimizer=optimizer, feature_library=library)
+
+model.fit(x_train, u=u_train, t=None, x_dot=xdot_train)
+print(model.coefficients().shape)
+model.print()
