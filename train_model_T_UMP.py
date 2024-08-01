@@ -56,7 +56,9 @@ def optimize_simulation(path_to_data_files, nmbr_models=-1, loglwrbnd=None, logu
     return
 
 
-def make_model(path_to_data_files, alpha, optimizer, nmbr_of_train=-1, Torque = False, UMP = False):
+def make_model(path_to_data_files, optimizer, nmbr_of_train=-1,
+               Torque = False, UMP = False, lib = "",
+               alpha=None, nu=None,lamb = None):
     """
     Simulates the Torque on test data, and compares with the Clarke model
     :param path_to_data_files:
@@ -67,7 +69,6 @@ def make_model(path_to_data_files, alpha, optimizer, nmbr_of_train=-1, Torque = 
     """
     DATA = prepare_data(path_to_data_files, number_of_trainfiles=nmbr_of_train)
 
-    lib = 'best'
     library = get_custom_library_funcs(lib)
 
     if Torque:
@@ -82,12 +83,13 @@ def make_model(path_to_data_files, alpha, optimizer, nmbr_of_train=-1, Torque = 
 
     if optimizer == 'sr3':
         print("SR3_L1 optimisation")
-        opt = ps.SR3(thresholder="l1", threshold=alpha)
+        opt = ps.SR3(thresholder="l1", threshold=lamb, nu=nu)
     elif optimizer == 'lasso':
         print("Lasso optimisation")
-        opt = Lasso(alpha=alpha, fit_intercept=False)
+        opt = ps.WrappedOptimizer(Lasso(alpha=alpha, fit_intercept=False, precompute=True, max_iter=1000))
     else:
         raise ValueError("Optimizer not known")
+
 
     model = ps.SINDy(optimizer=opt, feature_library=library,
                      feature_names=DATA['feature_names'])
@@ -95,10 +97,10 @@ def make_model(path_to_data_files, alpha, optimizer, nmbr_of_train=-1, Torque = 
     print("Fitting model")
     model.fit(DATA['x_train'], u=DATA['u_train'], t=None, x_dot=train)
 
-    if model.coefficients().ndim == 1:  # fix dimensions of this matrix, bug in pysindy, o this works
-        model.optimizer.coef_ = model.coefficients().reshape(1, model.coefficients().shape[0])
-    model.print()
+    model.print(precision=10)
 
+
+    print("SPAR", np.count_nonzero(model.coefficients()))
     #plot_coefs2(model, show = False, log = True)
 
     save_model(model, name+"_model", lib)
@@ -122,18 +124,25 @@ def simulate(model_name, path_to_test_file, Torque = False, UMP = False):
     t = TEST['t'][:, :, 0]  # assume the t is the same for all simulations
     test_predicted = model.predict(x_test, u_test)
 
+    print("MSE: ", mean_squared_error(test_values, test_predicted))
     # Compare with alternative approach for Torque calculation on testdata
     V = u_test[:, 6:9]
     I = u_test[:, 3:6]
     x = TEST['x']
 
-    print('hardcoded')
-    path_to_data_dir = os.path.join(os.getcwd(), 'train-data', '07-29-default')
-    with open(path_to_data_dir + '/SIMULATION_DATA.pkl', 'rb') as f:
-        data = pkl.load(f)
-    R = data['R_st']
-    lambda_dq0 = (V.T - np.dot(R, I.T)).T
-    Torque_value = lambda_dq0[:, 0] * x[:, 1] - lambda_dq0[:, 1] * x[:, 0]  # lambda_d * i_q - lambda_q * i_d
+    if Torque:
+        path_to_data_dir = os.path.dirname(path_to_test_file)
+        with open(path_to_data_dir + '/SIMULATION_DATA.pkl', 'rb') as f:
+            data = pkl.load(f)
+        R = data['R_st']
+        print(R)
+        lambda_dq0 = (V.T - np.dot(R, I.T)).T
+        Torque_value = lambda_dq0[:, 0] * x[:, 1] - lambda_dq0[:, 1] * x[:, 0]  # lambda_d * i_q - lambda_q * i_d
+
+
+
+
+
 
     if not UMP:
         # Save the plots, torque first
@@ -185,9 +194,22 @@ if __name__ == "__main__":
     plot_optuna_data('torque-optuna-study')
 
     ### MAKE A MODEL
+    #make_model(path_to_data_files, alpha=0.01, optimizer="lasso", nmbr_of_train=50, lib = "torque",
+    #           Torque = True, UMP=False)
+
     #make_model(path_to_data_files, alpha=1e-5, optimizer="lasso", nmbr_of_train=20)
     #make_model(path_to_data_files, alpha = 1e-1, optimizer="sr3", nmbr_of_train=30)
-    #make_model(path_to_data_files, alpha = 1e-5, optimizer="lasso", nmbr_of_train=25, Torque=True)
+    #make_model(path_to_data_files, alpha = .1, optimizer="lasso", nmbr_of_train=50, Torque=True, lib = "poly_2nd_order")
+    #make_model(path_to_data_files, alpha = 8.14, optimizer="lasso", nmbr_of_train=50, Torque=True, UMP=False, lib = 'poly_2nd_order')
+
+    #make_model(path_to_data_files, nu = 1.03e-6, lamb = 0.00091, optimizer="sr3", nmbr_of_train=50, Torque=True, UMP=False, lib = 'poly_2nd_order')
+    #make_model(path_to_data_files, nu=3.45e-10, lamb=1.197e-5,
+    #           optimizer="sr3", nmbr_of_train=50, Torque=True, UMP=False,
+    #           lib='poly_2nd_order')
+    #make_model(path_to_data_files, nu=1.0449e-9, lamb=1.47e-5,
+    #           optimizer="sr3", nmbr_of_train=50, Torque=True, UMP=False,
+    #           lib='poly_2nd_order')
+
 
     ### SIMULATE TORQUE WITH CHOSEN ALPHA AND OPTIMIZER
     #simulate("Torque-UMP_model", path_to_test_file, Torque=True)
