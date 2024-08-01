@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 def prepare_data(path_to_data_file,
                  test_data=False,
                  number_of_trainfiles=-1,
-                 use_estimate_for_v=True, #this one is better actucally
+                 use_estimate_for_v=False, #this one is better actucally
                  usage_per_trainfile=0.2):
     # load numpy file
     print("Loading data")
@@ -251,7 +251,7 @@ def reference_dq0_to_abc(coord_array: np.array):
 
 def v_abc_calculation(data_logger: dict, path_to_motor_info: str):
     """
-    This function calculates the exact abc voltages from the line voltages
+    This function calculates the exact abc voltages
     :param data_logger: HistoryDataLogger object or dict, containing the data
     :param path_to_motor_info: str, path to the motor data file
     :return: np.array with shape (N, 3), abc voltages
@@ -259,25 +259,22 @@ def v_abc_calculation(data_logger: dict, path_to_motor_info: str):
     with open(path_to_motor_info, "rb") as file:
         motorinfo = pkl.load(file)
 
-    # input the entire data_logger
     R = motorinfo["R_st"]
-    Nt = motorinfo["N_abc_T"]  # model.N_abc
+    Nt = motorinfo["N_abc_T"]  # model.N_abc transposed
     L_s = motorinfo["stator_leakage_inductance"]  # model.stator_leakage_inductance
 
     if np.ndim(data_logger['time']) > 2:
-        print("Also 4'th order now")  # DEBUG
         t = data_logger['time'][:, 0, 0]
-        dphi = FiniteDifference(order=4, axis=0)._differentiate(data_logger["flux_st_yoke"], t)
-        di = FiniteDifference(order=4, axis=0)._differentiate(data_logger["i_st"], t)
     else:
         t = data_logger['time'][:, 0]
-        dphi = FiniteDifference(order=4, axis=0)._differentiate(data_logger["flux_st_yoke"], t)
-        di = FiniteDifference(order=4, axis=0)._differentiate(data_logger["i_st"], t)
+
+    dphi = FiniteDifference(order=4, axis=0)._differentiate(data_logger["flux_st_yoke"], t)
+    di = FiniteDifference(order=4, axis=0)._differentiate(data_logger["i_st"], t)
 
     ist = data_logger["i_st"]
-    v_abc = np.tensordot(R, ist.swapaxes(0, 1), axes=([1], [0])) + np.tensordot(Nt, dphi.swapaxes(0, 1),
-                                                                                axes=([1], [0])) + L_s * di.swapaxes(0,
-                                                                                                                     1)
+    v_abc = np.tensordot(R, ist.swapaxes(0, 1), axes=([1], [0])) +\
+            np.tensordot(Nt, dphi.swapaxes(0, 1), axes=([1], [0])) +\
+            L_s * di.swapaxes(0, 1)
 
     return v_abc.swapaxes(0, 1)
 
@@ -288,7 +285,6 @@ def v_abc_estimate_from_line(v_line: np.array):
     :param v_line: the line voltages
     :return: np.array with shape (N, 3), abc voltages
     """
-    # actually, only data_logger['v_applied'] is needed here
     # outputs Nx3 array
     T = np.array([[1, -1, 0], [1, 2, 0], [-2, -1, 0]])
     return 1 / 3 * np.tensordot(T, v_line.swapaxes(0,1), axes=([1], [0])).swapaxes(0,1)
