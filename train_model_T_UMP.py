@@ -185,7 +185,7 @@ if __name__ == "__main__":
 
     ### OPTIMISE ALPHA FOR TORQUE SIMULATION
     #optimize_parameters(path_to_data_files, mode = 'torque')
-    #optimize_parameters(path_to_data_files, mode = 'ump')
+    optimize_parameters(path_to_data_files, mode = 'ump')
 
 
     ### PLOT MSE AND SPARSITY FOR TORQUE AND UMP SIMULATION

@@ -181,8 +181,8 @@ def check_trapezoid_integration():
     i_f[0,:] = 0
     v_f[0,:] = 0
     # ifft
-    invi = np.fft.ifft(i_f, axis=0).real
-    invv = np.fft.ifft(v_f, axis=0).real
+    invi = np.fft.ifft(i_f, axis=0)
+    invv = np.fft.ifft(v_f, axis=0)
 
     # check if the end values are the same
     print(invi[-1,:])
@@ -190,6 +190,35 @@ def check_trapezoid_integration():
     print(I_end)
     print(V_end)
 
+    # Simulated current signal
+    n_fft = 1000
+    sampling_freq = 1000
+    timestamps = np.linspace(0, 1, 1000)  # Time stamps
+    current = np.sin(2 * np.pi * 50 * timestamps) + np.random.normal(0, 0.1, len(timestamps))
+
+    # Perform FFT
+    fft_results = np.fft.fft(current)
+    p2 = np.abs(fft_results / n_fft)
+    p1 = p2[:int(n_fft / 2 + 1)]
+    p1[1:-1] = 2 * p1[1:-1]
+    freq = sampling_freq * np.arange(0, p1.size) / n_fft
+    # test = np.fft.fftfreq(len(current), d=timestamps[1] - timestamps[0])  # Frequency bins
+    plt.figure(figsize=(10, 6))
+    plt.subplot(2, 1, 1)
+    plt.plot(timestamps, current, label="Current Signal")
+    plt.xlabel("Time")
+    plt.ylabel("Current")
+    plt.title("Original Current Signal")
+
+    plt.subplot(2, 1, 2)
+    plt.plot(freq, np.abs(p1), label="FFT")
+    plt.xlabel("Frequency (Hz)")
+    plt.ylabel("Amplitude")
+    plt.title("Single-Sided FFT of Current")
+    plt.grid()
+
+    plt.tight_layout()
+    plt.show()
 
     return
 
