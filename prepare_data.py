@@ -155,71 +155,8 @@ def check_trapezoid_integration():
     V_end = dataset['u'][-1,6:9]
     i = dataset['x']
     v = dataset['u'][:, 0:3]
-    dt = 5e-5
-    '''
-    I_d = scipy.fftpack.diff(i[:,0], order = -1)
-    I_q = scipy.fftpack.diff(i[:, 1], order=-1)
-    I_0 = scipy.fftpack.diff(i[:, 2], order=-1)
-    V_d = scipy.fftpack.diff(v[:, 0], order=-1)
-    V_q = scipy.fftpack.diff(v[:, 1], order=-1)
-    V_0 = scipy.fftpack.diff(v[:, 2], order=-1)
-    invi = np.fft.ifft(np.vstack((I_d, I_q, I_0)).T, axis=0)
-    invv = np.fft.ifft(np.vstack((V_d, V_q, V_0)).T, axis=0)
-    '''
-    # fourier transform i and v, integrate that and ifft it
-    i_f = np.fft.fft(i, axis=0)
-    v_f = np.fft.fft(v, axis=0)
-    # remove small values
-    i_f[np.abs(i_f) < 1e-10] = 0
-    v_f[np.abs(v_f) < 1e-10] = 0
-    # integrate by multiplying times omega i
-    with np.errstate(divide="ignore", invalid="ignore"):
-        i_f = i_f / (2 * np.pi * 1j * np.repeat(np.fft.fftfreq(i_f.shape[0], dt).reshape(-1,1), 3, axis = 1))
-        v_f = v_f / (2 * np.pi * 1j * np.repeat(np.fft.fftfreq(v_f.shape[0], dt).reshape(-1,1), 3, axis = 1))
-  
-    # set DC term to zero
-    i_f[0,:] = 0
-    v_f[0,:] = 0
-    # ifft
-    invi = np.fft.ifft(i_f, axis=0)
-    invv = np.fft.ifft(v_f, axis=0)
-
-    # check if the end values are the same
-    print(invi[-1,:])
-    print(invv[-1,:])
-    print(I_end)
-    print(V_end)
-
-    # Simulated current signal
-    n_fft = 1000
-    sampling_freq = 1000
-    timestamps = np.linspace(0, 1, 1000)  # Time stamps
-    current = np.sin(2 * np.pi * 50 * timestamps) + np.random.normal(0, 0.1, len(timestamps))
-
-    # Perform FFT
-    fft_results = np.fft.fft(current)
-    p2 = np.abs(fft_results / n_fft)
-    p1 = p2[:int(n_fft / 2 + 1)]
-    p1[1:-1] = 2 * p1[1:-1]
-    freq = sampling_freq * np.arange(0, p1.size) / n_fft
-    # test = np.fft.fftfreq(len(current), d=timestamps[1] - timestamps[0])  # Frequency bins
-    plt.figure(figsize=(10, 6))
-    plt.subplot(2, 1, 1)
-    plt.plot(timestamps, current, label="Current Signal")
-    plt.xlabel("Time")
-    plt.ylabel("Current")
-    plt.title("Original Current Signal")
-
-    plt.subplot(2, 1, 2)
-    plt.plot(freq, np.abs(p1), label="FFT")
-    plt.xlabel("Frequency (Hz)")
-    plt.ylabel("Amplitude")
-    plt.title("Single-Sided FFT of Current")
-    plt.grid()
-
-    plt.tight_layout()
-    plt.show()
-
+    print(np.sum(i, axis = 0)*5e-5, I_end)
+    print(np.sum(v, axis = 0)*5e-5, V_end)
     return
 
 

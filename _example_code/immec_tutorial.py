@@ -11,7 +11,7 @@ stator_connection = 'wye'
 motor_model = MotorModel(motordict, timestep, stator_connection)
 data_logger = HistoryDataLogger(motor_model)
 
-t_end = 1 # Total simulation time
+t_end = 5 # Total simulation time
 steps_total = int(t_end // timestep)  # Total number of steps to simulate
 
 for n in tqdm(range(steps_total)):
@@ -32,7 +32,7 @@ for n in tqdm(range(steps_total)):
 
     # I.C Rotor eccentricity
     # In this demo, the rotor is placed in a centric position
-    ecc = np.zeros(2)
+    ecc = np.array([0, 0])*motordict['d_air']
 
     # I.D The inputs are concatenated to a single vector
     inputs = np.concatenate([v_line, [T_l], ecc])
@@ -44,6 +44,7 @@ for n in tqdm(range(steps_total)):
     # III. Step the motor model
 
     motor_model.step(inputs)
+
 data_logger.postprocess()
 
-data_logger.plot('all')
+data_logger.plot('F_em')

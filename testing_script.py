@@ -18,12 +18,17 @@ for i in range(6):
 #plot_immec_data(os.path.join(os.getcwd(), "train-data", "07-31-ecc-90", "IMMEC_90ecc_5.0sec.npz"),
 #                simulation_number=19, title=' 90 ecc, different simulation')
 
-paretos = np.zeros(3, dtype=object)
-paretos[0] = 'torque-optuna-study'
-paretos[1] = 'currents-optuna-study'
+#plot_immec_data(os.path.join(os.getcwd(), 'test-data', '08-02', 'IMMEC_xy50ecc_5.0sec.npz'))
+#plot_immec_data(os.path.join(os.getcwd(), 'test-data', '08-02', 'IMMEC_xy50_sweep_noloadecc_2.0sec.npz'))
+#plot_immec_data(os.path.join(os.getcwd(), 'test-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz'))
+#plot_immec_data(os.path.join(os.getcwd(), "test-data", "08-02", "IMMEC_y50ecc_5.0sec.npz"))
+
+'''paretos = np.zeros(3, dtype=object)
+#paretos[0] = 'torque-optuna-study'
+#paretos[1] = 'currents-optuna-study'
 paretos[2] = 'ump-optuna-study'
 
 for i in range(3):
-    plot_optuna_data( paretos[i])
+    plot_optuna_data( paretos[i])'''
 
 #plot_optuna_data('example-study-poly-vs-best')

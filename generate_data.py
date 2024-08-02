@@ -9,9 +9,9 @@ if __name__ == "__main__":
 
     motor_path = os.path.join(os.getcwd(), "Cantoni.pkl")
 
-    t_end = 1e-3 # debug
-    ecc = np.zeros(2)
-    eccname = "0"
+    t_end = 2.0 # debug
+    ecc = np.array([0.5,0.5])  / np.sqrt(2)# eccentricity in x and y direction
+    eccname = "ecec"
     numbr_of_simulations = 50  # number of train simulations (of 5sec)
     mode = 'linear'
 
@@ -79,7 +79,6 @@ if __name__ == "__main__":
         save_path = os.path.join(os.getcwd(), "test-data/", date.today().strftime("%m-%d"))
         # choose V and (initial) load somewhere between 0.0 and 3.7, but scale with V (so 3.7 is for V=400)
         V = np.random.randint(40, 400)
-
         # load = 1 / 100 * np.random.randint(0.0, 370) * (V / 400.0)
         load = 0.0
 

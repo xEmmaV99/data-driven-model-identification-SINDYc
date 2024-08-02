@@ -103,6 +103,7 @@ def save_plot_data(
 
 
 def plot_data(path="plotdata.pkl", show=True, figure=True, limits=None):
+    # todo adapt such that fourier is plotted too
     suppres_title = False
     if type(path) == str:
         paths = [path]
@@ -257,7 +258,7 @@ def load_model(name):
     return new_model
 
 
-def plot_immec_data(path, simulation_number=None, title = None):
+def plot_immec_data(path, simulation_number=None, title=None):
     # if path ends with pkl, load as pkl file
     if path.endswith(".pkl"):
         with open(path, "rb") as file:
@@ -286,10 +287,8 @@ def plot_immec_data(path, simulation_number=None, title = None):
         plt.subplot(2, 3, 5)
         plt.title("Applied line Voltages"), plt.xlabel("time (s)"), plt.ylabel("V")
 
-        #plt.plot(dataset["time"], dataset['v_applied'])
-        #debug
-        v_new = reference_abc_to_dq0_CP(v_abc_estimate(dataset['v_applied']), dataset['gamma_rot'])
-        plt.plot(dataset["time"], v_new)
+        plt.plot(dataset["time"], dataset['v_applied'])
+        # debug
 
         plt.subplot(2, 3, 4)
         plt.title("UMP"), plt.xlabel("time (s)"), plt.ylabel("N")
@@ -306,7 +305,8 @@ def plot_immec_data(path, simulation_number=None, title = None):
 
         plt.subplot(2, 3, 2)
         plt.title("i_st in dq0"), plt.xlabel("time (s)"), plt.ylabel("A")  # debug
-        plt.plot(dataset["time"][:, 0, simulation_number], reference_abc_to_dq0(dataset["i_st"][:, :, simulation_number]))
+        plt.plot(dataset["time"][:, 0, simulation_number],
+                 reference_abc_to_dq0(dataset["i_st"][:, :, simulation_number]))
 
         plt.subplot(2, 3, 3)
         plt.title("T_l and T_em"), plt.xlabel("time (s)"), plt.ylabel("Nm")
@@ -329,7 +329,7 @@ def plot_immec_data(path, simulation_number=None, title = None):
         plt.subplot(2, 3, 6)
         plt.title("Eccentricity"), plt.xlabel("time (s)"), plt.ylabel("% airgap")
         plt.plot(dataset["time"][:, 0, simulation_number], dataset["ecc"][:, :, simulation_number] / d_air)
-        plt.legend(["x","y"])
+        plt.legend(["x", "y"])
     if title is not None:
         plt.suptitle(title)
     # Add padding so title and labels dont overlap
@@ -345,4 +345,39 @@ def plot_everything(path_to_directory):
             path = os.path.join(path_to_directory, file)
             plot_data(path, show=False)
     plt.show()
+    return
+
+
+def plot_fourier(reference, result, dt, tmax):
+    def fun(w, n, s):
+        # Perform FFT
+        fft = np.fft.fft(w)
+        p = np.abs(fft / n)[:int(n / 2 + 1)]
+        p[1:-1] = 2 * p[1:-1]
+        freq = s * np.arange(0, p.shape[0]) / n
+        return p, freq
+
+    n_fft = tmax / dt
+    sampling_freq = 1 / dt
+
+    ref, f1 = fun(reference, n_fft, sampling_freq)
+    res, f2 = fun(result, n_fft, sampling_freq)
+
+    plt.figure(figsize=(10, 6))
+    plt.subplot(2, 1, 1)
+    plt.plot(f1, ref, label="Current Signal")
+    plt.xlabel("Frequency (Hz)")
+    plt.ylabel("Amplitude")
+    plt.title("Reference Signal FFT")
+
+    plt.subplot(2, 1, 2)
+    plt.plot(f2, res, label="FFT")
+    plt.xlabel("Frequency (Hz)")
+    plt.ylabel("Amplitude")
+    plt.title("Found Signal FFT")
+    plt.grid()
+
+    plt.tight_layout()
+    plt.show()
+
     return

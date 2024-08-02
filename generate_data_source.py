@@ -128,7 +128,6 @@ def create_immec_data(
             dt_load = .2  # apply faster
 
         T_l = change_load(start_load, end_load, n * timestep, start_time, start_time + dt_load)
-        # print("I think the problem is the .2 seconds, the motor cannot deal with the load, applied to fast")
 
         # I.B Applied voltage
         # 400 V_RMS symmetrical line voltages are used
@@ -152,6 +151,7 @@ def create_immec_data(
 
         # I.C Rotor eccentricity
         ecc = initial_ecc * motordict["d_air"]
+
 
         # I.D The inputs are concatenated to a single vector
         inputs = np.concatenate([v_uvw, [T_l], ecc])

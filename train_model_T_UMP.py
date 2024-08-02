@@ -75,7 +75,7 @@ def make_model(path_to_data_files, optimizer, nmbr_of_train=-1,
         train = DATA['T_em_train']
         name = "Torque"
     elif UMP:
-        train = DATA['UMP_Train']
+        train = DATA['UMP_train']
         name = "UMP"
     else:
         train = np.hstack((DATA['T_em_train'].reshape(-1, 1), DATA['UMP_train']))
@@ -140,10 +140,6 @@ def simulate(model_name, path_to_test_file, Torque = False, UMP = False):
         Torque_value = lambda_dq0[:, 0] * x[:, 1] - lambda_dq0[:, 1] * x[:, 0]  # lambda_d * i_q - lambda_q * i_d
 
 
-
-
-
-
     if not UMP:
         # Save the plots, torque first
         xydata = [np.hstack((t, test_predicted[:, 0].reshape(-1, 1))), np.hstack((t, test_values[:,0].reshape(-1, 1))),
@@ -166,8 +162,8 @@ def simulate(model_name, path_to_test_file, Torque = False, UMP = False):
 
     if not Torque:
         # Save the plots for UMP
-        xydata = [np.hstack((t, test_predicted[:, 1].reshape(len(t), 1))),
-                  np.hstack((t, test_predicted[:, 2].reshape(len(t), 1))), np.hstack((t, test_values[:,-2:]))]
+        xydata = [np.hstack((t, test_predicted[:, 0].reshape(len(t), 1))),
+                  np.hstack((t, test_predicted[:, 1].reshape(len(t), 1))), np.hstack((t, test_values[:,-2:]))]
         xlab = r"$t$"
         ylab = r'$UMP$ (Newton)'
         title = 'Predicted (SINDy) vs simulated UMP on test set V = ' + str(TEST['V'])
@@ -182,20 +178,31 @@ def simulate(model_name, path_to_test_file, Torque = False, UMP = False):
 if __name__ == "__main__":
     path_to_data_files = os.path.join(os.getcwd(), "train-data", "07-29-default", "IMMEC_0ecc_5.0sec.npz")
     path_to_test_file = os.path.join(os.getcwd(), "test-data", "07-29-default", "IMMEC_0ecc_5.0sec.npz")
+    path_to_data_files = os.path.join(os.getcwd(), "train-data", "07-31-ecc-50", "IMMEC_50ecc_5.0sec.npz")
+    #path_to_test_file = os.path.join(os.getcwd(), "test-data", "07-31-50ecc-load", "IMMEC_50ecc_5.0sec.npz")
+    #path_to_test_file = os.path.join(os.getcwd(), "test-data", "08-02", "IMMEC_xy50ecc_5.0sec.npz")
+    path_to_test_file = os.path.join(os.getcwd(), "test-data", "08-02", "IMMEC_y50ecc_5.0sec.npz")
 
-    ### OPTIMISE ALPHA FOR TORQUE SIMULATION
-    #optimize_parameters(path_to_data_files, mode = 'torque')
-    optimize_parameters(path_to_data_files, mode = 'ump')
+    optimize = False
+    plot_pareto = False
+    create_model = False
+    simulation = True
+
+    if optimize:
+        ### OPTIMISE ALPHA FOR TORQUE SIMULATION
+        optimize_parameters(path_to_data_files, mode = 'torque')
+        optimize_parameters(path_to_data_files, mode = 'ump')
 
 
     ### PLOT MSE AND SPARSITY FOR TORQUE AND UMP SIMULATION
-    #plot_optuna_data('torque-lasso-study')
-    #plot_optuna_data('UMP-lasso-study')
-    #plot_optuna_data('currents-optuna-study')
+    if plot_pareto:
+        plot_optuna_data('torque-lasso-study')
+        plot_optuna_data('UMP-lasso-study')
 
     ### MAKE A MODEL
-    make_model(path_to_data_files, alpha =36 ,lamb=0.002, nu=4.1e-7, optimizer="sr3", nmbr_of_train=-1, lib = "torque",
-               Torque = True, UMP=False)
+    if create_model:
+        make_model(path_to_data_files, alpha =36 ,lamb=4.15e-5, nu=3.4e-11, optimizer="sr3", nmbr_of_train=-1, lib = "poly_2nd_order",
+                   Torque = False, UMP=True)
 
 
     #make_model(path_to_data_files, alpha=1e-5, optimizer="lasso", nmbr_of_train=20)
@@ -211,7 +218,7 @@ if __name__ == "__main__":
     #           optimizer="sr3", nmbr_of_train=50, Torque=True, UMP=False,
     #           lib='poly_2nd_order')
 
-
-    ### SIMULATE TORQUE WITH CHOSEN ALPHA AND OPTIMIZER
-    #simulate("Torque-UMP_model", path_to_test_file, Torque=True)
-    simulate("torque_model", path_to_test_file, Torque=True)
+    if simulation:
+        ### SIMULATE TORQUE WITH CHOSEN ALPHA AND OPTIMIZER
+        #simulate("Torque-UMP_model", path_to_test_file, Torque=True)
+        simulate("ump_model", path_to_test_file, UMP=True)
