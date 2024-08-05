@@ -11,7 +11,7 @@ if __name__ == "__main__":
 
     t_end = 5.0 # debug
     ecc = np.array([0.5,0.0])
-    eccname = "50ecc"
+    eccname = "50eccTEST"
     numbr_of_simulations = 50  # number of train simulations (of 5sec)
     mode = 'linear'
 
