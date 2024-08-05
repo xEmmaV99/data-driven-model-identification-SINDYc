@@ -26,6 +26,9 @@ def optimize_parameters(path_to_data_files, mode='torque'):
     elif mode == "ump":
         XDOT = [DATA['UMP_train'], DATA['UMP_val']]
         namestr = "ump"
+    elif mode == "W_mag":
+        raise NotImplementedError("Wmag it not present in data yet")
+        namestr= "W"
     else:
         raise ValueError("mode is either currents, torque or ump")
 

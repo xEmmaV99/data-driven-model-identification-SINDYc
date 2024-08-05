@@ -180,10 +180,11 @@ if __name__ == "__main__":
     path_to_data_files = os.path.join(os.getcwd(), "train-data", "07-29-default", "IMMEC_0ecc_5.0sec.npz")
     path_to_test_file = os.path.join(os.getcwd(), "test-data", "07-29-default", "IMMEC_0ecc_5.0sec.npz")
     path_to_data_files = os.path.join(os.getcwd(), "train-data", "07-31-ecc-50", "IMMEC_50ecc_5.0sec.npz")
-    path_to_data_files = os.path.join(os.getcwd(), "train-data", "07-31-nonlin50", "IMMEC_nonlinear-50ecc_5.0sec.npz")
-    path_to_test_file = os.path.join(os.getcwd(), "test-data", "07-31-50ecc-load", "IMMEC_50ecc_5.0sec.npz")
+    #path_to_data_files = os.path.join(os.getcwd(), "train-data", "07-31-nonlin50", "IMMEC_nonlinear-50ecc_5.0sec.npz")
+    #path_to_test_file = os.path.join(os.getcwd(), "test-data", "07-31-50ecc-load", "IMMEC_50ecc_5.0sec.npz")
     #path_to_test_file = os.path.join(os.getcwd(), "test-data", "08-02", "IMMEC_xy50ecc_5.0sec.npz")
     #path_to_test_file = os.path.join(os.getcwd(), "test-data", "08-02", "IMMEC_y50ecc_5.0sec.npz")
+    path_to_test_file = os.path.join(os.getcwd(), "test-data", "07-31-50ecc-load", "IMMEC_50ecc_5.0sec.npz")
 
     optimize = False
     plot_pareto = False
@@ -206,21 +207,7 @@ if __name__ == "__main__":
         make_model(path_to_data_files, alpha =36 ,lamb=4.15e-5, nu=3.4e-11, optimizer="sr3", nmbr_of_train=-1, lib = "poly_2nd_order",
                    Torque = False, UMP=True)
 
-
-    #make_model(path_to_data_files, alpha=1e-5, optimizer="lasso", nmbr_of_train=20)
-    #make_model(path_to_data_files, alpha = 1e-1, optimizer="sr3", nmbr_of_train=30)
-    #make_model(path_to_data_files, alpha = .1, optimizer="lasso", nmbr_of_train=50, Torque=True, lib = "poly_2nd_order")
-    #make_model(path_to_data_files, alpha = 8.14, optimizer="lasso", nmbr_of_train=50, Torque=True, UMP=False, lib = 'poly_2nd_order')
-
-    #make_model(path_to_data_files, nu = 1.03e-6, lamb = 0.00091, optimizer="sr3", nmbr_of_train=50, Torque=True, UMP=False, lib = 'poly_2nd_order')
-    #make_model(path_to_data_files, nu=3.45e-10, lamb=1.197e-5,
-    #           optimizer="sr3", nmbr_of_train=50, Torque=True, UMP=False,
-    #           lib='poly_2nd_order')
-    #make_model(path_to_data_files, nu=1.0449e-9, lamb=1.47e-5,
-    #           optimizer="sr3", nmbr_of_train=50, Torque=True, UMP=False,
-    #           lib='poly_2nd_order')
-
     if simulation:
         ### SIMULATE TORQUE WITH CHOSEN ALPHA AND OPTIMIZER
         #simulate("Torque-UMP_model", path_to_test_file, Torque=True)
-        simulate("torque_model", path_to_test_file, Torque=True)
+        simulate("UMP_model", path_to_test_file, Torque=False, UMP=True )

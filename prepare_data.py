@@ -16,8 +16,8 @@ import matplotlib.pyplot as plt
 def prepare_data(path_to_data_file,
                  test_data=False,
                  number_of_trainfiles=-1,
-                 use_estimate_for_v=False, #this one is better actucally
-                 usage_per_trainfile=0.2):
+                 use_estimate_for_v=False,
+                 usage_per_trainfile=0.8):
     # load numpy file
     print("Loading data")
     dataset = dict(np.load(path_to_data_file))  # should be a dictionary
@@ -108,6 +108,15 @@ def prepare_data(path_to_data_file,
                              r'$I_d$', r'$I_q$', r'$I_0$',
                              r'$V_d$', r'$V_q$', r'$V_0$',
                              r'$\gamma$', r'$\omega$', r'$f$']
+
+    if not np.all(dataset['ecc'] < 1e-10):
+        print('Non zero ecc')
+        angle = np.arctan(dataset['ecc'][:,1]/dataset['ecc'][:,0])
+        if np.ndim(angle) >= 2:
+            u_data = np.hstack((u_data, angle.reshape(angle.shape[0],1,angle.shape[1])))
+        else:
+            u_data = np.hstack((u_data, angle.reshape(angle.shape[0], 1,1)))
+        DATA['feature_names'].append(r'\theta_{ecc}')
 
     # Now, stack data on top of each other and shuffle! (Note that the transpose is needed otherwise the reshape is wrong)
     DATA['x'] = x_data.transpose(0, 2, 1).reshape(x_data.shape[0] * x_data.shape[-1], x_data.shape[1])

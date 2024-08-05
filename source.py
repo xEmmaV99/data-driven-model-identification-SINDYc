@@ -2,11 +2,14 @@ import copy
 import pickle as pkl
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.interpolate import interp1d
+
 import pysindy as ps
 import seaborn as sns
 import os
 from libs import get_custom_library_funcs
 from prepare_data import *
+from scipy.integrate import solve_ivp
 
 
 def show_data_keys(path_to_data_logger: str):
@@ -349,14 +352,17 @@ def plot_everything(path_to_directory):
     return
 
 
-def plot_fourier(reference, result, dt, tmax):
+def plot_fourier(reference, result, dt, tmax, leg=None):
     def fun(w, n, s):
         # Perform FFT
-        fft = np.fft.fft(w)
+        fft = np.fft.fft(w, axis=0)
         p = np.abs(fft / n)[:int(n / 2 + 1)]
         p[1:-1] = 2 * p[1:-1]
         freq = s * np.arange(0, p.shape[0]) / n
         return p, freq
+
+    # cols = [['tab:blue','tab:red','tab:green'], ['tab:cyan','tab:orange','tab:olive']]
+    cols = [['C0', 'C3', 'C2'], ['C9', 'C1', 'C8']]
 
     n_fft = tmax / dt
     sampling_freq = 1 / dt
@@ -366,15 +372,18 @@ def plot_fourier(reference, result, dt, tmax):
 
     plt.figure(figsize=(10, 6))
     plt.subplot(2, 1, 1)
-    plt.semilogy(f1, ref, label="Current Signal")
-    plt.semilogy(f2, res, ':',label="Current Signal")
+    for line in range(ref.shape[1]):
+        plt.semilogy(f1, ref[:, line], cols[0][line], label="Current Signal")
+        plt.semilogy(f2, res[:, line], cols[1][line] + '--', label="Current Signal")
     plt.xlabel("Frequency (Hz)")
     plt.ylabel("Amplitude")
     plt.title("Reference Signal FFT")
     plt.grid()
+    if leg is not None:
+        plt.legend(leg)
 
     plt.subplot(2, 1, 2)
-    plt.semilogy(f2, np.abs(res-ref), label="FFT")
+    plt.semilogy(f2, np.abs(res - ref), 'k:', label="FFT")
     plt.xlabel("Frequency (Hz)")
     plt.ylabel("Amplitude")
     plt.title("Delta of FFT")
@@ -391,7 +400,26 @@ def test_plot_fourier():
     dt = 4e-5
     t = np.arange(0, tmax, dt)
     x = np.sin(2 * np.pi * 50 * t)
-    y = np.sin(2*2000*np.pi*t)
+    y = np.sin(2 * 2000 * np.pi * t)
     plot_fourier(x, y, dt=dt, tmax=tmax)
 
     return
+
+
+def model_simulate(
+        x0,
+        u,
+        model,
+        t,
+        integrator="solve_ivp"
+):
+    x = np.zeros((u.shape[0], model.n_features_in_ - model.n_control_features_))
+    x[0] = x0
+    u_fun = interp1d(
+        t, u, axis=0, kind="cubic", fill_value="extrapolate"
+    )
+
+    def rhs(t, x):
+        return model.predict(x[np.newaxis, :], u_fun(t))[0]
+
+    return solve_ivp(rhs, np.array([t[0], t[-1]]), np.array([0, 0, 0]), method='RK45', t_eval=t)
