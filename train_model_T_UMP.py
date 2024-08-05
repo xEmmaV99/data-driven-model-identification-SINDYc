@@ -188,7 +188,7 @@ if __name__ == "__main__":
 
     optimize = False
     plot_pareto = False
-    create_model = False
+    create_model = True
     simulation = True
 
     if optimize:
@@ -204,10 +204,14 @@ if __name__ == "__main__":
 
     ### MAKE A MODEL
     if create_model:
-        make_model(path_to_data_files, alpha =36 ,lamb=4.15e-5, nu=3.4e-11, optimizer="sr3", nmbr_of_train=-1, lib = "poly_2nd_order",
-                   Torque = False, UMP=True)
+        #make_model(path_to_data_files, alpha =36 ,lamb=4.15e-5, nu=3.4e-11, optimizer="sr3", nmbr_of_train=-1, lib = "poly_2nd_order",
+        #           Torque = False, UMP=True)
+        make_model(path_to_data_files, alpha=0.001, lamb=4.15e-5, nu=3.4e-11, optimizer="sr3", nmbr_of_train=-1,
+                   lib="poly_2nd_order",
+                   Torque=True, UMP=False)
 
     if simulation:
         ### SIMULATE TORQUE WITH CHOSEN ALPHA AND OPTIMIZER
         #simulate("Torque-UMP_model", path_to_test_file, Torque=True)
-        simulate("UMP_model", path_to_test_file, Torque=False, UMP=True )
+        #simulate("UMP_model", path_to_test_file, Torque=False, UMP=True )
+        simulate("torque_model", path_to_test_file, Torque=True)

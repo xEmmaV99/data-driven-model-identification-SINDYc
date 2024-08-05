@@ -5,7 +5,7 @@ from sklearn.linear_model import Lasso
 from sklearn.metrics import mean_squared_error
 
 
-def make_model_currents(path_to_data_files, alpha=None, nu=None, lamb = None, optimizer='sr3', nmbr_of_train=-1, lib = ""):
+def make_model_currents(path_to_data_files, alpha=None, nu=None, lamb = None, optimizer='sr3', nmbr_of_train=-1, lib = "",modelname=None):
     """
     Simulation for the currents and compared with testdata
     :param path_to_data_files:
@@ -40,7 +40,9 @@ def make_model_currents(path_to_data_files, alpha=None, nu=None, lamb = None, op
         model.score(DATA["x_val"], t=None, x_dot=DATA['xdot_val'], u=DATA['u_val'], metric=mean_squared_error)))
     # plot_coefs2(model, log=True)
 
-    save_model(model, "currents_model", lib)
+    if modelname is None:
+        modelname = "currents_model"
+    save_model(model, modelname, lib)
 
 
 def simulate_currents(model_name, path_to_test_file, do_time_simulation=False):
@@ -109,12 +111,14 @@ if __name__ == "__main__":
     ### CREATE A MODEL
     #make_model_currents(path_to_data_files, alpha=1, optimizer='lasso', nmbr_of_train=10)
     #make_model_currents(path_to_data_files, lamb = 1.46e-5, nu=4.6e-6, optimizer='sr3', nmbr_of_train=-1, lib = "poly_2nd_order")
+    #make_model_currents(path_to_data_files, lamb=1.67e-5, nu=2.236e-10, optimizer='sr3', lib="poly_2nd_order")
+    #make_model_currents(path_to_data_files, alpha = 0.132, optimizer="lasso", lib = "currents", modelname = '50ecc_paper')
 
     ### SIMULATE
     #path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
     #path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29', 'IMMEC_0ecc_5.0sec.npz')
-    path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-02', 'IMMEC_xy50ecc_1.0sec.npz')
-    #path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-31-50ecc-load', 'IMMEC_50ecc_5.0sec.npz')
-    simulate_currents('currents_model', path_to_test_file, do_time_simulation=False)
-
+    #path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-02', 'IMMEC_xy50ecc_1.0sec.npz')
+    path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-05', 'IMMEC_50eccecc_5.0sec.npz')
+    #simulate_currents('currents_model-x_ecc', path_to_test_file, do_time_simulation=True)
+    simulate_currents('50ecc_paper', path_to_test_file, do_time_simulation=True)
     #plt.show()

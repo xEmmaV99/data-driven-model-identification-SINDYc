@@ -1,3 +1,5 @@
+import joblib
+
 from prepare_data import *
 import optuna
 import multiprocessing
@@ -14,7 +16,7 @@ def optimize_parameters(path_to_data_files, mode='torque'):
     """
     both = True
 
-    DATA = prepare_data(path_to_data_files, number_of_trainfiles=50)
+    DATA = prepare_data(path_to_data_files, number_of_trainfiles=30, usage_per_trainfile=.25) #use 30 random samples, each 25% data
     if mode == "currents":
         XDOT = [DATA['xdot_train'], DATA['xdot_val']]
         namestr = "currents"
@@ -57,15 +59,21 @@ def optimize_parameters(path_to_data_files, mode='torque'):
 
     elif both:
         print("SR3_L1 and lasso optimisation")
-        n = 1
-        trials = 200
+        n = 2
+        trials = 50
         a_range = [1e-5, 1e2]
         l_range = [1e-5, 1e2]
         n_range = [1e-11, 1e-5]
-        with multiprocessing.Pool(n) as pool:
-            pool.starmap(optuna_search_both, [[DATA, XDOT, l_range, n_range, a_range, namestr, trials] for _ in range(n)])
-        pool.join()
-        pool.close()
+
+        with joblib.parallel_config(n_jobs = n, backend = "loky", inner_max_num_threads=1):
+            joblib.Parallel(n_jobs=n)(joblib.delayed(optuna_search_both)(DATA, XDOT, l_range, n_range, a_range, namestr, trials) for _ in range(n))
+
+        #with multiprocessing.Pool(n) as pool:
+        #    pool.starmap(optuna_search_both, [[DATA, XDOT, l_range, n_range, a_range, namestr, trials] for _ in range(n)])
+        #pool.join()
+        #pool.close()
+
+    # 32Gb ram -> 4 cores (yikes)
     return
 
 
@@ -74,7 +82,7 @@ def optuna_search_both(DATA, XDOT, lminmax, nminmax, aminmax, studyname, iter):
     # XDOT = f(DATA) with first element training, second validation
     def objective(trial):
         lib_choice = trial.suggest_categorical('lib_choice',
-                                               ['poly_2nd_order', 'custom', 'torque'])
+                                               ['poly_2nd_order', 'custom', 'torque', 'currents'])
         lib = get_custom_library_funcs(lib_choice)
         optimizer_name = trial.suggest_categorical('optimizer', ['lasso', 'sr3'])
         if optimizer_name == 'lasso':

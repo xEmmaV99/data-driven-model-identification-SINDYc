@@ -1,11 +1,12 @@
 import pysindy as ps
 import numpy as np
 
-
+# todo ohno, inputs per library depends on inputfeatures //
 def get_custom_library_funcs(type='default'):
     # Generalized library, sine and cos functions for gamma
-    all_but_gamma = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14]
-    all_but_i0 = [0, 1, 4, 5, 9, 10, 11, 12, 13, 14] # no constant terms in sin and cos
+    #print("hardcoded")
+    all_but_gamma = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14,15]
+    all_but_i0 = [0, 1, 4, 5, 9, 10, 11, 12, 13, 14,15] # no constant terms in sin and cos
     gamma = [12] # gamma should be inside a sin or cos function
     if type == 'poly_2nd_order':
         inputs_per_library = [all_but_gamma, gamma]
@@ -122,6 +123,26 @@ def get_custom_library_funcs(type='default'):
         # i i i v v v I I I V V V om gam f
         input_per_library = [[9,10,0,1,6,7]]
         custom_lib = ps.GeneralizedLibrary([ps.CustomLibrary(library_functions2, library_function_names2, interaction_only=False)],
+                                           tensor_array=None,  # don't merge the libraries
+                                           inputs_per_library=input_per_library)
+
+    elif type == 'currents':
+        library_functions = [
+            lambda x : x
+        ]
+        library_function_names = [
+            lambda x: x
+        ]
+        library_functions2 = [
+            lambda x,y: x*y
+        ]
+        library_function_names2 = [
+            lambda x,y: x+y
+        ]
+        # i i i v v v I I I V V V om gam f
+        input_per_library = [[0,1,2,3,4,5,6,7,8,9,10,11],[0,1,2,6,7,8,9,10,11,12]]
+        custom_lib = ps.GeneralizedLibrary([ps.CustomLibrary(library_functions , library_function_names , interaction_only=False),
+                                            ps.CustomLibrary(library_functions2, library_function_names2, interaction_only=False)],
                                            tensor_array=None,  # don't merge the libraries
                                            inputs_per_library=input_per_library)
 
