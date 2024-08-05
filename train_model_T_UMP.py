@@ -109,6 +109,7 @@ def make_model(path_to_data_files, optimizer, nmbr_of_train=-1,
 def simulate(model_name, path_to_test_file, Torque = False, UMP = False):
     model = load_model(model_name)
     model.print()
+    plot_coefs2(model ,show=True) #debgu!!
     TEST = prepare_data(path_to_test_file, test_data=True)
 
     # testdata
@@ -186,7 +187,7 @@ if __name__ == "__main__":
 
     optimize = False
     plot_pareto = False
-    create_model = True
+    create_model = False
     simulation = True
 
     if optimize:
@@ -222,4 +223,4 @@ if __name__ == "__main__":
     if simulation:
         ### SIMULATE TORQUE WITH CHOSEN ALPHA AND OPTIMIZER
         #simulate("Torque-UMP_model", path_to_test_file, Torque=True)
-        simulate("ump_model", path_to_test_file, UMP=True)
+        simulate("torque_model", path_to_test_file, Torque=True)

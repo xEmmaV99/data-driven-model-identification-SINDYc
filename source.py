@@ -190,6 +190,7 @@ def plot_coefs(model):
 
 
 def plot_coefs2(model, normalize_values=False, show=False, log=False):
+    # todo fix for torque
     xticknames = model.get_feature_names()
     for i in range(len(xticknames)):
         xticknames[i] = xticknames[i]
@@ -204,7 +205,7 @@ def plot_coefs2(model, normalize_values=False, show=False, log=False):
         plt.yscale("log", base=10)
         coefs = np.abs(coefs)
 
-    for i in range(2):
+    for i in range(coefs.shape[0]):
         values = coefs[i, :].T
         values[values == 0] = np.nan  # don't plot zero
         plt.scatter(
