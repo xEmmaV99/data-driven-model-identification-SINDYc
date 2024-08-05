@@ -1,16 +1,12 @@
 import pysindy as ps
 import numpy as np
 
-# u names = v, I , V, gamma, omega, f
-def get_library_keys():
-    return ['poly_2nd_order', 'sincos_cross', 'system', 'higher_order', 'custom', 'fourier']
-
 
 def get_custom_library_funcs(type='default'):
     # Generalized library, sine and cos functions for gamma
     all_but_gamma = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14]
-    all_but_i0 = [0, 1, 4, 5, 9, 10, 11, 12, 13, 14]
-    gamma = [12]
+    all_but_i0 = [0, 1, 4, 5, 9, 10, 11, 12, 13, 14] # no constant terms in sin and cos
+    gamma = [12] # gamma should be inside a sin or cos function
     if type == 'poly_2nd_order':
         inputs_per_library = [all_but_gamma, gamma]
         custom_lib = ps.GeneralizedLibrary([ps.PolynomialLibrary(degree=2, include_interaction=True),
@@ -37,7 +33,7 @@ def get_custom_library_funcs(type='default'):
                                             ps.FourierLibrary(n_frequencies=1, include_cos=True, include_sin=True)],
                                            tensor_array=None,
                                            inputs_per_library=inputs_per_library)
-    elif type == 'system':
+    elif type == 'poly_2nd_order_extra_fourier':
         library_functions = [
             lambda x: np.sin(x),
             lambda x: np.cos(x),
@@ -56,7 +52,6 @@ def get_custom_library_funcs(type='default'):
                                                              interaction_only=False)],
                                            tensor_array=None,  # don't merge the libraries
                                            inputs_per_library=inputs_per_library)
-
     elif type == 'higher_order':
         custom_lib = ps.PolynomialLibrary(degree=8, include_interaction=False)
 

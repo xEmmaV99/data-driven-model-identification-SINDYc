@@ -9,11 +9,11 @@ if __name__ == "__main__":
 
     motor_path = os.path.join(os.getcwd(), "Cantoni.pkl")
 
-    t_end = 2.0 # debug
-    ecc = np.array([0.5,0.5])  / np.sqrt(2)# eccentricity in x and y direction
-    eccname = "ecec"
+    t_end = 5.0 # debug
+    ecc = np.array([0.5,0.0])
+    eccname = "nonlinear-50ecc"
     numbr_of_simulations = 50  # number of train simulations (of 5sec)
-    mode = 'linear'
+    mode = 'nonlinear'
 
     if generate_traindata:
         print("Generating training data")

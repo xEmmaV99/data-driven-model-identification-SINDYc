@@ -179,13 +179,14 @@ if __name__ == "__main__":
     path_to_data_files = os.path.join(os.getcwd(), "train-data", "07-29-default", "IMMEC_0ecc_5.0sec.npz")
     path_to_test_file = os.path.join(os.getcwd(), "test-data", "07-29-default", "IMMEC_0ecc_5.0sec.npz")
     path_to_data_files = os.path.join(os.getcwd(), "train-data", "07-31-ecc-50", "IMMEC_50ecc_5.0sec.npz")
-    #path_to_test_file = os.path.join(os.getcwd(), "test-data", "07-31-50ecc-load", "IMMEC_50ecc_5.0sec.npz")
+    path_to_data_files = os.path.join(os.getcwd(), "train-data", "07-31-nonlin50", "IMMEC_nonlinear-50ecc_5.0sec.npz")
+    path_to_test_file = os.path.join(os.getcwd(), "test-data", "07-31-50ecc-load", "IMMEC_50ecc_5.0sec.npz")
     #path_to_test_file = os.path.join(os.getcwd(), "test-data", "08-02", "IMMEC_xy50ecc_5.0sec.npz")
-    path_to_test_file = os.path.join(os.getcwd(), "test-data", "08-02", "IMMEC_y50ecc_5.0sec.npz")
+    #path_to_test_file = os.path.join(os.getcwd(), "test-data", "08-02", "IMMEC_y50ecc_5.0sec.npz")
 
     optimize = False
     plot_pareto = False
-    create_model = False
+    create_model = True
     simulation = True
 
     if optimize:

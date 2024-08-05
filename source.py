@@ -365,19 +365,32 @@ def plot_fourier(reference, result, dt, tmax):
 
     plt.figure(figsize=(10, 6))
     plt.subplot(2, 1, 1)
-    plt.plot(f1, ref, label="Current Signal")
+    plt.semilogy(f1, ref, label="Current Signal")
+    plt.semilogy(f2, res, ':',label="Current Signal")
     plt.xlabel("Frequency (Hz)")
     plt.ylabel("Amplitude")
     plt.title("Reference Signal FFT")
+    plt.grid()
 
     plt.subplot(2, 1, 2)
-    plt.plot(f2, res, label="FFT")
+    plt.semilogy(f2, np.abs(res-ref), label="FFT")
     plt.xlabel("Frequency (Hz)")
     plt.ylabel("Amplitude")
-    plt.title("Found Signal FFT")
+    plt.title("Delta of FFT")
     plt.grid()
 
     plt.tight_layout()
     plt.show()
+
+    return
+
+
+def test_plot_fourier():
+    tmax = 5.0
+    dt = 4e-5
+    t = np.arange(0, tmax, dt)
+    x = np.sin(2 * np.pi * 50 * t)
+    y = np.sin(2*2000*np.pi*t)
+    plot_fourier(x, y, dt=dt, tmax=tmax)
 
     return

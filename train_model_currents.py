@@ -1,4 +1,4 @@
-from param_optimizer import parameter_search, optimize_parameters, plot_optuna_data
+from optimize_parameters import parameter_search, optimize_parameters, plot_optuna_data
 from source import *
 from prepare_data import prepare_data
 from sklearn.linear_model import Lasso
@@ -18,7 +18,7 @@ def make_model_currents(path_to_data_files, alpha, optimizer='sr3', nmbr_of_trai
 
     DATA = prepare_data(path_to_data_files, number_of_trainfiles=nmbr_of_train)
 
-    lib = 'best'
+    lib = 'poly_2nd_order'
     library = get_custom_library_funcs(lib)
 
     if optimizer == 'sr3':
@@ -89,7 +89,7 @@ def simulate_currents(model_name, path_to_test_file, do_time_simulation=False):
                        legend=[r"$i_d$", r"$i_q$", r"$i_0$", "test data"])
 
     plt.show()
-    return
+    return x_dot_test_predicted, xdot_test
 
 
 if __name__ == "__main__":
@@ -106,8 +106,8 @@ if __name__ == "__main__":
     make_model_currents(path_to_data_files, alpha=1, optimizer='lasso', nmbr_of_train=10)
 
     ### SIMULATE
-    path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
+    #path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
     #path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29', 'IMMEC_0ecc_5.0sec.npz')
-    simulate_currents('currents_model', path_to_test_file, do_time_simulation=True)
+    #simulate_currents('currents_model', path_to_test_file, do_time_simulation=True)
 
     #plt.show()
