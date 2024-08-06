@@ -7,7 +7,7 @@ from tqdm import tqdm
 def do_simulation(V_applied, motor_path, load=3.7, ecc=np.zeros(2), t_end=1.0, mode="linear"):
     dt = 1e-4  # default
 
-    datalogger = create_immec_data(
+    datalogger, wcoe = create_immec_data(
         mode=mode,
         timestep=dt,
         t_end=t_end,
@@ -29,6 +29,7 @@ def do_simulation(V_applied, motor_path, load=3.7, ecc=np.zeros(2), t_end=1.0, m
         datalogger.quantities["time"],
         datalogger.quantities["flux_st_yoke"],
         datalogger.quantities["gamma_rot"],
+        wcoe
     ]
 
 
@@ -108,6 +109,7 @@ def create_immec_data(
     Vfmode = "chirp"
     print('Mode: ', Vfmode)
 
+    Wmagcoen = np.zeros(steps_total)
     for n in tqdm(range(steps_total)):
         # I. Generate the input
 
@@ -159,15 +161,18 @@ def create_immec_data(
         # II. Log the motor model values, time, and inputs
         data_logger.log(n * timestep, inputs)
 
-        # DEBUG: MAGNETIC COENERGY
-        '''psi_st = data_logger.quantities['potentials_st']
-        psi_rot = data_logger.quantities['potentials_rot']
-        
-        Psi = np.broadcast_to(psi_st[:, np.newaxis], (psi_st.shape[0], motor_model.N_rot))\
-              - np.ones((motor_model.N_st, 1)) * psi_rot[np.newaxis, :]
+        # DEBUG: MAGNETIC COENERGY, after datalogger : might consider to skip first step
 
-        W = 0.5 * (Psi ** 2 * motor_model.P_air_hl_noskew()).sum(axis=1).sum()  # Total magnetic co energy
-        '''
+        if n != 0:
+            psi_st = data_logger.quantities['potentials_st'][-1,:]
+            psi_rot = data_logger.quantities['potentials_rot'][-1,:]
+
+            Psi = np.broadcast_to(psi_st[:, np.newaxis], (psi_st.shape[0], motor_model.N_rot))\
+                  - np.ones((motor_model.N_st, 1)) * psi_rot[np.newaxis, :]
+
+            W = 0.5 * (Psi ** 2 * motor_model.P_air_hl_noskew()).sum(axis=1).sum()  # Total magnetic co energy
+            Wmagcoen[n] = W
+
         # III. Step the motor model
         if mode == "linear":
             motor_model.step(inputs)
@@ -194,7 +199,7 @@ def create_immec_data(
                     nmbr_of_steps_per_chunk=int(0.03 / timestep),
                 )
 
-    return data_logger
+    return data_logger, Wmagcoen
 
 
 """ # testing code #

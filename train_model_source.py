@@ -185,4 +185,4 @@ def simulate_model(model_name, path_to_test_file, modeltype, do_time_simulation=
         save_plot_data("UMP", xydata, title, xlab, ylab, legend=legend, plot_now=True, specs=specs)
 
     plt.show()
-    return
+    return test_predicted, test_values

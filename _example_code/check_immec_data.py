@@ -28,10 +28,10 @@ plt.show()
 #path = os.path.join(os.path.dirname(os.getcwd()), 'train-data', '07-25', 'IMMEC_0ecc_1.0sec.npz')
 #path = '/train-data/07-29-default\\IMMEC_0ecc_5.0sec.npz'
 #path = os.path.join(os.path.dirname(os.getcwd()), 'test-data', "07-29-default","IMMEC_0ecc_5.0sec.npz")
-path = os.path.join(os.path.dirname(os.getcwd()), 'train-data', "07-29-default","IMMEC_0ecc_5.0sec.npz")
+path = os.path.join(os.path.dirname(os.getcwd()), 'train-data', "07-31-nonlin","IMMEC_nonlinear-0ecc_5.0sec.npz")
 #path = os.path.join(os.path.dirname(os.getcwd()), 'test-data', "07-29-nonlin","IMMEC_nonlin_0ecc_5.0sec.npz")
 #path = os.path.join(os.path.dirname(os.getcwd()), 'train-data', "07-29-nonlin","IMMEC_nonlin_0ecc_5.0sec.npz")
-
+#path = os.path.join(os.path.dirname(os.getcwd()), 'test-data','08-06', 'IMMEC_nonlin_0ecc_5.0sec.npz')
 
 dataset = dict(np.load(path))
 d_air = 0.000477 # for the Cantoni motor
@@ -74,7 +74,7 @@ if testdata:
     plt.show()
 
 if traindata:
-    simulation_number =29
+    simulation_number =10
     plt.subplot(2, 3, 1)
     plt.title("omega_rot"), plt.xlabel("time (s)"), plt.ylabel("rad/s")
     plt.plot(dataset["time"][:,0,simulation_number], dataset["omega_rot"][:,0,simulation_number])

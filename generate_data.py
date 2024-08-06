@@ -51,6 +51,7 @@ if __name__ == "__main__":
                     "time": simulation[7],
                     "flux_st_yoke": simulation[8],
                     "gamma_rot": simulation[9],
+                    "wcoe": simulation[10]
                 }  # shape t, simulations
 
             else:
@@ -72,6 +73,7 @@ if __name__ == "__main__":
             time=dataset["time"],
             flux_st_yoke=dataset["flux_st_yoke"],
             gamma_rot=dataset["gamma_rot"],
+            wcoe = dataset["wcoe"]
         )
 
     elif generate_testdata:
@@ -100,6 +102,7 @@ if __name__ == "__main__":
             "time": simulation[7],
             "flux_st_yoke": simulation[8],
             "gamma_rot": simulation[9],
+            "wcoe": simulation[10]
         }  # shape t, simulations
 
         print("Simulation finished")
@@ -116,4 +119,5 @@ if __name__ == "__main__":
             time=dataset["time"],
             flux_st_yoke=dataset["flux_st_yoke"],
             gamma_rot=dataset["gamma_rot"],
+            wcoe = dataset["wcoe"]
         )

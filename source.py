@@ -229,7 +229,8 @@ def plot_coefs2(model, normalize_values=False, show=False, log=False):
 
 def save_model(model, name, libstr):
     print("Saving model")
-    path = "C:/Users/emmav/PycharmProjects/SINDY_project/models/" + name + ".pkl"
+    path = os.path.join(os.getcwd(), "models", name + ".pkl")
+
     x = model.n_features_in_ - model.n_control_features_
     u = model.n_control_features_
 
@@ -244,7 +245,8 @@ def save_model(model, name, libstr):
 
 
 def load_model(name):
-    path = "C:/Users/emmav/PycharmProjects/SINDY_project/models/" + name + ".pkl"
+    path = os.path.join(os.getcwd(), "models", name + ".pkl")
+
     with open(path, "rb") as file:
         model_data = pkl.load(file)
 
@@ -301,6 +303,9 @@ def plot_immec_data(path, simulation_number=None, title=None):
         plt.subplot(2, 3, 6)
         plt.title("Eccentricity"), plt.xlabel("time (s)"), plt.ylabel("% airgap")
         plt.plot(dataset["time"], dataset["ecc"] / d_air)
+
+        plt.subplot(2, 3, 6)
+        plt.plot(dataset["time"], dataset["wcoe"])
     else:  # train file
         plt.subplot(2, 3, 1)
         plt.title("omega_rot"), plt.xlabel("time (s)"), plt.ylabel("rad/s")
@@ -359,6 +364,8 @@ def plot_fourier(reference, result, dt, tmax, leg=None):
         p = np.abs(fft / n)[:int(n / 2 + 1)]
         p[1:-1] = 2 * p[1:-1]
         freq = s * np.arange(0, p.shape[0]) / n
+        if np.ndim(p) == 1:
+            return p[:, np.newaxis], freq
         return p, freq
 
     # cols = [['tab:blue','tab:red','tab:green'], ['tab:cyan','tab:orange','tab:olive']]
