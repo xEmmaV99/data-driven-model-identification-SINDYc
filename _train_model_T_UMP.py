@@ -4,10 +4,11 @@ from prepare_data import prepare_data
 from optimize_parameters import parameter_search, optimize_parameters, plot_optuna_data
 from sklearn.linear_model import Lasso
 from sklearn.metrics import mean_squared_error
+from train_model_source import simulate_model, make_model
 
 # Can optionally be merged with currents, only difference is xdot and plots
 
-def optimize_simulation(path_to_data_files, nmbr_models=-1, loglwrbnd=None, loguprbnd=None, Torque=False, UMP=False):
+def OLD_optimize_simulation(path_to_data_files, nmbr_models=-1, loglwrbnd=None, loguprbnd=None, Torque=False, UMP=False):
     """
     OLD TO BE REMOVED
 
@@ -56,7 +57,7 @@ def optimize_simulation(path_to_data_files, nmbr_models=-1, loglwrbnd=None, logu
     return
 
 
-def make_model(path_to_data_files, optimizer, nmbr_of_train=-1,
+def OLD_make_model(path_to_data_files, optimizer, nmbr_of_train=-1,
                Torque = False, UMP = False, lib = "",
                alpha=None, nu=None,lamb = None):
     """
@@ -106,7 +107,7 @@ def make_model(path_to_data_files, optimizer, nmbr_of_train=-1,
     save_model(model, name+"_model", lib)
 
 
-def simulate(model_name, path_to_test_file, Torque = False, UMP = False):
+def OLD_simulate(model_name, path_to_test_file, Torque = False, UMP = False):
     model = load_model(model_name)
     model.print()
     plot_coefs2(model ,show=True) #debgu!!
@@ -214,4 +215,4 @@ if __name__ == "__main__":
         ### SIMULATE TORQUE WITH CHOSEN ALPHA AND OPTIMIZER
         #simulate("Torque-UMP_model", path_to_test_file, Torque=True)
         #simulate("UMP_model", path_to_test_file, Torque=False, UMP=True )
-        simulate("torque_model", path_to_test_file, Torque=True)
+        simulate_model("torque_model", path_to_test_file, Torque=True)

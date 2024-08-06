@@ -10,10 +10,10 @@ if __name__ == "__main__":
     motor_path = os.path.join(os.getcwd(), "Cantoni.pkl")
 
     t_end = 5.0 # debug
-    ecc = np.array([0.5,0.0])
-    eccname = "50eccTEST"
+    ecc = np.array([0.0,0.0])
+    eccname = "nonlin_0"
     numbr_of_simulations = 50  # number of train simulations (of 5sec)
-    mode = 'linear'
+    mode = 'nonlinear'
 
     if generate_traindata:
         print("Generating training data")

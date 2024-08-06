@@ -1,11 +1,13 @@
+import os
+
 from optimize_parameters import parameter_search, optimize_parameters, plot_optuna_data
 from source import *
 from prepare_data import prepare_data
 from sklearn.linear_model import Lasso
 from sklearn.metrics import mean_squared_error
+from train_model_source import make_model, simulate_model
 
-
-def make_model_currents(path_to_data_files, alpha=None, nu=None, lamb = None, optimizer='sr3', nmbr_of_train=-1, lib = "",modelname=None):
+def OLD_make_model_currents(path_to_data_files, alpha=None, nu=None, lamb = None, optimizer='sr3', nmbr_of_train=-1, lib = "",modelname=None):
     """
     Simulation for the currents and compared with testdata
     :param path_to_data_files:
@@ -45,7 +47,7 @@ def make_model_currents(path_to_data_files, alpha=None, nu=None, lamb = None, op
     save_model(model, modelname, lib)
 
 
-def simulate_currents(model_name, path_to_test_file, do_time_simulation=False):
+def OLD_simulate_currents(model_name, path_to_test_file, do_time_simulation=False):
     model = load_model(model_name)
     model.print()
     TEST = prepare_data(path_to_test_file, test_data=True)
@@ -99,26 +101,26 @@ def simulate_currents(model_name, path_to_test_file, do_time_simulation=False):
 
 
 if __name__ == "__main__":
-    path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
-    path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-31-ecc-50', 'IMMEC_50ecc_5.0sec.npz')
-    ### OPTIMIZE ALPHA
-    #optimize_parameters(path_to_data_files, mode = "currents")
 
-    ### PLOT MSE AND SPARSEITY FOR DIFFERENT PARAMETERS
-    #plot_optuna_data('currents-lasso-study')
-    #plot_optuna_data('currents-optuna-study')
+    path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-31-nonlin', 'IMMEC_nonlinear-0ecc_5.0sec.npz')
 
     ### CREATE A MODEL
     #make_model_currents(path_to_data_files, alpha=1, optimizer='lasso', nmbr_of_train=10)
     #make_model_currents(path_to_data_files, lamb = 1.46e-5, nu=4.6e-6, optimizer='sr3', nmbr_of_train=-1, lib = "poly_2nd_order")
     #make_model_currents(path_to_data_files, lamb=1.67e-5, nu=2.236e-10, optimizer='sr3', lib="poly_2nd_order")
     #make_model_currents(path_to_data_files, alpha = 0.132, optimizer="lasso", lib = "currents", modelname = '50ecc_paper')
+    #make_model_currents(path_to_data_files, lib = "poly_2nd_order", optimizer="sr3", lamb=2.26e-5, nu=2.997e-11, modelname='nonlin')
 
     ### SIMULATE
     #path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
-    #path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29', 'IMMEC_0ecc_5.0sec.npz')
+    path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29', 'IMMEC_0ecc_5.0sec.npz')
+    path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-06', 'IMMEC_nonlin_0ecc_5.0sec.npz')
+
     #path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-02', 'IMMEC_xy50ecc_1.0sec.npz')
-    path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-05', 'IMMEC_50eccecc_5.0sec.npz')
+    #path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-05', 'IMMEC_50eccecc_5.0sec.npz')
     #simulate_currents('currents_model-x_ecc', path_to_test_file, do_time_simulation=True)
-    simulate_currents('50ecc_paper', path_to_test_file, do_time_simulation=True)
+    w1,w2 = simulate_model('nonlin', path_to_test_file, modeltype='currents',do_time_simulation=False)
+    leg = ['dot i_d ref', 'dot i_d', 'dot i_q ref', 'dot i_q', 'dot i_0 ref', 'dot i_0']
+
+    plot_fourier(w2,w1, dt = 1e-4, tmax= 5.0, leg=leg)
     #plt.show()

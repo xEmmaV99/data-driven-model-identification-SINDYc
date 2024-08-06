@@ -10,7 +10,7 @@ from libs import get_custom_library_funcs
 import tqdm
 
 
-def optimize_parameters(path_to_data_files, mode='torque'):
+def optimize_parameters(path_to_data_files, mode='torque', additional_name=""):
     """
     Calculates for various parameters, plots MSE and Sparsity, for SR3 and Lasso optimisation
     """
@@ -28,6 +28,7 @@ def optimize_parameters(path_to_data_files, mode='torque'):
     elif mode == "ump":
         XDOT = [DATA['UMP_train'], DATA['UMP_val']]
         namestr = "ump"
+
     elif mode == "W_mag":
         raise NotImplementedError("Wmag it not present in data yet")
         namestr= "W"
@@ -60,13 +61,13 @@ def optimize_parameters(path_to_data_files, mode='torque'):
     elif both:
         print("SR3_L1 and lasso optimisation")
         n = 2
-        trials = 50
+        trials = 100
         a_range = [1e-5, 1e2]
-        l_range = [1e-5, 1e2]
-        n_range = [1e-11, 1e-5]
+        l_range = [1e-10, 1e2]
+        n_range = [1e-12, 1e2]
 
         with joblib.parallel_config(n_jobs = n, backend = "loky", inner_max_num_threads=1):
-            joblib.Parallel(n_jobs=n)(joblib.delayed(optuna_search_both)(DATA, XDOT, l_range, n_range, a_range, namestr, trials) for _ in range(n))
+            joblib.Parallel(n_jobs=n)(joblib.delayed(optuna_search_both)(DATA, XDOT, l_range, n_range, a_range, namestr+additional_name, trials) for _ in range(n))
 
         #with multiprocessing.Pool(n) as pool:
         #    pool.starmap(optuna_search_both, [[DATA, XDOT, l_range, n_range, a_range, namestr, trials] for _ in range(n)])
@@ -82,7 +83,8 @@ def optuna_search_both(DATA, XDOT, lminmax, nminmax, aminmax, studyname, iter):
     # XDOT = f(DATA) with first element training, second validation
     def objective(trial):
         lib_choice = trial.suggest_categorical('lib_choice',
-                                               ['poly_2nd_order', 'custom', 'torque', 'currents'])
+                                               ['nonlinear_terms', 'nonlinear_terms_with_f', 'poly_2nd_order'])
+
         lib = get_custom_library_funcs(lib_choice)
         optimizer_name = trial.suggest_categorical('optimizer', ['lasso', 'sr3'])
         if optimizer_name == 'lasso':

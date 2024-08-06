@@ -160,9 +160,14 @@ def create_immec_data(
         data_logger.log(n * timestep, inputs)
 
         # DEBUG: MAGNETIC COENERGY
-        #W = 0.5 * ((data_logger.quantities['potentials_st'][-1,:] - data_logger.quantities['potentials_rot'][-1,:]) ** 2 \
-        #           * motor_model.P_air_hl_noskew()).sum(axis=1).sum()  # Total magnetic co energy
+        '''psi_st = data_logger.quantities['potentials_st']
+        psi_rot = data_logger.quantities['potentials_rot']
+        
+        Psi = np.broadcast_to(psi_st[:, np.newaxis], (psi_st.shape[0], motor_model.N_rot))\
+              - np.ones((motor_model.N_st, 1)) * psi_rot[np.newaxis, :]
 
+        W = 0.5 * (Psi ** 2 * motor_model.P_air_hl_noskew()).sum(axis=1).sum()  # Total magnetic co energy
+        '''
         # III. Step the motor model
         if mode == "linear":
             motor_model.step(inputs)

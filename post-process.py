@@ -3,6 +3,7 @@ from optimize_parameters import plot_optuna_data
 
 # open model, do simulation on different test sets, plot
 
+plot_optuna_data("currentsNonlinear-optuna-study")
 
 '''
 path = np.zeros(6, dtype=object)
@@ -25,7 +26,7 @@ for i in range(6):
 #plot_immec_data(os.path.join(os.getcwd(), 'test-data', '08-02', 'IMMEC_xy50_sweep_noloadecc_2.0sec.npz'))
 #plot_immec_data(os.path.join(os.getcwd(), 'test-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz'))
 #plot_immec_data(os.path.join(os.getcwd(), "test-data", "08-02", "IMMEC_y50ecc_5.0sec.npz"))
-plot_immec_data(os.path.join(os.getcwd(), "test-data", "08-02", "IMMEC_nonlinear-50eccecc_5.0sec.npz"))
+#plot_immec_data(os.path.join(os.getcwd(), "test-data", "08-02", "IMMEC_nonlinear-50eccecc_5.0sec.npz"))
 '''paretos = np.zeros(3, dtype=object)
 #paretos[0] = 'torque-optuna-study'
 #paretos[1] = 'currents-optuna-study'
