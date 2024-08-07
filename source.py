@@ -274,75 +274,81 @@ def plot_immec_data(path, simulation_number=None, title=None):
 
     d_air = 0.000477  # for the Cantoni motor
 
+    if "wcoe" in dataset.keys(): # some datasets have magnetic coenergy
+        rows, cols = 2, 4
+    else:
+        rows, cols = 2, 3
+
     if simulation_number is None:  # testfile
-        plt.subplot(2,4, 1)
+        plt.subplot( rows, cols, 1)
         plt.title("omega_rot"), plt.xlabel("time (s)"), plt.ylabel("rad/s")
         plt.plot(dataset["time"], dataset["omega_rot"])
 
-        plt.subplot(2,4, 2)
+        plt.subplot( rows, cols, 2)
         plt.title("i_st in dq0"), plt.xlabel("time (s)"), plt.ylabel("A")  # debug
         plt.plot(dataset["time"], reference_abc_to_dq0(dataset["i_st"]))
 
-        plt.subplot(2,4, 3)
+        plt.subplot( rows, cols, 3)
         plt.title("T_l and T_em"), plt.xlabel("time (s)"), plt.ylabel("Nm")
         plt.plot(dataset["time"], dataset["T_em"])
 
         plt.plot(dataset["time"], dataset["T_l"], "k--")
         plt.legend(["T_em", "T_l"])
 
-        plt.subplot(2,4, 5)
+        plt.subplot( rows, cols, 5)
         plt.title("Applied line Voltages"), plt.xlabel("time (s)"), plt.ylabel("V")
         plt.plot(dataset["time"], dataset['v_applied'])
         # debug
 
-        plt.subplot(2,4, 4)
+        plt.subplot( rows, cols, 4)
         plt.title("UMP"), plt.xlabel("time (s)"), plt.ylabel("N")
         plt.plot(dataset["time"], dataset["F_em"])
 
-        plt.subplot(2,4, 6)
+        plt.subplot( rows, cols, 6)
         plt.title("Eccentricity"), plt.xlabel("time (s)"), plt.ylabel("% airgap")
         plt.plot(dataset["time"], dataset["ecc"] / d_air)
 
-        plt.subplot(2,4,7)
-        plt.title("Magnetic co-energy"), plt.xlabel("time (s)"), plt.ylabel("J")
-        plt.plot(dataset["time"], dataset["wcoe"])
+        # if wcoe not in keys, don't do the enxt plot
+        if "wcoe" in dataset.keys():
+            plt.subplot( rows, cols,7)
+            plt.title("Magnetic co-energy"), plt.xlabel("time (s)"), plt.ylabel("J")
+            plt.plot(dataset["time"], dataset["wcoe"])
 
     else:  # train file
-        plt.subplot(2,4, 1)
+        plt.subplot( rows, cols, 1)
         plt.title("omega_rot"), plt.xlabel("time (s)"), plt.ylabel("rad/s")
 
         plt.plot(dataset["time"][:, 0, simulation_number], dataset["omega_rot"][:, 0, simulation_number])
 
-        plt.subplot(2,4, 2)
+        plt.subplot( rows, cols, 2)
         plt.title("i_st in dq0"), plt.xlabel("time (s)"), plt.ylabel("A")  # debug
         plt.plot(dataset["time"][:, 0, simulation_number],
                  reference_abc_to_dq0(dataset["i_st"][:, :, simulation_number]))
 
-        plt.subplot(2,4, 3)
+        plt.subplot( rows, cols, 3)
         plt.title("T_l and T_em"), plt.xlabel("time (s)"), plt.ylabel("Nm")
-        # plt.title("T_em"), plt.xlabel("time (s)")
         plt.plot(dataset["time"][:, 0, simulation_number], dataset["T_em"][:, 0, simulation_number])
-
-        # plt.subplot(2, 3, 3)
-        # plt.title("T_l"), plt.xlabel("time (s)")
         plt.plot(dataset["time"][:, 0, simulation_number], dataset["T_l"][:, 0, simulation_number], 'k--')
         plt.legend(["T_em", "T_l"])
 
-        plt.subplot(2,4, 5)
+        plt.subplot( rows, cols, 5)
         plt.title("Applied line Voltages"), plt.xlabel("time (s)"), plt.ylabel("V")
         plt.plot(dataset["time"][:, 0, simulation_number], dataset["v_applied"][:, :, simulation_number])
 
-        plt.subplot(2,4, 4)
+        plt.subplot( rows, cols, 4)
         plt.title("UMP"), plt.xlabel("time (s)"), plt.ylabel("N")
         plt.plot(dataset["time"][:, 0, simulation_number], dataset["F_em"][:, :, simulation_number])
 
-        plt.subplot(2,4, 6)
+        plt.subplot(rows, cols, 6)
         plt.title("Eccentricity"), plt.xlabel("time (s)"), plt.ylabel("% airgap")
         plt.plot(dataset["time"][:, 0, simulation_number], dataset["ecc"][:, :, simulation_number] / d_air)
         plt.legend(["x", "y"])
-        plt.subplot(2,4,7)
-        plt.title("Magnetic coenergy"), plt.xlabel("time (s)"), plt.ylabel("J")
-        plt.plot(dataset["time"], dataset["wcoe"])
+
+        if "wcoe" in dataset.keys():
+            plt.subplot( rows, cols, 7)
+            plt.title("Magnetic coenergy"), plt.xlabel("time (s)"), plt.ylabel("J")
+            plt.plot(dataset["time"], dataset["wcoe"])
+
     if title is not None:
         plt.suptitle(title)
     # Add padding so title and labels dont overlap
