@@ -3,7 +3,7 @@ from source import *
 from train_model_source import make_model, simulate_model
 
 do_part1 = False
-do_part15 = True
+do_part15 = False
 do_part2 = False
 do_part3 = True
 
@@ -14,8 +14,8 @@ path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-29-default', 'I
 
 
 ### TEST FILES
-#path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-07', 'IMMEC_nonlin_0ecc_5.0sec.npz')
-path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
+path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-07', 'IMMEC_nonlin_0ecc_5.0sec.npz') # for A B examples
+#path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz') #
 
 
 ### PART 1: OPTIMIZE PARAMETERS
@@ -58,12 +58,14 @@ if do_part2:
 ### PART 3: SIMULATE MODEL
 if do_part3:
     models = ["example_A_currents", "example_B_currents"]
-    models = ["linear_example_2_currents", "linear_example_3_currents"]
+    #models = ["linear_example_2_currents", "linear_example_3_currents"]
+
+    pref = "0908//"
     for m in models:
         # simulate the model and plot the results
-        pr, test = simulate_model(m+'_model', path_to_test_file, modeltype="currents", do_time_simulation=True, show=False)
+        pr, test = simulate_model(pref+m+'_model', path_to_test_file, modeltype="currents", do_time_simulation=True, show=False)
 
-        plot_fourier(test, pr, dt = 5e-5, tmax = 5.0, show=False)
+        plot_fourier(test, pr, dt = 1e-4, tmax = 5.0, show=False)
 
     plt.show()
 

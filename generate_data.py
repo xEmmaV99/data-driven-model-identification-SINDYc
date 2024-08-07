@@ -1,9 +1,6 @@
 import os
 import multiprocessing
 from datetime import date
-
-import numpy as np
-
 from generate_data_source import *
 
 if __name__ == "__main__":
@@ -23,7 +20,7 @@ if __name__ == "__main__":
         print("No eccentricity")
         ecc = ecc_dir * ecc_value # if ecc_value is 0, ecc is 0
 
-    eccname = "nonlin_0"
+    eccname = "DEBUG"
     numbr_of_simulations = 50  # number of train simulations (of 5sec)
     mode = 'nonlinear'
 

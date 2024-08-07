@@ -10,9 +10,8 @@ except ImportError:
     print("Skipping import of pysindy")
 
 import matplotlib.pyplot as plt
-
-
 # todo consider multithreading here, as one CPU might be the bottleneck
+
 def prepare_data(path_to_data_file,
                  test_data=False,
                  number_of_trainfiles=-1,
@@ -37,7 +36,7 @@ def prepare_data(path_to_data_file,
 
     # initialise data
     DATA = {'x': np.array([]), 'u': np.array([]), 'xdot': np.array([]),
-            'T_em': np.array([]), 'UMP': np.array([]), 'feature_names': np.array([])}
+            'T_em': np.array([]), 'UMP': np.array([]), 'feature_names': np.array([])} # ,'wcoe':np.array([])}
 
     # crop dataset to desired amount of simulations (random_idx)
     if not test_data:
@@ -66,6 +65,7 @@ def prepare_data(path_to_data_file,
         t_data = np.expand_dims(t_data, axis=2)
         dataset['T_em'] = np.expand_dims(dataset['T_em'], axis=2)
         dataset['F_em'] = np.expand_dims(dataset['F_em'], axis=2)
+        #dataset['wcoe'] = np.expand_dims(dataset['wcoe'], axis=2)
 
     # get u data: potentials_st, i_st, omega_rot, gamma_rot, and the integrals.
     for simul in range(number_of_trainfiles):
@@ -107,17 +107,17 @@ def prepare_data(path_to_data_file,
                              r'$v_d$', r'$v_q$', r'$v_0$',
                              r'$I_d$', r'$I_q$', r'$I_0$',
                              r'$V_d$', r'$V_q$', r'$V_0$',
-                             r'$\gamma$', r'$\omega$', r'$f$']
+                             r'$\gamma$', r'$\omega$', r'$f$'] # ,r'$W_{coe}$']
 
-    #todo problem for dynamic ecc
+    # add eccentricity to the input data
+    '''
     if not np.all(dataset['ecc'] < 1e-10):
         print('Non zero ecc, added to input data')
         u_data = np.hstack((u_data, dataset['ecc']))
         DATA['feature_names'].append([r'r_x', r'r_y'])
     else:
         print('No ecc')
-        #u_data = np.hstack((u_data, np.zeros((u_data.shape[0],1,u_data.shape[-1]))))
-
+    '''
 
     # Now, stack data on top of each other and shuffle! (Note that the transpose is needed otherwise the reshape is wrong)
     DATA['x'] = x_data.transpose(0, 2, 1).reshape(x_data.shape[0] * x_data.shape[-1], x_data.shape[1])
@@ -126,6 +126,7 @@ def prepare_data(path_to_data_file,
     DATA['T_em'] = dataset["T_em"].transpose(0, 2, 1).reshape(dataset["T_em"].shape[0] * dataset["T_em"].shape[-1])
     DATA['UMP'] = dataset["F_em"].transpose(0, 2, 1).reshape(dataset["F_em"].shape[0] * dataset["F_em"].shape[-1],
                                                              dataset["F_em"].shape[1])
+    # DATA['wcoe'] = dataset['wcoe'].transpose(0, 2, 1).reshape(dataset['wcoe'].shape[0] * dataset['wcoe'].shape[-1])
 
     if test_data:
         DATA['V'] = V_range
@@ -139,6 +140,7 @@ def prepare_data(path_to_data_file,
     DATA['xdot'] = DATA['xdot'][shuffled_indices]
     DATA['T_em'] = DATA['T_em'][shuffled_indices]
     DATA['UMP'] = DATA['UMP'][shuffled_indices]
+    # DATA['wcoe'] = DATA['wcoe'][shuffled_indices]
 
     # split the data into train and validation data
     p = 0.8  # percentage of data to be used for training
@@ -149,11 +151,13 @@ def prepare_data(path_to_data_file,
     DATA['xdot_train'] = DATA['xdot'][:cutidx]
     DATA['T_em_train'] = DATA['T_em'][:cutidx]
     DATA['UMP_train'] = DATA['UMP'][:cutidx]
+    # DATA['wcoe_train'] = DATA['wcoe'][:cutidx]
     DATA['x_val'] = DATA['x'][cutidx:]
     DATA['u_val'] = DATA['u'][cutidx:]
     DATA['xdot_val'] = DATA['xdot'][cutidx:]
     DATA['T_em_val'] = DATA['T_em'][cutidx:]
     DATA['UMP_val'] = DATA['UMP'][cutidx:]
+    # DATA['wcoe_val'] = DATA['wcoe'][cutidx:]
 
     return DATA
 

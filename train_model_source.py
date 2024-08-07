@@ -40,8 +40,11 @@ def make_model(path_to_data_files, modeltype, optimizer, nmbr_of_train=-1, lib="
         train = DATA['xdot_train']
         val = DATA['xdot_val'] # only for MSE calculation
         name = "Currents"
-    elif modeltype == 'w_co':
+    elif modeltype == 'wcoe':
         raise NotImplementedError("Not implemented yet")
+        train = DATA['wcoe_train']
+        val = DATA['wcoe_val'] # only for MSE calculation
+        name = "Wcoe"
     else:
         raise ValueError("Model type not known")
 
@@ -90,8 +93,9 @@ def simulate_model(model_name, path_to_test_file, modeltype, do_time_simulation=
         test_values = np.hstack((TEST['T_em'].reshape(-1, 1), TEST['UMP']))
     elif modeltype == 'currents':
         test_values = TEST['xdot']
-    elif modeltype == 'w_co':
+    elif modeltype == 'wcoe':
         raise NotImplementedError("Not implemented yet")
+        test_values = TEST['wcoe']
     else:
         raise ValueError("Model type not known")
 
@@ -120,7 +124,7 @@ def simulate_model(model_name, path_to_test_file, modeltype, do_time_simulation=
             # x_sim = model.simulate(x_test[0, :],
             #                       u=u_test[(t < simulation_time).reshape(-1), :],
             #                       t=t_value.reshape(t_value.shape[0]),
-            #                       integrator_kws={'method': 'RK45'})  # todo : change integration method
+            #                       integrator_kws={'method': 'RK45'})
 
             x_sim = model_simulate(x_test[0, :],
                                    u=u_test[(t < simulation_time).reshape(-1), :],

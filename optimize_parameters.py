@@ -30,8 +30,9 @@ def optimize_parameters(path_to_data_files, mode='torque', additional_name=""):
         XDOT = [DATA['UMP_train'], DATA['UMP_val']]
         namestr = "ump"
 
-    elif mode == "W_mag":
-        raise NotImplementedError("Wmag it not present in data yet")
+    elif mode == "wcoe":
+        raise NotImplementedError("Magnetic coenergy is not fully implemented yet")
+        XDOT = [DATA['wcoe_train'], DATA['wcoe_mag']]
         namestr= "W"
     else:
         raise ValueError("mode is either currents, torque or ump")

@@ -29,7 +29,7 @@ def do_simulation(V_applied, motor_path, load=3.7, ecc=np.zeros(2), t_end=1.0, m
         datalogger.quantities["time"],
         datalogger.quantities["flux_st_yoke"],
         datalogger.quantities["gamma_rot"],
-        wcoe
+        wcoe[:,np.newaxis]
     ]
 
 
