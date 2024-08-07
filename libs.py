@@ -2,6 +2,7 @@ import pysindy as ps
 import numpy as np
 
 def get_library_names():
+    return ['poly_2nd_order', 'linear-specific']
     return ['nonlinear_terms', 'nonlinear_terms_with_f', 'poly_2nd_order', 'torque']
 
 
@@ -170,6 +171,26 @@ def get_custom_library_funcs(type, nmbr_input_features = 15):
                                             ps.CustomLibrary(library_functions2, library_function_names2, interaction_only=False)],
                                            tensor_array=None,  # don't merge the libraries
                                            inputs_per_library=input_per_library)
+
+    elif type == 'linear-specific':
+        ins = [0,1,2,3,4,5,6,7,8,9,10,11] # i i i v v v I I I V V V
+        ins2 = [12,13,3,4,5] # omega gamma v v v
+        ins3 = [0,1,2,6,7,8,9,10,11] # i i i I I I V V V
+        lin = [
+            lambda x: x
+        ]
+        lin_name = [
+            lambda x: x
+        ]
+        linear_terms = ps.GeneralizedLibrary([ps.CustomLibrary(lin, lin_name, interaction_only=False)],
+                                             inputs_per_library=[ins])
+        cross_terms = ps.GeneralizedLibrary([ps.CustomLibrary(lin, lin_name, interaction_only=False)],
+                                             inputs_per_library=[ins2]) * \
+                      ps.GeneralizedLibrary([ps.CustomLibrary(lin, lin_name, interaction_only=False)],
+                                             inputs_per_library=[ins3])
+
+        custom_lib = linear_terms + cross_terms
+
 
     else:
         raise ValueError('Library unknown')

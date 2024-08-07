@@ -3,6 +3,7 @@ from libs import *
 
 # todo add constraints
 
+
 def optimize_currents_simulation(path_to_data_files, nmbr_models=20, loglwrbnd=None, loguprbnd=None):
     """
     Calculates for various parameters, plots MSE and Sparsity, for SR3 and Lasso optimisation
@@ -133,6 +134,7 @@ if __name__ == "__main__":
     path_to_data_files = os.path.join(os.getcwd(), 'train-data', "07-29-default","IMMEC_0ecc_5.0sec.npz")
 
     ### OPTIMIZE ALPHA
+
     #optimize_currents_simulation(path_to_data_files, nmbr_models=1, loglwrbnd=[-7, -7], loguprbnd=[3, 3])
 
     ### PLOT MSE FOR DIFFERENT ALPHA

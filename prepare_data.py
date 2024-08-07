@@ -4,13 +4,15 @@ import numpy as np
 import os
 import pickle as pkl
 import numba as nb
+
 try:
     from pysindy import FiniteDifference
 except ImportError:
     print("Skipping import of pysindy")
 
-import matplotlib.pyplot as plt
+
 # todo consider multithreading here, as one CPU might be the bottleneck
+
 
 def prepare_data(path_to_data_file,
                  test_data=False,
@@ -21,6 +23,7 @@ def prepare_data(path_to_data_file,
     print("Loading data")
     dataset = dict(np.load(path_to_data_file))  # should be a dictionary
     print("Done loading data")
+
     path_to_simulation_data = os.path.join(os.path.dirname(path_to_data_file), 'SIMULATION_DATA.pkl')
     if not test_data:
         V_range, load_range = read_V_load_from_simulationdata(path_to_simulation_data)
@@ -36,47 +39,50 @@ def prepare_data(path_to_data_file,
 
     # initialise data
     DATA = {'x': np.array([]), 'u': np.array([]), 'xdot': np.array([]),
-            'T_em': np.array([]), 'UMP': np.array([]), 'feature_names': np.array([])} # ,'wcoe':np.array([])}
+            'T_em': np.array([]), 'UMP': np.array([]), 'feature_names': np.array([])}  # ,'wcoe':np.array([])}
 
     # crop dataset to desired amount of simulations (random_idx)
     if not test_data:
         for key in dataset.keys():
             dataset[key] = dataset[key][:, :, random_idx]
 
-    # get x data
-    x_data = reference_abc_to_dq0(dataset['i_st'])
-    t_data = dataset['time']
-
-    # first, calculate xdots and add to the data
-    print("Calculating xdots")
-    xdots = calculate_xdot(x_data, t_data)
-    print("Done calculating xdots")
-
     # prepare v data
     if use_estimate_for_v:
-        v_stator = reference_abc_to_dq0(v_abc_estimate_from_line(dataset["v_applied"])) #debug
+        v_stator = reference_abc_to_dq0(v_abc_estimate_from_line(dataset["v_applied"]))  # debug
     else:
-        v_stator = reference_abc_to_dq0(v_abc_calculation(dataset, path_to_motor_info=path_to_simulation_data)) #debug
+        v_stator = reference_abc_to_dq0(v_abc_calculation(dataset, path_to_motor_info=path_to_simulation_data))  # debug
 
-    if np.ndim(x_data) <= 2:  # expand such that the code works for both 2D and 3D data
-        x_data = np.expand_dims(x_data, axis=2)
-        xdots = np.expand_dims(xdots, axis=2)
+    i_st = reference_abc_to_dq0(dataset['i_st'])
+
+    if np.ndim(i_st) <= 2:  # expand such that the code works for both 2D and 3D data
+        i_st = np.expand_dims(i_st, axis=2)
         v_stator = np.expand_dims(v_stator, axis=2)
-        t_data = np.expand_dims(t_data, axis=2)
+        dataset["time"] = np.expand_dims(dataset['time'], axis=2)
         dataset['T_em'] = np.expand_dims(dataset['T_em'], axis=2)
         dataset['F_em'] = np.expand_dims(dataset['F_em'], axis=2)
-        #dataset['wcoe'] = np.expand_dims(dataset['wcoe'], axis=2)
+        # dataset['wcoe'] = np.expand_dims(dataset['wcoe'], axis=2)
 
     # get u data: potentials_st, i_st, omega_rot, gamma_rot, and the integrals.
     for simul in range(number_of_trainfiles):
         if simul == 0:  # initiliaze
-            I = scipy.integrate.cumulative_trapezoid(x_data[:, :, simul], t_data[:, 0, simul], axis=0, initial=0)
-            V = scipy.integrate.cumulative_trapezoid(v_stator[:, :, simul], t_data[:, 0, simul], axis=0, initial=0)
+            I = scipy.integrate.cumulative_trapezoid(i_st[:, :, simul],  dataset['time'][:, 0, simul], axis=0, initial=0)
+            V = scipy.integrate.cumulative_trapezoid(v_stator[:, :, simul],  dataset['time'][:, 0, simul], axis=0, initial=0)
             continue
         I = np.dstack(
-            (I, scipy.integrate.cumulative_trapezoid(x_data[:, :, simul], t_data[:, 0, simul], axis=0, initial=0)))
+            (I, scipy.integrate.cumulative_trapezoid(i_st[:, :, simul],  dataset['time'][:, 0, simul], axis=0, initial=0)))
         V = np.dstack(
-            (V, scipy.integrate.cumulative_trapezoid(v_stator[:, :, simul], t_data[:, 0, simul], axis=0, initial=0)))
+            (V, scipy.integrate.cumulative_trapezoid(v_stator[:, :, simul],  dataset['time'][:, 0, simul], axis=0, initial=0)))
+
+    # get x data
+    x_data = reference_abc_to_dq0(dataset['i_st'])
+    ###  x_data = np.hstack((i_st, I.reshape(i_st.shape), V.reshape(i_st.shape)))
+    t_data = dataset['time']
+
+
+    # calculate xdots
+    print("Calculating xdots")
+    xdots = calculate_xdot(x_data, t_data)
+    print("Done calculating xdots")
 
     if not test_data:  # trim times AFTER xdots calculation
         print('time trim: ', usage_per_trainfile)
@@ -107,7 +113,7 @@ def prepare_data(path_to_data_file,
                              r'$v_d$', r'$v_q$', r'$v_0$',
                              r'$I_d$', r'$I_q$', r'$I_0$',
                              r'$V_d$', r'$V_q$', r'$V_0$',
-                             r'$\gamma$', r'$\omega$', r'$f$'] # ,r'$W_{coe}$']
+                             r'$\gamma$', r'$\omega$', r'$f$']  # ,r'$W_{coe}$']
 
     # add eccentricity to the input data
     '''
@@ -161,18 +167,18 @@ def prepare_data(path_to_data_file,
 
     return DATA
 
+
 def check_trapezoid_integration():
     print("this doesn't work")
     path = os.path.join(os.getcwd(), 'test-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
     dataset = prepare_data(path, test_data=True)
-    I_end = dataset['u'][-1,3:6]
-    V_end = dataset['u'][-1,6:9]
+    I_end = dataset['u'][-1, 3:6]
+    V_end = dataset['u'][-1, 6:9]
     i = dataset['x']
     v = dataset['u'][:, 0:3]
-    print(np.sum(i, axis = 0)*5e-5, I_end)
-    print(np.sum(v, axis = 0)*5e-5, V_end)
+    print(np.sum(i, axis=0) * 5e-5, I_end)
+    print(np.sum(v, axis=0) * 5e-5, V_end)
     return
-
 
 
 def reference_abc_to_dq0(coord_array: np.array):
@@ -190,7 +196,8 @@ def reference_abc_to_dq0(coord_array: np.array):
     )
     return np.tensordot(T, coord_array.swapaxes(0, 1), axes=([1], [0])).swapaxes(0, 1)
 
-@nb.njit(cache = True)
+
+@nb.njit(cache=True)
 def reference_abc_to_dq0_CP(coord_array: np.array, gamma):
     nd = 3
     if np.ndim(gamma) <= 2:
@@ -204,8 +211,8 @@ def reference_abc_to_dq0_CP(coord_array: np.array, gamma):
             g = gamma[j, 0, simul]
             # Clarck- Park transformation as a function of gamma
             CP = np.sqrt(2 / 3) * np.array(
-                [[np.cos(g), np.cos(g-2/3*np.pi), np.cos(g+2/3*np.pi)],
-                 [-np.sin(g), -np.sin(g-2/3*np.pi/3), -np.sin(g+2/3*np.pi)],
+                [[np.cos(g), np.cos(g - 2 / 3 * np.pi), np.cos(g + 2 / 3 * np.pi)],
+                 [-np.sin(g), -np.sin(g - 2 / 3 * np.pi / 3), -np.sin(g + 2 / 3 * np.pi)],
                  [1 / np.sqrt(2), 1 / np.sqrt(2), 1 / np.sqrt(2)]]
             )
             newcoord[j, :, simul] = np.dot(CP, coord_array[j, :, simul].T).T
@@ -252,8 +259,8 @@ def v_abc_calculation(data_logger: dict, path_to_motor_info: str):
     di = FiniteDifference(order=4, axis=0)._differentiate(data_logger["i_st"], t)
 
     ist = data_logger["i_st"]
-    v_abc = np.tensordot(R, ist.swapaxes(0, 1), axes=([1], [0])) +\
-            np.tensordot(Nt, dphi.swapaxes(0, 1), axes=([1], [0])) +\
+    v_abc = np.tensordot(R, ist.swapaxes(0, 1), axes=([1], [0])) + \
+            np.tensordot(Nt, dphi.swapaxes(0, 1), axes=([1], [0])) + \
             L_s * di.swapaxes(0, 1)
 
     return v_abc.swapaxes(0, 1)
@@ -267,7 +274,7 @@ def v_abc_estimate_from_line(v_line: np.array):
     """
     # outputs Nx3 array
     T = np.array([[1, -1, 0], [1, 2, 0], [-2, -1, 0]])
-    return 1 / 3 * np.tensordot(T, v_line.swapaxes(0,1), axes=([1], [0])).swapaxes(0,1)
+    return 1 / 3 * np.tensordot(T, v_line.swapaxes(0, 1), axes=([1], [0])).swapaxes(0, 1)
 
 
 def read_V_load_from_simulationdata(path_to_simulation_data: str):

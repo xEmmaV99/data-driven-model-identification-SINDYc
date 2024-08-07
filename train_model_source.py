@@ -85,6 +85,7 @@ def simulate_model(model_name, path_to_test_file, modeltype, do_time_simulation=
     TEST = prepare_data(path_to_test_file, test_data=True)
     ## plot_coefs2(model, show=True, log=True)
     # merge the simulation functions
+
     if modeltype == 'torque':
         test_values = TEST['T_em'].reshape(-1, 1)
     elif modeltype == 'ump':
@@ -104,7 +105,7 @@ def simulate_model(model_name, path_to_test_file, modeltype, do_time_simulation=
     t = TEST['t'][:, :, 0]  # assume the t is the same for all simulations
     test_predicted = model.predict(x_test, u_test)
 
-    print("MSE: ", mean_squared_error(test_values, test_predicted))
+    print("MSE on test: ", mean_squared_error(test_values, test_predicted))
 
     if modeltype == 'currents':
         xydata = [np.hstack((t, test_predicted)), np.hstack((t, test_values))]
@@ -130,7 +131,9 @@ def simulate_model(model_name, path_to_test_file, modeltype, do_time_simulation=
                                    u=u_test[(t < simulation_time).reshape(-1), :],
                                    t=t_value.reshape(t_value.shape[0]), model=model
                                    ).y.T
-
+            plt.plot(x_sim)
+            plt.plot(x_test)
+            plt.show()
             print("Finished simulation")
             print("MSE on simulation: ", mean_squared_error(x_sim, x_test[:len(t_value), :]))
 

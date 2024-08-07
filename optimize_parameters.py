@@ -17,7 +17,7 @@ def optimize_parameters(path_to_data_files, mode='torque', additional_name=""):
     """
     both = True
 
-    DATA = prepare_data(path_to_data_files, number_of_trainfiles=30, usage_per_trainfile=.50) #use 30 random samples, each 25% data
+    DATA = prepare_data(path_to_data_files, number_of_trainfiles=30, usage_per_trainfile=.25) #use 30 random samples, each 25% data
     if mode == "currents":
         XDOT = [DATA['xdot_train'], DATA['xdot_val']]
         namestr = "currents"
@@ -34,6 +34,11 @@ def optimize_parameters(path_to_data_files, mode='torque', additional_name=""):
         raise NotImplementedError("Magnetic coenergy is not fully implemented yet")
         XDOT = [DATA['wcoe_train'], DATA['wcoe_mag']]
         namestr= "W"
+    elif mode == "merged":
+        # now, the xdot_train contains i and V and I,
+        raise NotImplementedError("Merged mode is not fully implemented yet")
+
+
     else:
         raise ValueError("mode is either currents, torque or ump")
 
@@ -62,7 +67,7 @@ def optimize_parameters(path_to_data_files, mode='torque', additional_name=""):
 
     elif both:
         print("SR3_L1 and lasso optimisation")
-        n = 1
+        n = 2
         trials = 100
         a_range = [1e-5, 1e2]
         l_range = [1e-10, 1e2]

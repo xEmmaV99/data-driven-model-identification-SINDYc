@@ -53,7 +53,6 @@ def prepare_data(path_to_data_file,
 
     i_st = reference_abc_to_dq0(dataset['i_st'])
 
-    # todo: expand such that 2D works too
     if np.ndim(i_st) <= 2: #expand such that the code works for both 2D and 3D data
         i_st = np.expand_dims(i_st, axis=2)
         v_stator = np.expand_dims(v_stator, axis=2)
