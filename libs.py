@@ -1,15 +1,18 @@
 import pysindy as ps
 import numpy as np
 
-# todo ohno, inputs per library depends on inputfeatures //
-def get_custom_library_funcs(type='default'):
+
+def get_custom_library_funcs(type, nmbr_input_features = 15):
     # Generalized library, sine and cos functions for gamma
-    #print("hardcoded")
-    all_but_gamma = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14]
-    all_but_gammafr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13]
-    all_but_i0 = [0, 1, 4, 5, 9, 10, 11, 12, 13, 14] # no constant terms in sin and cos
+    gamma = [12]
     fr = [14]
-    gamma = [12] # gamma should be inside a sin or cos function
+    i0_idx = [2,6]
+
+    all = [i for i in range(nmbr_input_features)]
+    all_but_gamma = [i for i in range(nmbr_input_features) if i not in gamma]
+    all_but_gammafr = [i for i in range(nmbr_input_features) if i not in gamma and i not in fr]
+    all_but_i0 = [i for i in range(nmbr_input_features) if i not in i0_idx]
+
     if type == 'poly_2nd_order':
         inputs_per_library = [all_but_gamma, gamma]
         custom_lib = ps.GeneralizedLibrary([ps.PolynomialLibrary(degree=2, include_interaction=True),
@@ -133,12 +136,6 @@ def get_custom_library_funcs(type='default'):
                                            inputs_per_library=[all_but_gamma, fourier_terms])
 
     elif type == 'torque':
-        library_functions = [
-            lambda x : x
-        ]
-        library_function_names = [
-            lambda x: x
-        ]
         library_functions2 = [
             lambda x,y: x*y
         ]

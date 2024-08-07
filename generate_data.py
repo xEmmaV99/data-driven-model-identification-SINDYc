@@ -7,8 +7,8 @@ import numpy as np
 from generate_data_source import *
 
 if __name__ == "__main__":
-    generate_traindata = True
-    generate_testdata = False
+    generate_traindata = False
+    generate_testdata = True
 
     motor_path = os.path.join(os.getcwd(), "Cantoni.pkl")
 
@@ -18,9 +18,9 @@ if __name__ == "__main__":
     ecc_dir = np.array([1, 0])
     ecc = ecc_dir / np.linalg.norm(ecc_dir) * ecc_value
 
-    eccname = "lin_ecc_random"
+    eccname = "nonlin_ecc_random"
     numbr_of_simulations = 50  # number of train simulations (of 5sec)
-    mode = 'linear'
+    mode = 'nonlinear'
 
     ecc_random_direction = True
     if ecc_random_direction:
@@ -34,13 +34,12 @@ if __name__ == "__main__":
     if generate_traindata:
         print("Generating training data")
         save_path = os.path.join(os.getcwd(), "train-data/", date.today().strftime("%m-%d"))
-        # create directory if not exists
+        # create directory if not exist
         if not os.path.exists(save_path):
             os.makedirs(save_path)
 
         V_ranges = np.random.randint(40, 400, numbr_of_simulations)  # randomly generated V values
-        load_ranges = (0 * np.random.randint(0.0, 370, numbr_of_simulations))
-        # INITIAL LOAD IS ZERO
+        load_ranges = (0 * np.random.randint(0.0, 370, numbr_of_simulations)) # INITIAL LOAD IS ZERO..
 
         save_simulation_data(motor_path, save_path, extra_dict={"V": V_ranges, "load": load_ranges})  # save motor data
 

@@ -4,7 +4,7 @@ from source import *
 from optimize_parameters import plot_optuna_data
 
 
-plot_immec_data(os.path.join(os.getcwd(), 'test-data', '08-06', 'TESTWCOE.npz'))
+plot_immec_data(os.path.join(os.getcwd(), 'test-data', '08-07', 'IMMEC_nonlin_ecc_randomecc_5.0sec.npz'))
 
 
 """

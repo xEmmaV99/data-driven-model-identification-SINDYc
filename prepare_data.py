@@ -111,10 +111,9 @@ def prepare_data(path_to_data_file,
 
     #todo problem for dynamic ecc
     if not np.all(dataset['ecc'] < 1e-10):
-        print('Non zero ecc')
-        angle = np.arctan2(dataset['ecc'][:,1],dataset['ecc'][:,0])
-        u_data = np.hstack((u_data, angle.reshape(angle.shape[0],1,u_data.shape[-1])))
-        DATA['feature_names'].append(r'\theta_{ecc}')
+        print('Non zero ecc, added to input data')
+        u_data = np.hstack((u_data, dataset['ecc']))
+        DATA['feature_names'].append([r'r_x', r'r_y'])
     else:
         print('No ecc')
         #u_data = np.hstack((u_data, np.zeros((u_data.shape[0],1,u_data.shape[-1]))))
