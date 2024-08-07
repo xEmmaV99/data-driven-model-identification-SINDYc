@@ -105,7 +105,7 @@ def save_plot_data(
     return save_path
 
 
-def plot_data(path="plotdata.pkl", show=True, figure=True, limits=None):
+def plot_data(path="plotdata.pkl", show=False, figure=True, limits=None):
     # todo adapt such that fourier is plotted too
     suppres_title = False
     if type(path) == str:
@@ -367,7 +367,7 @@ def plot_everything(path_to_directory):
     return
 
 
-def plot_fourier(reference, result, dt, tmax, leg=None):
+def plot_fourier(reference, result, dt, tmax, leg=None, show = True):
     def fun(w, n, s):
         # Perform FFT
         fft = np.fft.fft(w, axis=0)
@@ -407,7 +407,8 @@ def plot_fourier(reference, result, dt, tmax, leg=None):
     plt.grid()
 
     plt.tight_layout()
-    plt.show()
+    if show:
+        plt.show()
 
     return
 

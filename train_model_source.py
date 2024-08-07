@@ -75,11 +75,11 @@ def make_model(path_to_data_files, modeltype, optimizer, nmbr_of_train=-1, lib="
     save_model(model, name + "_model", lib)
 
 
-def simulate_model(model_name, path_to_test_file, modeltype, do_time_simulation=False):
+def simulate_model(model_name, path_to_test_file, modeltype, do_time_simulation=False, show=True):
     model = load_model(model_name)
     model.print()
     TEST = prepare_data(path_to_test_file, test_data=True)
-    plot_coefs2(model, show=True, log=True)
+    ## plot_coefs2(model, show=True, log=True)
     # merge the simulation functions
     if modeltype == 'torque':
         test_values = TEST['T_em'].reshape(-1, 1)
@@ -108,8 +108,7 @@ def simulate_model(model_name, path_to_test_file, modeltype, do_time_simulation=
         title = 'Predicted vs computed derivatives on test set V = ' + str(TEST['V'])
         leg = [r"$\partial_t{i_d}$", r"$\partial_t{i_q}$", r"$\partial_t{i_0}$", "computed"]
         specs = [None, "k--"]
-        save_plot_data("currents", xydata, title, xlab, ylab, legend=leg, plot_now=True,
-                       specs=specs)
+        save_plot_data("currents", xydata, title, xlab, ylab, legend=leg, plot_now=True, specs=specs)
 
         if do_time_simulation:
             simulation_time = 5.0
@@ -136,7 +135,8 @@ def simulate_model(model_name, path_to_test_file, modeltype, do_time_simulation=
                            r"$t$", r"$x$", plot_now=True, specs=[None, "k--"],
                            legend=[r"$i_d$", r"$i_q$", r"$i_0$", "test data"])
             return x_sim, x_test
-        plt.show()
+        if show:
+            plt.show()
         return test_predicted, test_values
 
     # Compare with alternative approach for Torque calculation on testdata
@@ -183,6 +183,6 @@ def simulate_model(model_name, path_to_test_file, modeltype, do_time_simulation=
         legend = [r"Predicted UMP_x", r"Predicted UMP_y", r"Reference"]
         specs = ["b", "r", "k--"]
         save_plot_data("UMP", xydata, title, xlab, ylab, legend=legend, plot_now=True, specs=specs)
-
-    plt.show()
+    if show:
+        plt.show()
     return test_predicted, test_values

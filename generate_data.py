@@ -14,15 +14,20 @@ if __name__ == "__main__":
 
     t_end = 5.0 # debug
 
-    ecc_value = .5
-    ecc_dir = np.array([1, 0])
-    ecc = ecc_dir / np.linalg.norm(ecc_dir) * ecc_value
+    ecc_value = 0.0
+    ecc_dir = np.array([0, 0])
 
-    eccname = "nonlin_ecc_random"
+    if np.linalg.norm(ecc_dir) > 1e-10 or np.abs(ecc_value) > 1e-10: # if one of those is zero, ecc is zero
+        ecc = ecc_dir / np.linalg.norm(ecc_dir) * ecc_value
+    else:
+        print("No eccentricity")
+        ecc = ecc_dir * ecc_value # if ecc_value is 0, ecc is 0
+
+    eccname = "nonlin_0"
     numbr_of_simulations = 50  # number of train simulations (of 5sec)
     mode = 'nonlinear'
 
-    ecc_random_direction = True
+    ecc_random_direction = False
     if ecc_random_direction:
         xvalue = np.random.random(numbr_of_simulations)*2-1 #between() -1 and 1
         xvalue = ecc_value*xvalue # scale with ecc
