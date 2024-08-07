@@ -1,6 +1,9 @@
 import os
 import multiprocessing
 from datetime import date
+
+import numpy as np
+
 from generate_data_source import *
 
 if __name__ == "__main__":
@@ -10,10 +13,23 @@ if __name__ == "__main__":
     motor_path = os.path.join(os.getcwd(), "Cantoni.pkl")
 
     t_end = 5.0 # debug
-    ecc = np.array([0.0,0.0])
+
+    ecc_value = .5
+    ecc_dir = np.array([1, 0])
+    ecc = ecc_dir / np.linalg.norm(ecc_dir) * ecc_value
+
     eccname = "nonlin_0"
     numbr_of_simulations = 50  # number of train simulations (of 5sec)
     mode = 'nonlinear'
+
+    ecc_random_direction = True
+    if ecc_random_direction:
+        xvalue = np.random.random(numbr_of_simulations)*2-1 #between() -1 and 1
+        xvalue = ecc*xvalue # scale with ecc
+        yvalue = np.sqrt(ecc**2-xvalue**2) # ecc^2 = x^2 + y^2
+        ecc_list = np.column_stack((xvalue, yvalue))
+    else:
+        ecc_list = np.repeat(ecc[np.newaxis,:], numbr_of_simulations, axis=0)
 
     if generate_traindata:
         print("Generating training data")
@@ -30,7 +46,7 @@ if __name__ == "__main__":
 
         print("Starting simulation")
         p = multiprocessing.Pool(processes=6)
-        input_data = [(V, motor_path, load_ranges[i], ecc, t_end, mode) for i, V in enumerate(V_ranges)]
+        input_data = [(V, motor_path, load_ranges[i], ecc_list[i], t_end, mode) for i, V in enumerate(V_ranges)]
         output_list = p.starmap(do_simulation, input_data)
         p.close()
         p.join()
@@ -90,7 +106,7 @@ if __name__ == "__main__":
         save_simulation_data(motor_path, save_path, extra_dict={"V": V, "load": load})  # save motor data
 
         print("Starting simulation")
-        simulation = do_simulation(V, motor_path, t_end=t_end, ecc=ecc, load=load, mode=mode)
+        simulation = do_simulation(V, motor_path, t_end=t_end, ecc=ecc_list[0], load=load, mode=mode)
         dataset = {
             "i_st": simulation[0],  # shape t, 3, simulations
             "omega_rot": simulation[1],  # shape t, simulations
