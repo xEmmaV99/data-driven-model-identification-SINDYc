@@ -7,6 +7,7 @@ from sklearn.linear_model import Lasso
 from sklearn.metrics import mean_squared_error
 import pysindy as ps
 from libs import get_custom_library_funcs
+from libs import get_library_names
 import tqdm
 
 
@@ -83,7 +84,7 @@ def optuna_search_both(DATA, XDOT, lminmax, nminmax, aminmax, studyname, iter):
     # XDOT = f(DATA) with first element training, second validation
     def objective(trial):
         lib_choice = trial.suggest_categorical('lib_choice',
-                                               ['nonlinear_terms', 'nonlinear_terms_with_f', 'poly_2nd_order'])
+                                               get_library_names())
 
         lib = get_custom_library_funcs(lib_choice)
         optimizer_name = trial.suggest_categorical('optimizer', ['lasso', 'sr3'])
@@ -123,7 +124,7 @@ def optuna_search_lasso(DATA, XDOT, minmax, studyname, iter):
     def objective(trial):
         alphas = trial.suggest_float('alphas', minmax[0], minmax[1], log=True)
         lib_choice = trial.suggest_categorical('lib_choice',
-                                               ['poly_2nd_order', 'custom'])  # 'best' eats all the memory
+                                               get_library_names())
 
         lib = get_custom_library_funcs(lib_choice)
 
@@ -162,7 +163,7 @@ def optuna_search_sr3(DATA, XDOT, l_minmax, n_minmax, studyname, iter):
 
         # todo maybe leave out this?
         lib_choice = trial.suggest_categorical('lib_choice',
-                                               ['poly_2nd_order', 'custom', 'torque'])  # 'best' eats all the memory
+                                               get_library_names())  # 'best' eats all the memory
 
         lib = get_custom_library_funcs(lib_choice)
 

@@ -1,6 +1,9 @@
 import pysindy as ps
 import numpy as np
 
+def get_library_names():
+    return ['nonlinear_terms', 'nonlinear_terms_with_f', 'poly_2nd_order', 'torque']
+
 
 def get_custom_library_funcs(type, nmbr_input_features = 15):
     # Generalized library, sine and cos functions for gamma
