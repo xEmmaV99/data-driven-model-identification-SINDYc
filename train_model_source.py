@@ -2,6 +2,7 @@ from source import *
 from prepare_data import prepare_data
 from sklearn.linear_model import Lasso
 from sklearn.metrics import mean_squared_error
+import datetime
 
 
 def make_model(path_to_data_files, modeltype, optimizer, nmbr_of_train=-1, lib="",
@@ -127,6 +128,7 @@ def simulate_model(model_name, path_to_test_file, modeltype, do_time_simulation=
                                    ).y.T
 
             print("Finished simulation")
+            print("MSE on simulation: ", mean_squared_error(x_sim, x_test[:len(t_value), :]))
 
             save_plot_data("currents_simulation",
                            [np.hstack((t_value[:].reshape(len(t_value), 1), x_sim)),

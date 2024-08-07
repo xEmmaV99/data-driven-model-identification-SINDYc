@@ -3,7 +3,7 @@ from source import *
 from train_model_source import make_model, simulate_model
 
 do_part1 = False
-do_part15 = False
+do_part15 = True
 do_part2 = False
 do_part3 = True
 
@@ -58,7 +58,7 @@ if do_part2:
 ### PART 3: SIMULATE MODEL
 if do_part3:
     models = ["example_A_currents", "example_B_currents"]
-    models = ["linear_example_1_currents", "linear_example_2_currents", "linear_example_3_currents", "linear_example_4_currents"]
+    models = ["linear_example_2_currents", "linear_example_3_currents"]
     for m in models:
         # simulate the model and plot the results
         pr, test = simulate_model(m+'_model', path_to_test_file, modeltype="currents", do_time_simulation=True, show=False)

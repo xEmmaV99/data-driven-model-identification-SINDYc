@@ -1,4 +1,5 @@
 import copy
+from datetime import datetime
 import pickle as pkl
 import matplotlib.pyplot as plt
 import numpy as np
@@ -90,13 +91,12 @@ def save_plot_data(
         "ylab": ylab,
         "legend": legend,
         "plots": {},
-        "specs": specs,
-        "model": sindy_model,  # todo wtf?
+        "specs": specs
     }
     for i, xy_array in enumerate(xydata):
         pltdata["plots"][str(i)] = xy_array
     cwd = os.getcwd()
-    save_path = os.path.join(cwd, "plot_data\\", save_name + ".pkl")
+    save_path = os.path.join(cwd, "plot_data\\", save_name+get_date() + ".pkl")
 
     with open(save_path, "wb") as file:
         pkl.dump(pltdata, file)
@@ -226,10 +226,13 @@ def plot_coefs2(model, normalize_values=False, show=False, log=False):
         plt.show()
     return
 
+def get_date():
+    now = datetime.now()
+    return now.strftime("%m-%d_%H-%M-%S")
 
 def save_model(model, name, libstr):
     print("Saving model")
-    path = os.path.join(os.getcwd(), "models", name + ".pkl")
+    path = os.path.join(os.getcwd(), "models", name+get_date() +".pkl")
 
     x = model.n_features_in_ - model.n_control_features_
     u = model.n_control_features_
