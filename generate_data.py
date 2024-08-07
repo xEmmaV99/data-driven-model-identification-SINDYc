@@ -7,8 +7,8 @@ import numpy as np
 from generate_data_source import *
 
 if __name__ == "__main__":
-    generate_traindata = False
-    generate_testdata = True
+    generate_traindata = True
+    generate_testdata = False
 
     motor_path = os.path.join(os.getcwd(), "Cantoni.pkl")
 
@@ -18,15 +18,15 @@ if __name__ == "__main__":
     ecc_dir = np.array([1, 0])
     ecc = ecc_dir / np.linalg.norm(ecc_dir) * ecc_value
 
-    eccname = "nonlin_0"
+    eccname = "lin_ecc_random"
     numbr_of_simulations = 50  # number of train simulations (of 5sec)
-    mode = 'nonlinear'
+    mode = 'linear'
 
     ecc_random_direction = True
     if ecc_random_direction:
         xvalue = np.random.random(numbr_of_simulations)*2-1 #between() -1 and 1
-        xvalue = ecc*xvalue # scale with ecc
-        yvalue = np.sqrt(ecc**2-xvalue**2) # ecc^2 = x^2 + y^2
+        xvalue = ecc_value*xvalue # scale with ecc
+        yvalue = np.sqrt(ecc_value**2-xvalue**2) # ecc^2 = x^2 + y^2
         ecc_list = np.column_stack((xvalue, yvalue))
     else:
         ecc_list = np.repeat(ecc[np.newaxis,:], numbr_of_simulations, axis=0)
