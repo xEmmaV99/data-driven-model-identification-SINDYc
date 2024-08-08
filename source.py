@@ -9,7 +9,7 @@ import pysindy as ps
 import seaborn as sns
 import os
 from libs import get_custom_library_funcs
-from prepare_data_new import *
+from prepare_data import *
 from scipy.integrate import solve_ivp
 
 

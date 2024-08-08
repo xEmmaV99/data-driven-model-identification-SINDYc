@@ -2,19 +2,20 @@ from optimize_parameters import parameter_search, optimize_parameters, plot_optu
 from source import *
 from train_model_source import make_model, simulate_model
 
-do_part1 = False
-do_part15 = True
+do_part1 = True
+do_part15 = False
 do_part2 = False
 do_part3 = False
 
 ### DATA TRAINING FILES
-path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
+#path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
 #path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-31-ecc-50', 'IMMEC_50ecc_5.0sec.npz')
-#path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-31-nonlin', 'IMMEC_nonlinear-0ecc_5.0sec.npz')
+
+path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-31-nonlin50', 'IMMEC_nonlinear-50ecc_5.0sec.npz')
 
 
 ### TEST FILES
-path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-07', 'IMMEC_nonlin_0ecc_5.0sec.npz') # for A B examples
+#path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-07', 'IMMEC_nonlin_0ecc_5.0sec.npz') # for A B examples
 #path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz') #
 
 
@@ -22,7 +23,7 @@ path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-07', 'IMMEC_nonli
 if do_part1:
     # mode is either "currents", "torque" or "ump" (TO BE IMPLEMENTED W_mag)
     # Creates an optuna study to optimize the parameters of the
-    optimize_parameters(path_to_data_files, mode="currents", additional_name="Linear-specific")
+    optimize_parameters(path_to_data_files, mode="currents", additional_name="nonlinear-50-specific")
 
 if do_part15:
     #plot_optuna_data('currents-optuna-study', dirs = 'w3-presentation-0208//')
@@ -30,6 +31,10 @@ if do_part15:
 
 ### PART 2: TRAIN MODEL
 if do_part2:
+    make_model(path_to_data_files, modeltype = "currents", optimizer = "sr3",
+               nmbr_of_train=-1, lib="linear-specific",
+                   alpha=None, nu=4.0115e-7, lamb=1.1038e-9, modelname="linear_example_new_1_currents")
+
     '''
     # Create a model with the optimized parameters
     make_model(path_to_data_files, modeltype = "currents", optimizer = "lasso",
@@ -51,18 +56,19 @@ if do_part2:
     make_model(path_to_data_files, modeltype = "currents", optimizer = "sr3",
                nmbr_of_train=-1, lib="nonlinear_terms",
                    alpha=None, nu=9.4, lamb=7.16e-6, modelname="example_A_currents")
-    '''
+    
     make_model(path_to_data_files, modeltype = "currents", optimizer = "sr3",
                nmbr_of_train=-1, lib="poly_2nd_order",
                    alpha=None, nu=2.8e-12, lamb=6.8e-5, modelname="example_B_currents")
-
+    '''
 ### PART 3: SIMULATE MODEL
 if do_part3:
     models = [ "example_A_currents"] #"example_A_currents",
     #models = ["linear_example_2_currents", "linear_example_3_currents"]
 
+    models ["linear_example_new_1_currents"]
     pref = "0908//"
-    #pref = ""
+    pref = ""
     for m in models:
         # simulate the model and plot the results
         pr, test = simulate_model(pref+m+'_model', path_to_test_file, modeltype="currents", do_time_simulation=True, show=False)
