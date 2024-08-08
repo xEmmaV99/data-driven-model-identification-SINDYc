@@ -8,7 +8,11 @@ from optimize_parameters import plot_optuna_data
 #plot_coefs2(model, show=True, log=True)
 #plot_immec_data(os.path.join(os.getcwd(), 'test-data', '08-07', 'IMMEC_nonlin_ecc_randomecc_5.0sec.npz'))
 
-plot_optuna_data('currentsLinear-specific-optuna-study')
+plot_immec_data(os.path.join(os.getcwd(), 'test-data', '08-02', 'IMMEC_y50ecc_5.0sec.npz'))
+plot_immec_data(os.path.join(os.getcwd(), 'test-data', '08-02', 'IMMEC_xy50ecc_5.0sec.npz'))
+plot_immec_data(os.path.join(os.getcwd(), 'test-data', '08-08', 'IMMEC_50ecc_ecc_5.0sec.npz'))
+
+#plot_optuna_data('currentsLinear-specific-optuna-study')
 
 #p = os.path.join(os.getcwd(), 'plot_data','currents08-07_16-28-24.pkl')
 #plot_data(p, show=True)
