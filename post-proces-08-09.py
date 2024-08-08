@@ -4,8 +4,8 @@ from optimize_parameters import plot_optuna_data
 from source import *
 from train_model_source import simulate_model
 
-process = 10
-coefs = True
+process =7
+coefs = False
 
 ## 1 linear model currents
 if process == 1:

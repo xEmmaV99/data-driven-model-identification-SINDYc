@@ -90,6 +90,10 @@ def prepare_data(path_to_data_file,
         timepoints = len(dataset['time'][:, 0, 0])
         time_trim = random.sample(range(timepoints), int(usage_per_trainfile * timepoints))
         for key in dataset.keys():
+            # error for wcoe
+            if key == 'wcoe' and dataset[key].shape[0] == 1:
+                dataset[key] = np.swapaxes(dataset[key], 0, 1) #debug TO BE REMOVED...
+
             dataset[key] = dataset[key][time_trim]
 
         v_stator = v_stator[time_trim]
