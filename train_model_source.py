@@ -106,6 +106,7 @@ def simulate_model(model_name, path_to_test_file, modeltype, do_time_simulation=
     test_predicted = model.predict(x_test, u_test)
 
     print("MSE on test: ", mean_squared_error(test_values, test_predicted))
+    print("Sparsity: ", np.count_nonzero(model.coefficients()))
 
     if modeltype == 'currents':
         xydata = [np.hstack((t, test_predicted)), np.hstack((t, test_values))]

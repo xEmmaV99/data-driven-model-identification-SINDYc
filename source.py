@@ -194,6 +194,7 @@ def plot_coefs(model):
 
 def plot_coefs2(model, normalize_values=False, show=False, log=False):
     # todo fix for torque
+    model.print()
     xticknames = model.get_feature_names()
     for i in range(len(xticknames)):
         xticknames[i] = xticknames[i]

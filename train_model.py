@@ -1,23 +1,25 @@
+import os
+
 from optimize_parameters import parameter_search, optimize_parameters, plot_optuna_data
 from source import *
 from train_model_source import make_model, simulate_model
 
 do_part1 = False
 do_part15 = False
-do_part2 = False
-do_part3 = True
+do_part2 = True
+do_part3 = False
 
 ### DATA TRAINING FILES
 #path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
 #path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-31-ecc-50', 'IMMEC_50ecc_5.0sec.npz')
-
+#path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-31-nonlin', 'IMMEC_nonlinear-0ecc_5.0sec.npz')
 path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-31-nonlin50', 'IMMEC_nonlinear-50ecc_5.0sec.npz')
 
 
 ### TEST FILES
 #path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-07', 'IMMEC_nonlin_0ecc_5.0sec.npz') # for A B examples
 
-path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz') #
+#path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz') #
 
 
 ### PART 1: OPTIMIZE PARAMETERS
@@ -32,7 +34,30 @@ if do_part15:
 
 ### PART 2: TRAIN MODEL
 if do_part2:
+    make_model(path_to_data_files, modeltype='currents', optimizer='lasso',
+               nmbr_of_train=-1, lib='nonlinear_terms', alpha=86.47,
+               modelname= 'currents_nonlinear_50ecc_60')
+    make_model(path_to_data_files, modeltype='currents', optimizer='sr3',
+               nmbr_of_train=-1, lib='linear-specific', nu=1.075e-11,lamb= 0.00226,
+               modelname= 'currents_nonlinear_50ecc_90')
+    make_model(path_to_data_files, modeltype='currents', optimizer='sr3',
+               nmbr_of_train=-1, lib='poly_2nd_order', nu=1.424e-8, lamb=4.5e-5,
+               modelname='currents_nonlinear_50ecc_200')
+    make_model(path_to_data_files, modeltype='currents', optimizer='sr3',
+               nmbr_of_train=-1, lib='nonlinear_terms', nu=2e-9, lamb=3.4e-5,
+               modelname='currents_nonlinear_50ecc_550')
+
     '''
+    make_model(path_to_data_files, modeltype="torque", optimizer= "sr3",
+               nmbr_of_train=-1, lib="poly_2nd_order",
+               alpha=None, nu=5.043e-7, lamb=3.8157e-10, modelname="torque_nonlinear_100coef")
+    make_model(path_to_data_files, modeltype="torque", optimizer= "sr3",
+               nmbr_of_train=-1, lib="torque",
+               alpha=None, nu=3.416e-6, lamb=1.74e-6, modelname="torque_nonlinear_20coef")
+    make_model(path_to_data_files, modeltype="torque", optimizer= "sr3",
+               nmbr_of_train=-1, lib="nonlinear_terms",
+               alpha=None, nu=0.002, lamb=1.36e-9, modelname="torque_nonlinear_280coef")
+    ''''''
     make_model(path_to_data_files, modeltype = "currents", optimizer = "sr3",
                nmbr_of_train=-1, lib="linear-specific",
                    alpha=None, nu=4.0115e-7, lamb=1.1038e-9, modelname="linear_example_new_1_currents")
