@@ -201,7 +201,7 @@ def optuna_search_sr3(DATA, XDOT, l_minmax, n_minmax, studyname, iter):
 
 
 def plot_optuna_data(name, dirs = ""):
-    stud = optuna.load_study(study_name=name, storage="sqlite:///" + "optuna_studies//"+dirs + name + ".db")
+    stud = optuna.load_study(study_name = None , storage="sqlite:///" + "optuna_studies/"+dirs+ name + ".db")
     optuna.visualization.plot_pareto_front(stud, target_names=["MSE", "SPAR"]).show(renderer="browser")
     print(f"Trial count: {len(stud.trials)}")
     return

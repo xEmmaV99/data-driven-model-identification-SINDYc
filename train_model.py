@@ -2,10 +2,10 @@ from optimize_parameters import parameter_search, optimize_parameters, plot_optu
 from source import *
 from train_model_source import make_model, simulate_model
 
-do_part1 = True
+do_part1 = False
 do_part15 = False
 do_part2 = False
-do_part3 = False
+do_part3 = True
 
 ### DATA TRAINING FILES
 #path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
@@ -16,7 +16,8 @@ path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-31-nonlin50', '
 
 ### TEST FILES
 #path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-07', 'IMMEC_nonlin_0ecc_5.0sec.npz') # for A B examples
-#path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz') #
+
+path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz') #
 
 
 ### PART 1: OPTIMIZE PARAMETERS
@@ -31,11 +32,11 @@ if do_part15:
 
 ### PART 2: TRAIN MODEL
 if do_part2:
+    '''
     make_model(path_to_data_files, modeltype = "currents", optimizer = "sr3",
                nmbr_of_train=-1, lib="linear-specific",
                    alpha=None, nu=4.0115e-7, lamb=1.1038e-9, modelname="linear_example_new_1_currents")
 
-    '''
     # Create a model with the optimized parameters
     make_model(path_to_data_files, modeltype = "currents", optimizer = "lasso",
                nmbr_of_train=-1, lib="custom",
@@ -64,11 +65,10 @@ if do_part2:
 ### PART 3: SIMULATE MODEL
 if do_part3:
     models = [ "example_A_currents"] #"example_A_currents",
-    #models = ["linear_example_2_currents", "linear_example_3_currents"]
+    models = ["linear_example_new_1_currents", "linear_example_2_currents", "linear_example_3_currents"]
 
-    models ["linear_example_new_1_currents"]
     pref = "0908//"
-    pref = ""
+
     for m in models:
         # simulate the model and plot the results
         pr, test = simulate_model(pref+m+'_model', path_to_test_file, modeltype="currents", do_time_simulation=True, show=False)

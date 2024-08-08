@@ -131,9 +131,6 @@ def simulate_model(model_name, path_to_test_file, modeltype, do_time_simulation=
                                    u=u_test[(t < simulation_time).reshape(-1), :],
                                    t=t_value.reshape(t_value.shape[0]), model=model
                                    ).y.T
-            plt.plot(x_sim)
-            plt.plot(x_test)
-            plt.show()
             print("Finished simulation")
             print("MSE on simulation: ", mean_squared_error(x_sim, x_test[:len(t_value), :]))
 

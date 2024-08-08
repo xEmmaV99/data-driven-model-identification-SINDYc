@@ -1,0 +1,140 @@
+import os.path
+
+from optimize_parameters import plot_optuna_data
+from source import *
+from train_model_source import simulate_model
+
+process = 4
+
+## 1 linear model currents
+if process == 1:
+    testdata = os.path.join(os.getcwd(), 'test-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
+    plot_optuna_data('currentsLinear-specific-optuna-study')
+    models = ["linear_example_new_1_currents", "linear_example_2_currents", "linear_example_3_currents"]
+    pref = "currents_linear\\"
+    pltdata_present = True
+    if not pltdata_present:
+        for model in models:
+            sim, test = simulate_model(pref+model+'_model' , testdata, modeltype= 'currents', do_time_simulation=True, show = False)
+            plot_fourier(test, sim, dt = 5e-5, tmax=5.0)
+    else:
+        path = os.path.join(os.getcwd(), 'plot_data', 'currents_linear')
+        plot_everything(path)
+
+
+## 2 linear model torque : todo LEUVEN
+elif process == 2:
+    testdata = os.path.join(os.getcwd(), 'test-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
+    plot_optuna_data('')
+    models = []
+    pref = "torque_linear\\"
+    pltdata_present = False
+    if not pltdata_present:
+        for model in models:
+            sim, test = simulate_model(pref+model+'_model' , testdata, modeltype= 'torque', show = False)
+            plot_fourier(test, sim, dt = 5e-5, tmax=5.0)
+    else:
+        path = os.path.join(os.getcwd(), 'plot_data', 'torque_linear')
+        plot_everything(path)
+
+## 3 nonlinear model currents
+elif process == 3:
+    testdata = os.path.join(os.getcwd(), 'test-data', '08-07', 'IMMEC_nonlin_0ecc_5.0sec.npz')
+    plot_optuna_data('currentsNonlinear-extra_models-optuna-study')
+    models = ["example_A_currents_model", "example_B_currents_model"]
+    pref = "currents_nonlinear\\"
+    pltdata_present = True
+    if not pltdata_present:
+        for model in models:
+            sim, test = simulate_model(pref+model+'_model' , testdata, modeltype= 'currents', do_time_simulation=True, show = False)
+            plot_fourier(test, sim, dt = 1e-4, tmax=5.0)
+    else:
+        path = os.path.join(os.getcwd(), 'plot_data', 'currents_nonlinear')
+        plot_everything(path)
+
+## 4 nonlinear model torque
+elif process == 4:
+    testdata = os.path.join(os.getcwd(), 'test-data', '08-07', 'IMMEC_nonlin_0ecc_5.0sec.npz')
+    plot_optuna_data('new', dirs = 'torque_nonlin_0608/')
+    models = ["Torque-nonlin_model"]
+    pref = "torque_nonlinear\\"
+    pltdata_present = False
+    if not pltdata_present:
+        for model in models:
+            sim,test = simulate_model(pref+model +'_model', testdata, modeltype= 'torque', show = False)
+            plot_fourier(test, sim, dt=1e-4, tmax=5.0)
+    else:
+        path = os.path.join(os.getcwd(), 'plot_data', 'torque_nonlinear')
+        plot_everything(path)
+
+## 5 linear model currents with 50 ecc
+elif process == 5:
+    testdata = os.path.join(os.getcwd(), 'test-data', '08-08', 'IMMEC_50ecc_ecc_5.0sec.npz')
+    plot_optuna_data()
+    models = []
+    pref = "currents_50_linear\\"
+    pltdata_present = False
+    if not pltdata_present:
+        for model in models:
+            sim,test =simulate_model(pref+model +'_model', testdata, modeltype= 'currents', do_time_simulation=True, show = False)
+            plot_fourier(test, sim, dt=1e-4, tmax=5.0)
+
+## 6 linear model torque with 50 ecc
+elif process == 6:
+    testdata = os.path.join(os.getcwd(), 'test-data', '08-08', 'IMMEC_50ecc_ecc_5.0sec.npz')
+    plot_optuna_data()
+    models = []
+    pref = "torque_50_linear\\"
+    pltdata_present = False
+    if not pltdata_present:
+        for model in models:
+            sim,test =simulate_model(pref+model +'_model', testdata, modeltype= 'torque', show = False)
+            plot_fourier(test, sim, dt=1e-4, tmax=5.0)
+
+## 7 linear model UMP with 50 ecc
+elif process == 7:
+    testdata = os.path.join(os.getcwd(), 'test-data', '08-08', 'IMMEC_50ecc_ecc_5.0sec.npz')
+    plot_optuna_data()
+    models = []
+    pref = "ump_50_linear\\"
+    pltdata_present = False
+    if not pltdata_present:
+        for model in models:
+            sim,test = simulate_model(pref+model +'_model', testdata, modeltype= 'ump', show = False)
+            plot_fourier(test, sim, dt=1e-4, tmax=5.0)
+
+## 8 nonlinear model currents with 50 ecc
+elif process == 8:
+    testdata = os.path.join(os.getcwd(), 'test-data', '08-07-nonlin-50ecc', 'IMMEC_nonlin_50ecc_5.0sec.npz')
+    plot_optuna_data()
+    models = []
+    pref = "ump_50_nonlinear\\"
+    pltdata_present = False
+    if not pltdata_present:
+        for model in models:
+            sim,test=simulate_model(pref+model+'_model' , testdata, modeltype= 'currents', do_time_simulation=True, show = False)
+            plot_fourier(test, sim, dt=1e-4, tmax=5.0)
+
+## 9 nonlinear model torque with 50 ecc
+elif process == 9:
+    testdata = os.path.join(os.getcwd(), 'test-data', '08-07-nonlin-50ecc', 'IMMEC_nonlin_50ecc_5.0sec.npz')
+    plot_optuna_data()
+    models = []
+    pref = "torque_50_nonlinear\\"
+    pltdata_present = False
+    if not pltdata_present:
+        for model in models:
+            sim,test=simulate_model(pref+model +'_model', testdata, modeltype= 'torque', show = False)
+            plot_fourier(test, sim, dt=1e-4, tmax=5.0)
+
+## 10 nonlinear model ump with 50 ecc
+elif process == 10:
+    testdata = os.path.join(os.getcwd(), 'test-data', '08-07-nonlin-50ecc', 'IMMEC_nonlin_50ecc_5.0sec.npz')
+    plot_optuna_data('umpNonlinear-50ecc-optuna-study', dirs = 'ump_nonlin_0708')
+    models = []
+    pref = "currents_50_nonlinear\\"
+    pltdata_present = False
+    if not pltdata_present:
+        for model in models:
+            sim,test= simulate_model(pref+model+'_model' , testdata, modeltype= 'ump', show = False)
+            plot_fourier(test, sim, dt=1e-4, tmax=5.0)
