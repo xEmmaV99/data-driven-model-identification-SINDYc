@@ -4,7 +4,7 @@ from optimize_parameters import plot_optuna_data
 from source import *
 from train_model_source import simulate_model
 
-process = 4
+process = 10
 coefs = True
 
 ## 1 linear model currents
@@ -143,9 +143,9 @@ elif process == 8:
     testdata = os.path.join(os.getcwd(), 'test-data', '08-07-nonlin-50ecc', 'IMMEC_nonlin_50ecc_5.0sec.npz')
     plot_optuna_data('currentsNonlinear-50-specific-optuna-study')
     models = ["currents_nonlinear_50ecc_60", "currents_nonlinear_50ecc_90"]
-
     # "currents_nonlinear_50ecc_200", #this one diverges
     # "currents_nonlinear_50ecc_550"] #this one diverges too
+
     pref = "currents_50_nonlinear\\"
     pltdata_present = True
     if not pltdata_present:

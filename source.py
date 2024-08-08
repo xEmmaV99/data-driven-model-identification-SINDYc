@@ -193,17 +193,14 @@ def plot_coefs(model):
 
 
 def plot_coefs2(model, normalize_values=False, show=False, log=False):
-    # todo fix for torque
     model.print()
+    print("Sparsity: ", np.count_nonzero(model.coefficients()))
     xticknames = model.get_feature_names()
     for i in range(len(xticknames)):
         xticknames[i] = xticknames[i]
     plt.figure(figsize=(len(xticknames), 4))
     colors = ["b", "r", "k"]
     coefs = copy.deepcopy(model.coefficients())
-
-    if normalize_values:
-        raise NotImplementedError("This function is not implemented yet.")  # todo, unsure how to
 
     if log:
         plt.yscale("log", base=10)
