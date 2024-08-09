@@ -75,7 +75,7 @@ def prepare_data(path_to_data_file,
 
     # get x data
     x_data = reference_abc_to_dq0(dataset['i_st'])
-    ###  x_data = np.hstack((i_st, I.reshape(i_st.shape), V.reshape(i_st.shape)))
+    ###  x_data = np.hstack((i_st, I.reshape(i_st.shape), V.reshape(i_st.shape))) #for data merged
     t_data = dataset['time']
     if np.ndim(x_data) <= 2:
         x_data = np.expand_dims(x_data, axis=2)

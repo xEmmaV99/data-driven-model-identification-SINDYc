@@ -2,12 +2,22 @@ import pysindy as ps
 import numpy as np
 
 def get_library_names():
+    """
+    Returns the library names to be considered for the parameter optimisation
+    :return: list of str
+    """
     return ['poly_2nd_order', 'linear-specific', 'torque', 'nonlinear_terms', 'nonlinear_terms_with_f']
 
-    return ['nonlinear_terms', 'nonlinear_terms_with_f', 'poly_2nd_order', 'torque']
+    #return ['nonlinear_terms', 'nonlinear_terms_with_f', 'poly_2nd_order', 'torque']
 
 
 def get_custom_library_funcs(type, nmbr_input_features = 15):
+    """
+    Returns a pysindy library corresponding to the "type"
+    :param type: str, name of the library
+    :param nmbr_input_features: number of input features, important for 'inputs_per_library'
+    :return: library
+    """
     # Generalized library, sine and cos functions for gamma
     gamma = [12]
     fr = [14]

@@ -96,7 +96,7 @@ def save_plot_data(
     for i, xy_array in enumerate(xydata):
         pltdata["plots"][str(i)] = xy_array
     cwd = os.getcwd()
-    save_path = os.path.join(cwd, "plot_data\\", save_name+get_date() + ".pkl")
+    save_path = os.path.join(cwd, "plot_data\\", save_name + get_date() + ".pkl")
 
     with open(save_path, "wb") as file:
         pkl.dump(pltdata, file)
@@ -105,7 +105,7 @@ def save_plot_data(
     return save_path
 
 
-def plot_data(path="plotdata.pkl", show=False, figure=True, limits=None):
+def plot_data(path="plotdata.pkl", show=False, limits=None):
     # todo adapt such that fourier is plotted too
     suppres_title = False
     if type(path) == str:
@@ -148,14 +148,20 @@ def plot_data(path="plotdata.pkl", show=False, figure=True, limits=None):
             plt.figure()
             plt.xlabel(data["xlab"]), plt.ylabel(data["ylab"])
             specs = data["specs"]
+
+            #yvalues = np.array([[]])
             for idx in data["plots"]:
+                #yvalues[idx][:] = data["plots"][idx][:,1:]
                 if specs[int(idx)] is not None:
-                    plt.plot(data["plots"][idx][:, 0], data["plots"][idx][:, 1:], specs[int(idx)])
+                    plt.plot(data["plots"][idx][:, 0], data["plots"][idx][:, 1:], specs[int(idx)]) #todo replace with yvalue
                 else:
                     plt.plot(data["plots"][idx][:, 0], data["plots"][idx][:, 1:])
 
             plt.legend(data["legend"])
             plt.title(data["title"])
+            # plot_fourier(yvalues[0][:], yvalues[1][:], dt= data["plots"][idx][1,0])-data["plots"][idx][0,0]), tmax = data["plots"][0][-1,0]))
+
+    # note that for each path, if  data["plots"] contains multiple plots, they are related -> fourier analysis?
     if show:
         plt.show()
     return
@@ -192,7 +198,7 @@ def plot_coefs(model):
     return
 
 
-def plot_coefs2(model, normalize_values=False, show=False, log=False):
+def plot_coefs2(model, show=False, log=False):
     model.print()
     print("Sparsity: ", np.count_nonzero(model.coefficients()))
     xticknames = model.get_feature_names()
@@ -224,13 +230,19 @@ def plot_coefs2(model, normalize_values=False, show=False, log=False):
         plt.show()
     return
 
+
 def get_date():
+    """
+    Returns the current date, used for saving data such that they don't get overwritten by accident
+    :return: str containing the current date
+    """
     now = datetime.now()
     return now.strftime("%m-%d_%H-%M-%S")
 
+
 def save_model(model, name, libstr):
     print("Saving model")
-    path = os.path.join(os.getcwd(), "models", name+get_date() +".pkl")
+    path = os.path.join(os.getcwd(), "models", name + get_date() + ".pkl")
 
     x = model.n_features_in_ - model.n_control_features_
     u = model.n_control_features_
@@ -275,68 +287,68 @@ def plot_immec_data(path, simulation_number=None, title=None):
 
     d_air = 0.000477  # for the Cantoni motor
 
-    if "wcoe" in dataset.keys(): # some datasets have magnetic coenergy
+    if "wcoe" in dataset.keys():  # some datasets have magnetic coenergy
         rows, cols = 2, 4
     else:
         rows, cols = 2, 3
 
     if simulation_number is None:  # testfile
-        plt.subplot( rows, cols, 1)
+        plt.subplot(rows, cols, 1)
         plt.title("omega_rot"), plt.xlabel("time (s)"), plt.ylabel("rad/s")
         plt.plot(dataset["time"], dataset["omega_rot"])
 
-        plt.subplot( rows, cols, 2)
+        plt.subplot(rows, cols, 2)
         plt.title("i_st in dq0"), plt.xlabel("time (s)"), plt.ylabel("A")  # debug
         plt.plot(dataset["time"], reference_abc_to_dq0(dataset["i_st"]))
 
-        plt.subplot( rows, cols, 3)
+        plt.subplot(rows, cols, 3)
         plt.title("T_l and T_em"), plt.xlabel("time (s)"), plt.ylabel("Nm")
         plt.plot(dataset["time"], dataset["T_em"])
 
         plt.plot(dataset["time"], dataset["T_l"], "k--")
         plt.legend(["T_em", "T_l"])
 
-        plt.subplot( rows, cols, 5)
+        plt.subplot(rows, cols, 5)
         plt.title("Applied line Voltages"), plt.xlabel("time (s)"), plt.ylabel("V")
         plt.plot(dataset["time"], dataset['v_applied'])
         # debug
 
-        plt.subplot( rows, cols, 4)
+        plt.subplot(rows, cols, 4)
         plt.title("UMP"), plt.xlabel("time (s)"), plt.ylabel("N")
         plt.plot(dataset["time"], dataset["F_em"])
 
-        plt.subplot( rows, cols, 6)
+        plt.subplot(rows, cols, 6)
         plt.title("Eccentricity"), plt.xlabel("time (s)"), plt.ylabel("% airgap")
         plt.plot(dataset["time"], dataset["ecc"] / d_air)
 
         # if wcoe not in keys, don't do the enxt plot
         if "wcoe" in dataset.keys():
-            plt.subplot( rows, cols,7)
+            plt.subplot(rows, cols, 7)
             plt.title("Magnetic co-energy"), plt.xlabel("time (s)"), plt.ylabel("J")
             plt.plot(dataset["time"], dataset["wcoe"])
 
     else:  # train file
-        plt.subplot( rows, cols, 1)
+        plt.subplot(rows, cols, 1)
         plt.title("omega_rot"), plt.xlabel("time (s)"), plt.ylabel("rad/s")
 
         plt.plot(dataset["time"][:, 0, simulation_number], dataset["omega_rot"][:, 0, simulation_number])
 
-        plt.subplot( rows, cols, 2)
+        plt.subplot(rows, cols, 2)
         plt.title("i_st in dq0"), plt.xlabel("time (s)"), plt.ylabel("A")  # debug
         plt.plot(dataset["time"][:, 0, simulation_number],
                  reference_abc_to_dq0(dataset["i_st"][:, :, simulation_number]))
 
-        plt.subplot( rows, cols, 3)
+        plt.subplot(rows, cols, 3)
         plt.title("T_l and T_em"), plt.xlabel("time (s)"), plt.ylabel("Nm")
         plt.plot(dataset["time"][:, 0, simulation_number], dataset["T_em"][:, 0, simulation_number])
         plt.plot(dataset["time"][:, 0, simulation_number], dataset["T_l"][:, 0, simulation_number], 'k--')
         plt.legend(["T_em", "T_l"])
 
-        plt.subplot( rows, cols, 5)
+        plt.subplot(rows, cols, 5)
         plt.title("Applied line Voltages"), plt.xlabel("time (s)"), plt.ylabel("V")
         plt.plot(dataset["time"][:, 0, simulation_number], dataset["v_applied"][:, :, simulation_number])
 
-        plt.subplot( rows, cols, 4)
+        plt.subplot(rows, cols, 4)
         plt.title("UMP"), plt.xlabel("time (s)"), plt.ylabel("N")
         plt.plot(dataset["time"][:, 0, simulation_number], dataset["F_em"][:, :, simulation_number])
 
@@ -346,7 +358,7 @@ def plot_immec_data(path, simulation_number=None, title=None):
         plt.legend(["x", "y"])
 
         if "wcoe" in dataset.keys():
-            plt.subplot( rows, cols, 7)
+            plt.subplot(rows, cols, 7)
             plt.title("Magnetic coenergy"), plt.xlabel("time (s)"), plt.ylabel("J")
             plt.plot(dataset["time"], dataset["wcoe"])
 
@@ -368,7 +380,7 @@ def plot_everything(path_to_directory):
     return
 
 
-def plot_fourier(reference, result, dt, tmax, leg=None, show = True):
+def plot_fourier(reference, result, dt, tmax, leg=None, show=True):
     def fun(w, n, s):
         # Perform FFT
         fft = np.fft.fft(w, axis=0)
