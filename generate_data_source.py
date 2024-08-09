@@ -161,7 +161,7 @@ def create_immec_data(
             omega = data_logger.quantities['omega_rot'][-1]
             ex = ecc_value * np.cos(omega * n * timestep + ecc_phi)
             ey = ecc_value * np.sin(omega * n * timestep + ecc_phi)
-            ecc = np.array(ex, ey)
+            ecc = np.array([ex[0], ey[0]]) * motordict["d_air"]
 
         # I.D The inputs are concatenated to a single vector
         inputs = np.concatenate([v_uvw, [T_l], ecc])

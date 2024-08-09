@@ -9,7 +9,10 @@ import numba as nb
 from matplotlib import pyplot as plt
 from sklearn import decomposition
 import seaborn as sns
+from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import StandardScaler
+import pysindy as ps
+import libs
 
 try:
     from pysindy import FiniteDifference
@@ -21,7 +24,7 @@ def prepare_data(path_to_data_file,
                  test_data=False,
                  number_of_trainfiles=-1,
                  use_estimate_for_v=False,
-                 usage_per_trainfile=0.5):
+                 usage_per_trainfile=0.5, pca = None, scaling = None):
     # load numpy file
     print("Loading data")
     dataset = dict(np.load(path_to_data_file))  # should be a dictionary
@@ -123,27 +126,33 @@ def prepare_data(path_to_data_file,
                         np.repeat(freqs, dataset['omega_rot'].shape[0], axis=0)))
     u_pca = u_pca.transpose(0, 2, 1).reshape(u_pca.shape[0] * u_pca.shape[-1], u_pca.shape[1])
 
-    # Scale data before applying PCA
-    scaling = StandardScaler()
-
     # Use fit and transform method
     do_pca_analysis = False
-    scaling.fit(u_pca)
-    Scaled_data = scaling.transform(u_pca)
+    if pca is None:
+        # Scale data before applying PCA
+        #scaling = StandardScaler()
 
-    if do_pca_analysis:
-        pca = decomposition.PCA()
-        #pca.fit(u_data)
+        #scaling.fit(u_pca)
+        #Scaled_data = scaling.transform(u_pca)
+        Scaled_data = u_pca
+
+        if do_pca_analysis:
+            pca = decomposition.PCA()
+            pca.fit(Scaled_data)
+
+            print(pca.components_)
+            plot_pca_heatmap(pca, featurenames=[r'i_d', r'i_q', r'i_0',r'v_d',r'v_q',r'v_0',
+                                                r'I_d', r'I_q', r'I_0',r'V_d', r'V_q', r'V_0',
+                                                r'\gamma_{rot}', r'\omega_{rot}', r'f'])
+            plot_pca_variance_ratio(pca) # use 7 coefs
+
+        pca = decomposition.PCA(n_components=14) #n_components=7
         pca.fit(Scaled_data)
-
-        print(pca.components_)
-        plot_pca_heatmap(pca, featurenames=[r'i_d', r'i_q', r'i_0',r'v_d',r'v_q',r'v_0',
-                                            r'I_d', r'I_q', r'I_0',r'V_d', r'V_q', r'V_0',
-                                            r'\gamma_{rot}', r'\omega_{rot}', r'f'])
-        plot_pca_variance_ratio(pca) # use 7 coefs
-
-    pca = decomposition.PCA(n_components=7)
-    u_pca = pca.transform(Scaled_data) # use scaled data...
+        u_pca = pca.transform(Scaled_data) # use scaled data...
+    else: #pca is provided
+        #Scaled_data = scaling.transform(u_pca)
+        Scaled_data = u_pca
+        u_pca = pca.transform(Scaled_data)
     DATA['u_pca'] = u_pca
 
     # Now, stack data on top of each other and shuffle! (Note that the transpose is needed otherwise the reshape is wrong)
@@ -189,7 +198,7 @@ def prepare_data(path_to_data_file,
     # DATA['wcoe_val'] = DATA['wcoe'][cutidx:]
     DATA['u_pca_val'] = DATA['u_pca'][cutidx:]
 
-    return DATA
+    return DATA, pca, scaling
 
 
 def plot_pca_heatmap(pca, featurenames):
@@ -360,10 +369,42 @@ def calculate_xdot(x: np.array, t: np.array):
 if __name__ == "__main__":
     #check_trapezoid_integration()
 
-    path = os.path.join(os.getcwd(), 'test-data', '07-29', 'IMMEC_0ecc_5.0sec.npz')
-    data = prepare_data(path,
-                        test_data=True,
+    path = os.path.join(os.getcwd(), 'train-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
+    path = os.path.join(os.getcwd(), 'train-data', '07-31-ecc-50', 'IMMEC_50ecc_5.0sec.npz')
+    data,pca,scaling = prepare_data(path,
+                        test_data=False,
                         number_of_trainfiles=-1,
                         use_estimate_for_v=False)
+    library = libs.get_custom_library_funcs("pca", nmbr_input_features=data['u_pca_train'].shape[1])
 
 
+    train = data['T_em_train']
+    #train = data['xdot_train']
+    name = "pca"
+    opt = ps.SR3(thresholder="l1", threshold=0.0001, nu=.1)
+    model = ps.SINDy(optimizer=opt, feature_library=library)
+                     #feature_names=data['feature_names'])
+
+    print("Fitting model")
+    model.fit(data['u_pca_train'], t=None, x_dot=train)
+    model.print(precision=10)
+
+
+    path = os.path.join(os.getcwd(), 'test-data', '07-29', 'IMMEC_0ecc_5.0sec.npz')
+    path = os.path.join(os.getcwd(), 'test-data', '08-05','IMMEC_50eccecc_5.0sec.npz')
+    test = prepare_data(path,
+                     test_data=True,
+                     number_of_trainfiles=-1,
+                     use_estimate_for_v=False, pca=pca, scaling=scaling)
+
+    test_values = test['T_em']
+    #test_values = test['xdot']
+
+    test_predicted = model.predict(test['u_pca'])
+
+    print("MSE on test: ", mean_squared_error(test_values, test_predicted))
+    print("Sparsity: ", np.count_nonzero(model.coefficients()))
+    plt.figure()
+    plt.plot(test_values)
+    plt.plot(test_predicted)
+    plt.show()

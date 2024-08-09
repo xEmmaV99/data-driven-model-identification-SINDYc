@@ -34,6 +34,8 @@ def get_custom_library_funcs(type, nmbr_input_features = 15):
                                             ps.FourierLibrary(n_frequencies=1, include_cos=True, include_sin=True)],
                                            tensor_array=None,  # don't merge the libraries
                                            inputs_per_library=inputs_per_library)
+    elif type == 'pca':
+        custom_lib = ps.PolynomialLibrary(degree=2, include_interaction=True)
     elif type == 'nonlinear_terms':
         inputs_per_library = [all_but_gamma, gamma]
         custom_lib = ps.GeneralizedLibrary([ps.PolynomialLibrary(degree=2, include_interaction=True),
