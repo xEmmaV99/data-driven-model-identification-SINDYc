@@ -102,6 +102,8 @@ def create_immec_data(
 
     # initial params
     dynamic_ecc = False
+    ecc_value = np.linalg.norm(initial_ecc)
+    ecc_phi = np.arctan2(initial_ecc[1], initial_ecc[0])
     start_load = 0.0
     end_load = load
     start_time = 0.0
@@ -156,7 +158,10 @@ def create_immec_data(
         if not dynamic_ecc:
             ecc = initial_ecc * motordict["d_air"] # static eccentricity
         else:
-            raise NotImplementedError("need to implement dynamic eccentricity")
+            omega = motordict['omega_rot'][-1]
+            ex = ecc_value * np.cos(omega * n*timestep + ecc_phi)
+            ey = ecc_value * np.sin(omega * n*timestep + ecc_phi)
+            ecc = np.array(ex, ey)
 
         # I.D The inputs are concatenated to a single vector
         inputs = np.concatenate([v_uvw, [T_l], ecc])

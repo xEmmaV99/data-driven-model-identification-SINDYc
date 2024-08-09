@@ -149,17 +149,28 @@ def plot_data(path="plotdata.pkl", show=False, limits=None):
             plt.xlabel(data["xlab"]), plt.ylabel(data["ylab"])
             specs = data["specs"]
 
-            #yvalues = np.array([[]])
+
+            # shape should be (2, t), where t is the number of time points and 2 number of solution
+            # it is saved as [x, y, reference] or for torque [x,ref, simplified model] or currents [di, ref]
+            if data["plots"]['0'].shape[-1]==4: #currents
+                yvalues = np.hstack((data["plots"]['0'][:,1:],data["plots"]['1'][:,1:]))
+                yid = 2
+            elif data["plots"]['2'].shape[-1] == 2: #torque
+                yvalues = np.hstack((data["plots"]['0'][:,1:],data["plots"]['1'][:,1:]))
+                yid = 1
+            else:
+                yvalues = np.hstack((np.hstack((data["plots"]['0'][:,1:],data["plots"]['1'][:,1:])),data["plots"]['2'][:,1:]))
+                yid = 1
+
             for idx in data["plots"]:
-                #yvalues[idx][:] = data["plots"][idx][:,1:]
                 if specs[int(idx)] is not None:
-                    plt.plot(data["plots"][idx][:, 0], data["plots"][idx][:, 1:], specs[int(idx)]) #todo replace with yvalue
+                    plt.plot(data["plots"][idx][:, 0], data["plots"][idx][:, 1:], specs[int(idx)])
                 else:
                     plt.plot(data["plots"][idx][:, 0], data["plots"][idx][:, 1:])
 
             plt.legend(data["legend"])
             plt.title(data["title"])
-            # plot_fourier(yvalues[0][:], yvalues[1][:], dt= data["plots"][idx][1,0])-data["plots"][idx][0,0]), tmax = data["plots"][0][-1,0]))
+            plot_fourier(yvalues[:yid,:], yvalues[yid:,:], dt=1e-4, tmax = data["plots"]["0"][-1,0])
 
     # note that for each path, if  data["plots"] contains multiple plots, they are related -> fourier analysis?
     if show:
