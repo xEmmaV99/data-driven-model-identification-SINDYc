@@ -3,7 +3,26 @@ import matplotlib.pyplot as plt
 from source import *
 from optimize_parameters import plot_optuna_data
 
+path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-31-ecc-50', 'IMMEC_50ecc_5.0sec.npz')
+DATA = prepare_data(path_to_data_files, number_of_trainfiles=-1)
+library = get_custom_library_funcs("poly_2nd_order")
+train = DATA['T_em_train']
+train = DATA['xdot_train']
+name = "Torque"
+opt = ps.SR3(thresholder="l1", threshold=0.0001, nu=1)
+model = ps.SINDy(optimizer=opt, feature_library=library,
+                 feature_names=DATA['feature_names'])
 
+print("Fitting model")
+model.fit(DATA['x_train'], u=DATA['u_train'], t=None, x_dot=train)
+model.print(precision=10)
+model = ps.SINDy(optimizer=opt, feature_library=library,
+                 feature_names=DATA['feature_names'])
+model.fit(np.hstack((DATA['x_train'],DATA['u_train'])), t=None, x_dot=train)
+model.print(precision=10)
+
+
+"""
 #model = load_model('linear_example_2_currents_model')
 #plot_coefs2(model, show=True, log=True)
 #plot_immec_data(os.path.join(os.getcwd(), 'test-data', '08-07', 'IMMEC_nonlin_ecc_randomecc_5.0sec.npz'))
@@ -17,7 +36,7 @@ plot_immec_data(os.path.join(os.getcwd(), 'test-data', '08-08', 'IMMEC_50ecc_ecc
 #p = os.path.join(os.getcwd(), 'plot_data','currents08-07_16-28-24.pkl')
 #plot_data(p, show=True)
 
-"""
+
 path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
 
 x_pred, x_test = simulate('currents_model_accurate', path_to_test_file, do_time_simulation=True)

@@ -155,12 +155,12 @@ def create_immec_data(
             v_uvw = immec.smooth_runup(v_uvw, n * timestep, 0.0, 1.5)  # change amplitude of voltage
 
         # I.C Rotor eccentricity
-        if not dynamic_ecc:
-            ecc = initial_ecc * motordict["d_air"] # static eccentricity
-        else:
-            omega = motordict['omega_rot'][-1]
-            ex = ecc_value * np.cos(omega * n*timestep + ecc_phi)
-            ey = ecc_value * np.sin(omega * n*timestep + ecc_phi)
+        if (not dynamic_ecc) or n == 0:
+            ecc = initial_ecc * motordict["d_air"]  # static eccentricity
+        elif n != 0:
+            omega = data_logger.quantities['omega_rot'][-1]
+            ex = ecc_value * np.cos(omega * n * timestep + ecc_phi)
+            ey = ecc_value * np.sin(omega * n * timestep + ecc_phi)
             ecc = np.array(ex, ey)
 
         # I.D The inputs are concatenated to a single vector

@@ -4,8 +4,8 @@ from optimize_parameters import plot_optuna_data
 from source import *
 from train_model_source import simulate_model
 
-process = 10
-coefs = True
+process = 1
+coefs = False
 
 ## 1 linear model currents
 if process == 1:
@@ -13,7 +13,7 @@ if process == 1:
     plot_optuna_data('currentsLinear-specific-optuna-study')
     models = ["linear_example_new_1_currents", "linear_example_2_currents", "linear_example_3_currents"]
     pref = "currents_linear\\"
-    pltdata_present = False
+    pltdata_present = True
     if not pltdata_present:
         for model in models:
             sim, test = simulate_model(pref + model + '_model', testdata, modeltype='currents', do_time_simulation=False,

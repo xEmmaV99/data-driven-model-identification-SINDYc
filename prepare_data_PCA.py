@@ -1,9 +1,15 @@
 import random
+
+import pandas as pd
 import scipy
 import numpy as np
 import os
 import pickle as pkl
 import numba as nb
+from matplotlib import pyplot as plt
+from sklearn import decomposition
+import seaborn as sns
+from sklearn.preprocessing import StandardScaler
 
 try:
     from pysindy import FiniteDifference
@@ -11,14 +17,11 @@ except ImportError:
     print("Skipping import of pysindy")
 
 
-# todo consider multithreading here, as one CPU might be the bottleneck
-
-
 def prepare_data(path_to_data_file,
                  test_data=False,
                  number_of_trainfiles=-1,
                  use_estimate_for_v=False,
-                 usage_per_trainfile=0.25):
+                 usage_per_trainfile=0.5):
     # load numpy file
     print("Loading data")
     dataset = dict(np.load(path_to_data_file))  # should be a dictionary
@@ -90,10 +93,6 @@ def prepare_data(path_to_data_file,
         timepoints = len(dataset['time'][:, 0, 0])
         time_trim = random.sample(range(timepoints), int(usage_per_trainfile * timepoints))
         for key in dataset.keys():
-            # error for wcoe
-            if key == 'wcoe' and dataset[key].shape[0] == 1:
-                dataset[key] = np.swapaxes(dataset[key], 0, 1) #debug TO BE REMOVED...
-
             dataset[key] = dataset[key][time_trim]
 
         v_stator = v_stator[time_trim]
@@ -107,28 +106,36 @@ def prepare_data(path_to_data_file,
     freqs = V_range * 50 / 400  # constant proportion
 
     freqs = freqs.reshape(1, 1, len(freqs))  # along third axis
-    u_data = np.hstack((v_stator,
+    u_data = np.hstack((x_data, v_stator,
                         I.reshape(v_stator.shape),
                         V.reshape(v_stator.shape),
                         dataset['gamma_rot'].reshape(t_data.shape) % (2 * np.pi),
                         dataset['omega_rot'].reshape(t_data.shape),
                         np.repeat(freqs, dataset['omega_rot'].shape[0], axis=0)))
+    # u_data contains ALL variables needed for prediction
+    # principal component analysis on u_data
+    # First, I need to reshape the data to be 2D
+    u_data = u_data.transpose(0, 2, 1).reshape(u_data.shape[0] * u_data.shape[-1], u_data.shape[1])
 
-    DATA['feature_names'] = [r'$i_d$', r'$i_q$', r'$i_0$',
-                             r'$v_d$', r'$v_q$', r'$v_0$',
-                             r'$I_d$', r'$I_q$', r'$I_0$',
-                             r'$V_d$', r'$V_q$', r'$V_0$',
-                             r'$\gamma$', r'$\omega$', r'$f$']  # ,r'$W_{coe}$']
+    # Scale data before applying PCA
+    scaling = StandardScaler()
 
-    # add eccentricity to the input data
-    '''
-    if not np.all(dataset['ecc'] < 1e-10):
-        print('Non zero ecc, added to input data')
-        u_data = np.hstack((u_data, dataset['ecc']))
-        DATA['feature_names'].append([r'r_x', r'r_y'])
-    else:
-        print('No ecc')
-    '''
+    # Use fit and transform method
+    scaling.fit(u_data)
+    Scaled_data = scaling.transform(u_data)
+
+    pca = decomposition.PCA()
+    #pca.fit(u_data)
+    pca.fit(Scaled_data)
+
+    print(pca.components_)
+    plot_pca_heatmap(pca, featurenames=[r'i_d', r'i_q', r'i_0',r'v_d',r'v_q',r'v_0',
+                                        r'I_d', r'I_q', r'I_0',r'V_d', r'V_q', r'V_0',
+                                        r'\gamma_{rot}', r'\omega_{rot}', r'f'])
+    plot_pca_variance_ratio(pca)
+
+    u_pca = pca.transform(Scaled_data) # use scaled data...
+
 
     # Now, stack data on top of each other and shuffle! (Note that the transpose is needed otherwise the reshape is wrong)
     DATA['x'] = x_data.transpose(0, 2, 1).reshape(x_data.shape[0] * x_data.shape[-1], x_data.shape[1])
@@ -171,6 +178,32 @@ def prepare_data(path_to_data_file,
     # DATA['wcoe_val'] = DATA['wcoe'][cutidx:]
 
     return DATA
+def plot_pca_heatmap(pca, featurenames):
+    plt.figure()
+    d = pd.DataFrame(pca.components_, columns=featurenames)
+    sns.heatmap(d, cmap='coolwarm', center=0)
+    plt.ylabel("Principal component")
+    plt.tight_layout()
+    plt.show()
+
+    return
+def plot_pca_variance_ratio(pca):
+    plt.figure()
+    plt.title("Variance ratio")
+    plt.xlabel("Number of components")
+    plt.ylabel("Percentage of variance")
+    plt.ylim([-0.1,1.1])
+    plt.plot(pca.explained_variance_ratio_)
+    plt.plot(np.cumsum(pca.explained_variance_ratio_))
+    plt.legend(["Variance ratio", "Cumulative variance ratio"])
+    plt.figure()
+    plt.title("Cumulative variance ratio")
+    plt.xlabel("Number of components")
+    plt.ylabel("Percentage of variance")
+    plt.plot(np.cumsum(pca.explained_variance_ratio_))
+    plt.yscale("log")
+    plt.show()
+
 
 
 def check_trapezoid_integration():
@@ -311,13 +344,10 @@ def calculate_xdot(x: np.array, t: np.array):
 
 
 if __name__ == "__main__":
-    check_trapezoid_integration()
-    '''
+    #check_trapezoid_integration()
+
     path = os.path.join(os.getcwd(), 'test-data', '07-29', 'IMMEC_0ecc_5.0sec.npz')
     data = prepare_data(path,
                         test_data=True,
                         number_of_trainfiles=-1,
                         use_estimate_for_v=False)
-    plt.plot(data['xdot'])
-    plt.show()
-    '''
