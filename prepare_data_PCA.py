@@ -106,7 +106,7 @@ def prepare_data(path_to_data_file,
     freqs = V_range * 50 / 400  # constant proportion
 
     freqs = freqs.reshape(1, 1, len(freqs))  # along third axis
-    u_data = np.hstack((x_data, v_stator,
+    u_data = np.hstack((v_stator,
                         I.reshape(v_stator.shape),
                         V.reshape(v_stator.shape),
                         dataset['gamma_rot'].reshape(t_data.shape) % (2 * np.pi),
@@ -115,27 +115,36 @@ def prepare_data(path_to_data_file,
     # u_data contains ALL variables needed for prediction
     # principal component analysis on u_data
     # First, I need to reshape the data to be 2D
-    u_data = u_data.transpose(0, 2, 1).reshape(u_data.shape[0] * u_data.shape[-1], u_data.shape[1])
+    u_pca =  np.hstack((x_data, v_stator,
+                        I.reshape(v_stator.shape),
+                        V.reshape(v_stator.shape),
+                        dataset['gamma_rot'].reshape(t_data.shape) % (2 * np.pi),
+                        dataset['omega_rot'].reshape(t_data.shape),
+                        np.repeat(freqs, dataset['omega_rot'].shape[0], axis=0)))
+    u_pca = u_pca.transpose(0, 2, 1).reshape(u_pca.shape[0] * u_pca.shape[-1], u_pca.shape[1])
 
     # Scale data before applying PCA
     scaling = StandardScaler()
 
     # Use fit and transform method
-    scaling.fit(u_data)
-    Scaled_data = scaling.transform(u_data)
+    do_pca_analysis = False
+    scaling.fit(u_pca)
+    Scaled_data = scaling.transform(u_pca)
 
-    pca = decomposition.PCA()
-    #pca.fit(u_data)
-    pca.fit(Scaled_data)
+    if do_pca_analysis:
+        pca = decomposition.PCA()
+        #pca.fit(u_data)
+        pca.fit(Scaled_data)
 
-    print(pca.components_)
-    plot_pca_heatmap(pca, featurenames=[r'i_d', r'i_q', r'i_0',r'v_d',r'v_q',r'v_0',
-                                        r'I_d', r'I_q', r'I_0',r'V_d', r'V_q', r'V_0',
-                                        r'\gamma_{rot}', r'\omega_{rot}', r'f'])
-    plot_pca_variance_ratio(pca)
+        print(pca.components_)
+        plot_pca_heatmap(pca, featurenames=[r'i_d', r'i_q', r'i_0',r'v_d',r'v_q',r'v_0',
+                                            r'I_d', r'I_q', r'I_0',r'V_d', r'V_q', r'V_0',
+                                            r'\gamma_{rot}', r'\omega_{rot}', r'f'])
+        plot_pca_variance_ratio(pca) # use 7 coefs
 
+    pca = decomposition.PCA(n_components=7)
     u_pca = pca.transform(Scaled_data) # use scaled data...
-
+    DATA['u_pca'] = u_pca
 
     # Now, stack data on top of each other and shuffle! (Note that the transpose is needed otherwise the reshape is wrong)
     DATA['x'] = x_data.transpose(0, 2, 1).reshape(x_data.shape[0] * x_data.shape[-1], x_data.shape[1])
@@ -159,6 +168,7 @@ def prepare_data(path_to_data_file,
     DATA['T_em'] = DATA['T_em'][shuffled_indices]
     DATA['UMP'] = DATA['UMP'][shuffled_indices]
     # DATA['wcoe'] = DATA['wcoe'][shuffled_indices]
+    DATA['u_pca'] = DATA['u_pca'][shuffled_indices]
 
     # split the data into train and validation data
     p = 0.8  # percentage of data to be used for training
@@ -170,14 +180,18 @@ def prepare_data(path_to_data_file,
     DATA['T_em_train'] = DATA['T_em'][:cutidx]
     DATA['UMP_train'] = DATA['UMP'][:cutidx]
     # DATA['wcoe_train'] = DATA['wcoe'][:cutidx]
+    DATA['u_pca_train'] = DATA['u_pca'][:cutidx]
     DATA['x_val'] = DATA['x'][cutidx:]
     DATA['u_val'] = DATA['u'][cutidx:]
     DATA['xdot_val'] = DATA['xdot'][cutidx:]
     DATA['T_em_val'] = DATA['T_em'][cutidx:]
     DATA['UMP_val'] = DATA['UMP'][cutidx:]
     # DATA['wcoe_val'] = DATA['wcoe'][cutidx:]
+    DATA['u_pca_val'] = DATA['u_pca'][cutidx:]
 
     return DATA
+
+
 def plot_pca_heatmap(pca, featurenames):
     plt.figure()
     d = pd.DataFrame(pca.components_, columns=featurenames)
@@ -351,3 +365,5 @@ if __name__ == "__main__":
                         test_data=True,
                         number_of_trainfiles=-1,
                         use_estimate_for_v=False)
+
+
