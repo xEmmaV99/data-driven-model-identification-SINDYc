@@ -8,6 +8,7 @@ import pickle as pkl
 import numba as nb
 from matplotlib import pyplot as plt
 from sklearn import decomposition
+from sklearn.linear_model import Lasso
 import seaborn as sns
 from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import StandardScaler
@@ -146,7 +147,7 @@ def prepare_data(path_to_data_file,
                                                 r'\gamma_{rot}', r'\omega_{rot}', r'f'])
             plot_pca_variance_ratio(pca) # use 7 coefs
 
-        pca = decomposition.PCA(n_components=14) #n_components=7
+        pca = decomposition.PCA(n_components=7) #n_components=7
         pca.fit(Scaled_data)
         u_pca = pca.transform(Scaled_data) # use scaled data...
     else: #pca is provided
@@ -370,18 +371,19 @@ if __name__ == "__main__":
     #check_trapezoid_integration()
 
     path = os.path.join(os.getcwd(), 'train-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
-    path = os.path.join(os.getcwd(), 'train-data', '07-31-ecc-50', 'IMMEC_50ecc_5.0sec.npz')
+    #path = os.path.join(os.getcwd(), 'train-data', '07-31-ecc-50', 'IMMEC_50ecc_5.0sec.npz')
     data,pca,scaling = prepare_data(path,
                         test_data=False,
                         number_of_trainfiles=-1,
                         use_estimate_for_v=False)
     library = libs.get_custom_library_funcs("pca", nmbr_input_features=data['u_pca_train'].shape[1])
 
-
     train = data['T_em_train']
-    #train = data['xdot_train']
+    train = data['UMP_train']
+    train = data['xdot_train']
     name = "pca"
     opt = ps.SR3(thresholder="l1", threshold=0.0001, nu=.1)
+    opt = ps.WrappedOptimizer(Lasso(alpha=0.01, fit_intercept=False, precompute=True))
     model = ps.SINDy(optimizer=opt, feature_library=library)
                      #feature_names=data['feature_names'])
 
@@ -391,16 +393,21 @@ if __name__ == "__main__":
 
 
     path = os.path.join(os.getcwd(), 'test-data', '07-29', 'IMMEC_0ecc_5.0sec.npz')
-    path = os.path.join(os.getcwd(), 'test-data', '08-05','IMMEC_50eccecc_5.0sec.npz')
+    #path = os.path.join(os.getcwd(), 'test-data', '08-05','IMMEC_50eccecc_5.0sec.npz')
     test = prepare_data(path,
                      test_data=True,
                      number_of_trainfiles=-1,
                      use_estimate_for_v=False, pca=pca, scaling=scaling)
 
     test_values = test['T_em']
-    #test_values = test['xdot']
+    test_values = test['UMP']
+    test_values = test['xdot']
 
-    test_predicted = model.predict(test['u_pca'])
+    #test_predicted = model.predict(test['u_pca'])
+
+
+    test_values = test['x']
+    test_predicted = model.simulate(test_values[0,:], t = test['t'].reshape(test['t'].shape[0]))
 
     print("MSE on test: ", mean_squared_error(test_values, test_predicted))
     print("Sparsity: ", np.count_nonzero(model.coefficients()))
