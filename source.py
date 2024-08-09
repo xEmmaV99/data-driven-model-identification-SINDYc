@@ -154,13 +154,13 @@ def plot_data(path="plotdata.pkl", show=False, limits=None):
             # it is saved as [x, y, reference] or for torque [x,ref, simplified model] or currents [di, ref]
             if data["plots"]['0'].shape[-1]==4: #currents
                 yvalues = np.hstack((data["plots"]['0'][:,1:],data["plots"]['1'][:,1:]))
-                yid = 2
+                yid = 3
             elif data["plots"]['2'].shape[-1] == 2: #torque
                 yvalues = np.hstack((data["plots"]['0'][:,1:],data["plots"]['1'][:,1:]))
                 yid = 1
             else:
                 yvalues = np.hstack((np.hstack((data["plots"]['0'][:,1:],data["plots"]['1'][:,1:])),data["plots"]['2'][:,1:]))
-                yid = 1
+                yid = 2
 
             for idx in data["plots"]:
                 if specs[int(idx)] is not None:
@@ -170,7 +170,7 @@ def plot_data(path="plotdata.pkl", show=False, limits=None):
 
             plt.legend(data["legend"])
             plt.title(data["title"])
-            plot_fourier(yvalues[:yid,:], yvalues[yid:,:], dt=1e-4, tmax = data["plots"]["0"][-1,0])
+            plot_fourier(yvalues[:,:yid], yvalues[:,yid:], dt=1e-4, tmax = data["plots"]["0"][-1,0], show=False)
 
     # note that for each path, if  data["plots"] contains multiple plots, they are related -> fourier analysis?
     if show:

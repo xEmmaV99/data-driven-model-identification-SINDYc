@@ -180,7 +180,7 @@ elif process == 10:
     plot_optuna_data('umpNonlinear-50ecc-optuna-study', dirs='ump_nonlin_0708/')
     models = ["nonlinear_big_ump_50ecc", "nonlinear_ump_50ecc"]
     pref = "ump_50_nonlinear\\"
-    pltdata_present = False
+    pltdata_present = True
     if not pltdata_present:
         for model in models:
             sim, test = simulate_model(pref + model + '_model', testdata, modeltype='ump', show=False)
