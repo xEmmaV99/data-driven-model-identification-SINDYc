@@ -4,8 +4,8 @@ from optimize_parameters import plot_optuna_data
 from source import *
 from train_model_source import simulate_model
 
-process =7
-coefs = False
+process = 10
+coefs = True
 
 ## 1 linear model currents
 if process == 1:
@@ -13,10 +13,10 @@ if process == 1:
     plot_optuna_data('currentsLinear-specific-optuna-study')
     models = ["linear_example_new_1_currents", "linear_example_2_currents", "linear_example_3_currents"]
     pref = "currents_linear\\"
-    pltdata_present = True
+    pltdata_present = False
     if not pltdata_present:
         for model in models:
-            sim, test = simulate_model(pref + model + '_model', testdata, modeltype='currents', do_time_simulation=True,
+            sim, test = simulate_model(pref + model + '_model', testdata, modeltype='currents', do_time_simulation=False,
                                        show=False)
             plot_fourier(test, sim, dt=5e-5, tmax=5.0)
     else:
@@ -53,7 +53,7 @@ elif process == 2:
 elif process == 3:
     testdata = os.path.join(os.getcwd(), 'test-data', '08-07', 'IMMEC_nonlin_0ecc_5.0sec.npz')
     plot_optuna_data('currentsNonlinear-extra_models-optuna-study')
-    models = ["example_A_currents_model", "example_B_currents_model"]
+    models = ["example_A_currents", "example_B_currents"]
     pref = "currents_nonlinear\\"
     pltdata_present = True
     if not pltdata_present:
@@ -180,7 +180,7 @@ elif process == 10:
     plot_optuna_data('umpNonlinear-50ecc-optuna-study', dirs='ump_nonlin_0708/')
     models = ["nonlinear_big_ump_50ecc", "nonlinear_ump_50ecc"]
     pref = "ump_50_nonlinear\\"
-    pltdata_present = True
+    pltdata_present = False
     if not pltdata_present:
         for model in models:
             sim, test = simulate_model(pref + model + '_model', testdata, modeltype='ump', show=False)

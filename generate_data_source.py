@@ -101,6 +101,7 @@ def create_immec_data(
     # data_logger.pre_allocate(steps_total)
 
     # initial params
+    dynamic_ecc = False
     start_load = 0.0
     end_load = load
     start_time = 0.0
@@ -152,8 +153,10 @@ def create_immec_data(
             v_uvw = immec.smooth_runup(v_uvw, n * timestep, 0.0, 1.5)  # change amplitude of voltage
 
         # I.C Rotor eccentricity
-        ecc = initial_ecc * motordict["d_air"]
-
+        if not dynamic_ecc:
+            ecc = initial_ecc * motordict["d_air"] # static eccentricity
+        else:
+            raise NotImplementedError("need to implement dynamic eccentricity")
 
         # I.D The inputs are concatenated to a single vector
         inputs = np.concatenate([v_uvw, [T_l], ecc])
