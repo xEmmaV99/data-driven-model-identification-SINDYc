@@ -42,7 +42,7 @@ def check_training_data(path_to_data_logger: str, keys_to_plot_list: list = None
     plt.show()
     return
 
-
+'''
 def read_V_from_directory(path_to_directory: str):
     """
     This function reads the voltage from the directory name, when multiple simulations are in seperate files. TO BE REMOVED
@@ -57,34 +57,33 @@ def read_V_from_directory(path_to_directory: str):
         if file.endswith(".pkl") and file.startswith("IMMEC_history"):
             V.append(int(file.split("_")[2][:-1]))
     return np.array(V)
-
+'''
 
 def save_plot_data(
         save_name: str,
         xydata: list,
         title: str,
-        xlab, ylab,
-        legend=None,
-        plot_now=False,
-        specs=None,
-        sindy_model=None
+        xlab: str, ylab,
+        legend: list =None,
+        plot_now: bool =False,
+        specs=None
 ):
     """
     Saves the plot data in a .pkl file such that it can be plotted later
-    :param save_name:
-    :param xydata:
-    :param title:
-    :param xlab:
-    :param ylab:
-    :param legend:
-    :param plot_now:
-    :param specs:
-    :param sindy_model:
+    :param save_name: str used to save the data with
+    :param xydata: list of np.array, containing the data to plot. If only one x, y then [np.array([x,y])].
+    Here, x is assumed to be one dimensional, x.shape = (n,1) and y.shape = (n, k) with k the number of lines to be plotted.
+    If multiple axis should be plotted, then [np.array([x1,y1]), np.array([x2,y2]), ...]
+    :param title: Title of the plot
+    :param xlab: x label
+    :param ylab: y label, can be a list of two y lables if multiple axis
+    :param legend: list of str containing the legend entries
+    :param plot_now: True if plt.show is called
+    :param specs: list of str containing the specifications, for example ["k--", "b", "r"] for the color and linestypes.
+    The number of elements in this list should be equal to 'k' from y.shape = (n,k)
     :return:
     """
-    # xydata contains the data to plot, but if multiple axis should be plotted, xy data should be a list of arrays
-    # if it is only one x,y then [np.array([x,y])] should be the input
-    # create the dictionary to save as is
+    # create the dictionary to save
     pltdata = {
         "title": title,
         "xlab": xlab,
@@ -106,6 +105,14 @@ def save_plot_data(
 
 
 def plot_data(path="plotdata.pkl", show=False, limits=None):
+    """
+    Plots the data from a .pkl file
+    :param path: str or list of str containing the path(s) to the plot data file(s)
+    :param show: True if plt.show is called
+    :param limits: list of list of floats, to manually set the limits, can be np.array too.
+    Example: [[0, 5],[-10,10]] to set ylim [0,5] and ylim [-10,10], for a plot with multiple axis.
+    :return:
+    """
     # todo adapt such that fourier is plotted too
     suppres_title = False
     if type(path) == str:
@@ -119,7 +126,8 @@ def plot_data(path="plotdata.pkl", show=False, limits=None):
         with open(path, "rb") as file:
             data = pkl.load(file)
 
-        if type(data["ylab"]) != str:  # multiple axis
+        # multiple axis, !!! This was mainly used for the MSE/SPAR plot before the pareto plots were added.
+        if type(data["ylab"]) != str:
             print("Multiple axis plot detected.")
             print("loglog ax1 and semilogx ax2.")
             # if subplot exist, dont' create a new subplot
@@ -148,10 +156,9 @@ def plot_data(path="plotdata.pkl", show=False, limits=None):
             plt.figure()
             plt.xlabel(data["xlab"]), plt.ylabel(data["ylab"])
             specs = data["specs"]
-
-
             # shape should be (2, t), where t is the number of time points and 2 number of solution
-            # it is saved as [x, y, reference] or for torque [x,ref, simplified model] or currents [di, ref]
+            # it is saved as [x, y, reference] or for torque [x, ref, simplified model] or currents [di, ref]
+            # Gather y-values for the fourier plot later
             if data["plots"]['0'].shape[-1]==4: #currents
                 yvalues = np.hstack((data["plots"]['0'][:,1:],data["plots"]['1'][:,1:]))
                 yid = 3
@@ -162,6 +169,7 @@ def plot_data(path="plotdata.pkl", show=False, limits=None):
                 yvalues = np.hstack((np.hstack((data["plots"]['0'][:,1:],data["plots"]['1'][:,1:])),data["plots"]['2'][:,1:]))
                 yid = 2
 
+            # plot the data
             for idx in data["plots"]:
                 if specs[int(idx)] is not None:
                     plt.plot(data["plots"][idx][:, 0], data["plots"][idx][:, 1:], specs[int(idx)])
@@ -170,19 +178,26 @@ def plot_data(path="plotdata.pkl", show=False, limits=None):
 
             plt.legend(data["legend"])
             plt.title(data["title"])
-            plot_fourier(yvalues[:,:yid], yvalues[:,yid:], dt=1e-4, tmax = data["plots"]["0"][-1,0], show=False)
+            if limits is not None:
+                plt.ylim(limits[0])
 
-    # note that for each path, if  data["plots"] contains multiple plots, they are related -> fourier analysis?
+            # plot the fourier data
+            plot_fourier(yvalues[:,:yid], yvalues[:,yid:], dt=1e-4, tmax = data["plots"]["0"][-1,0], show=False)
     if show:
         plt.show()
     return
 
 
 def plot_coefs(model):
+    """
+    Creates a heatplot of the coefficients of the model, see
+    https://pysindy.readthedocs.io/en/latest/examples/7_plasma_examples/example.html
+
+    :param model: a model instance
+    :return:
+    """
     coefs = model.coefficients()
     featurenames = model.feature_names()
-    # plot coefs of the model, based on the code provided by pysindy:
-    # https://pysindy.readthedocs.io/en/latest/examples/7_plasma_examples/example.html
     input_features = [rf"$\dot x_{k}$" for k in range(coefs.shape[0])]
     if featurenames == None:
         input_names = [rf"$x_{k}$" for k in range(coefs.shape[1])]
@@ -210,14 +225,21 @@ def plot_coefs(model):
 
 
 def plot_coefs2(model, show=False, log=False):
+    """
+    Plot the coefficients of a model, but on an axis
+    :param model: a model instance
+    :param show: if True, plt.show() is called
+    :param log: if True, uses logscale for the yscale
+    :return:
+    """
     model.print()
     print("Sparsity: ", np.count_nonzero(model.coefficients()))
-    xticknames = model.get_feature_names()
+    xticknames = model.get_feature_names() # todo DEBUG for torque and UMP this is still i .... maybe pass the names?
     for i in range(len(xticknames)):
         xticknames[i] = xticknames[i]
     plt.figure(figsize=(len(xticknames), 4))
     colors = ["b", "r", "k"]
-    coefs = copy.deepcopy(model.coefficients())
+    coefs = copy.deepcopy(model.coefficients()) # copy such that they do not get overwritten
 
     if log:
         plt.yscale("log", base=10)
@@ -251,7 +273,14 @@ def get_date():
     return now.strftime("%m-%d_%H-%M-%S")
 
 
-def save_model(model, name, libstr):
+def save_model(model, name:str, libstr:str):
+    """
+    Function to save a model as pkl file. Note that a pysindy library cannot simply be pikled
+    :param model: a model instance, to be saved
+    :param name: name used for saving the model
+    :param libstr: string of the libary used to generate the model
+    :return:
+    """
     print("Saving model")
     path = os.path.join(os.getcwd(), "models", name + get_date() + ".pkl")
 
@@ -268,27 +297,39 @@ def save_model(model, name, libstr):
         pkl.dump(lib, file)
 
 
-def load_model(name):
+def load_model(name: str):
+    """
+    Load the model from a .pkl file
+    :param name: name of the model
+    :return: a model
+    """
+    # load .pkl file
     path = os.path.join(os.getcwd(), "models", name + ".pkl")
-
     with open(path, "rb") as file:
         model_data = pkl.load(file)
 
     # initialize pysindy model
-
     lib = get_custom_library_funcs(model_data["library"])
-
     new_model = ps.SINDy(optimizer=None, feature_names=model_data["features"], feature_library=lib)
 
+    # Trick SINDy to fit a model
     x_shape, u_shape, xdot_shape = model_data["shapes"]
     new_model.fit(np.zeros(x_shape), u=np.zeros(u_shape), t=None, x_dot=np.zeros(xdot_shape))
 
+    # overwrite the coefficients of the 'fitted' model :)
     new_model.optimizer.coef_ = model_data["coefs"]
 
     return new_model
 
 
-def plot_immec_data(path, simulation_number=None, title=None):
+def plot_immec_data(path: str, simulation_number: int=None, title:str=None):
+    """
+    Plot the trainig or test data from a file
+    :param path: path to the data
+    :param simulation_number: if trainingdata, provide a simulation number
+    :param title: string for the suptitle
+    :return:
+    """
     # if path ends with pkl, load as pkl file
     if path.endswith(".pkl"):
         with open(path, "rb") as file:
@@ -296,12 +337,12 @@ def plot_immec_data(path, simulation_number=None, title=None):
     else:
         dataset = dict(np.load(path))
 
-    d_air = 0.000477  # for the Cantoni motor
+    d_air = 0.000477  # for the Cantoni motor, todo DEBUG hardcoded
 
     if "wcoe" in dataset.keys():  # some datasets have magnetic coenergy
         rows, cols = 2, 4
     else:
-        rows, cols = 2, 3
+        rows, cols = 2, 3 # others don't
 
     if simulation_number is None:  # testfile
         plt.subplot(rows, cols, 1)
@@ -381,7 +422,12 @@ def plot_immec_data(path, simulation_number=None, title=None):
     return
 
 
-def plot_everything(path_to_directory):
+def plot_everything(path_to_directory: str):
+    """
+    Plots every file from a folder
+    :param path_to_directory:  path to a folder
+    :return:
+    """
     files = os.listdir(path_to_directory)
     for file in files:
         if file.endswith(".pkl"):

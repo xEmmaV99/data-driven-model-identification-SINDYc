@@ -5,9 +5,9 @@ from source import *
 from train_model_source import make_model, simulate_model
 
 do_part1 = False
-do_part15 = False
 do_part2 = False
-do_part3 = True
+do_part3 = False
+do_part4 = False
 
 ### DATA TRAINING FILES
 #path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
@@ -30,12 +30,13 @@ if do_part1:
     # Creates an optuna study to optimize the parameters of the
     optimize_parameters(path_to_data_files, mode="currents", additional_name="nonlinear-50-specific")
 
-if do_part15:
+### PART 2: plot the optuna study to choose the hyperparameters
+if do_part2:
     #plot_optuna_data('currents-optuna-study', dirs = 'w3-presentation-0208//')
     plot_optuna_data('currentsLinear-specific-optuna-study')
 
-### PART 2: TRAIN MODEL
-if do_part2:
+### PART 3: TRAIN MODEL
+if do_part3:
     '''
     make_model(path_to_data_files, modeltype='currents', optimizer='lasso',
                nmbr_of_train=-1, lib='nonlinear_terms', alpha=86.47,
@@ -90,8 +91,8 @@ if do_part2:
                nmbr_of_train=-1, lib="poly_2nd_order",
                    alpha=None, nu=2.8e-12, lamb=6.8e-5, modelname="example_B_currents")
     '''
-### PART 3: SIMULATE MODEL
-if do_part3:
+### PART 4: SIMULATE MODEL
+if do_part4:
     models = [ "example_A_currents"] #"example_A_currents",
     models = ["linear_example_new_1_currents", "linear_example_2_currents", "linear_example_3_currents"]
 

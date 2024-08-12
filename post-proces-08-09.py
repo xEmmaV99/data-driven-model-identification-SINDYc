@@ -29,7 +29,7 @@ if process == 1:
         path = os.path.join(os.getcwd(), 'plot_data', 'currents_linear')
         plot_everything(path)
 
-## 2 linear model torque : todo LEUVEN
+## 2 linear model torque : todo: data in LEUVEN
 elif process == 2:
     testdata = os.path.join(os.getcwd(), 'test-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
     plot_optuna_data('')

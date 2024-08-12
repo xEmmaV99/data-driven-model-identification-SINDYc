@@ -4,7 +4,19 @@ import immec
 from tqdm import tqdm
 
 
-def do_simulation(V_applied, motor_path, load=3.7, ecc=np.zeros(2), t_end=1.0, mode="linear"):
+def do_simulation(V_applied: float, motor_path: str,
+                  load: float = 3.7, ecc: np.array = np.zeros(2),
+                  t_end: float = 1.0, mode: str = "linear"):
+    """
+    Initialises the simulation and handles the output data
+    :param V_applied:  maximal applied voltage during the simulation
+    :param motor_path: path to the motor .pkl file, containing the motor specifications
+    :param load: initial applied load
+    :param ecc: rotor's eccentricity in % of the airgaplength, in [x, y] coordinates
+    :param t_end: end time of the simulation
+    :param mode: 'linear' or 'nonlinear' behaviour of the motor
+    :return: list of np.array
+    """
     dt = 1e-4  # default
 
     datalogger, wcoe = create_immec_data(
@@ -29,7 +41,7 @@ def do_simulation(V_applied, motor_path, load=3.7, ecc=np.zeros(2), t_end=1.0, m
         datalogger.quantities["time"],
         datalogger.quantities["flux_st_yoke"],
         datalogger.quantities["gamma_rot"],
-        wcoe[:,np.newaxis]
+        wcoe[:, np.newaxis]
     ]
 
 
@@ -69,83 +81,81 @@ def create_immec_data(
         initial_ecc: np.array = np.zeros(2),
 ):
     """
-    Creates data from the IMMEC model
-    :param timestep: timestep of the simulation
-    :param t_end: end of the simulation
-    :param path_to_motor: path to the motor data file
-    :param V: Maximum voltage applied to the motor
-    :param mode: 'linear' for no nonlinear effects when simulating
-    :param solving_tolerance:  tolerance used for the approximation of non linearities, only used when mode is not "linear"
-    :param load: Load applied to the motor in Nm, at time 1.5s to 1.7s
-    :param ecc: eccentricity of the motor, in percentage of the airgap
-    :return: data_logger object (HistoryDataLogger) containing the data
+    Creates a simulation of a motor by using the time-stepping method from the IMMEC implementation
+    :param timestep: size of the time step
+    :param t_end: end time of the simulation
+    :param path_to_motor: path to a .pkl file containing motor specifications
+    :param V: maximim applied voltage
+    :param mode: either 'linear' or 'nonlinear'
+    :param solving_tolerance: used solving tolerance for the 'nonlinear' approximation
+    :param load: initial applied load
+    :param initial_ecc: eccentricity at the start of the simulation
+    :return: data_logger object
     """
-    # V should always be below 400, minimal V is 40 (means 5hz f)
+    ### initialisation
+    # initialise the motor
     motordict = immec.read_motordict(path_to_motor)
     stator_connection = "wye"
-
     if mode == "linear":
         motor_model = immec.MotorModel(motordict, timestep, stator_connection)
     else:
         motor_model = immec.MotorModel(
             motordict, timestep, stator_connection, solver="newton", solving_tolerance=solving_tolerance
         )
-
-    tuner = immec.RelaxationTuner()
+        tuner = immec.RelaxationTuner()
+    # initialise the datalogger
     data_logger = immec.HistoryDataLogger(motor_model)
-
-    steps_total = int(t_end // timestep)  # Total number of steps to simulate
-
-    Vf_ratio = 400 / 50
-
     # data_logger.pre_allocate(steps_total)
 
-    # initial params
-    dynamic_ecc = False
-    ecc_value = np.linalg.norm(initial_ecc)
-    ecc_phi = np.arctan2(initial_ecc[1], initial_ecc[0])
-    start_load = 0.0
+    # Other initialising parameters
+    steps_total = int(t_end // timestep)  # Total number of steps to simulate
+    Vf_ratio = 400 / 50 # Assume a constant V/f ratio
+    dynamic_ecc = False # using a dynamic eccentricity
+    ecc_value = np.linalg.norm(initial_ecc) # the size of eccentricity
+    ecc_phi = np.arctan2(initial_ecc[1], initial_ecc[0]) # the anlge of rotor displacement
+    start_load = 0.0 # always start with 0.0 load, but increase it up to the desired load value
     end_load = load
-    start_time = 0.0
+    start_time = 0.0 # start time for load
     close_to_steady_state = False
-    dt_load = 0.2  # first applied load for 1 second
-    Vfmode = "chirp"
-    print('Mode: ', Vfmode)
+    dt_load = 0.2  # graddually apply the initial load over a time span of .2 seconds
 
-    Wmagcoen = np.zeros(steps_total)
+    Vfmode = "chirp"
+    # either 1. constant_freq (increase voltage but keep f a constant, violating the V/f constant)
+    # 2. chirp (increase frequency like a chirp-wave, constant V/f)
+    # 3. chirp_linear (increase the Voltage linearly, frequency chirp)
+    # print('Mode: ', Vfmode)
+
+    Wmagcoen = np.zeros(steps_total) # initialise the magnetic coenergy
+
+    ### Simulation
     for n in tqdm(range(steps_total)):
         # I. Generate the input
-
         # I.A Load torque
-
-        # The IMMEC function smooth_runup is called.
-        # Here, it runs up to 3.7 Nm (load) between 1.5 seconds and 1.7 seconds
-        # T_l = smooth_runup(load, n * timestep, 1.5, 1.7)  # n*timestep is current time
-        # Here, no torque is applied
-        # T_l = 0
+        # A new load is applied when steady state is reached
+        # change_load() returns the value of the load at the current time, n*timestep
         if close_to_steady_state:
-            # start_load = end_load #continuous
+            # make sure the load is changed continuously
             start_load = change_load(start_load, end_load, n * timestep, start_time, start_time + dt_load)
             end_load = int(np.random.randint(0, 370) * (V / 400.0)) / 100  # choose new load
             print("New applied load: ", end_load, "Nm")
             start_time = n * timestep  # apply now
-            close_to_steady_state = False  # change back
-            dt_load = .2  # apply faster
+            close_to_steady_state = False  # change back to False
+            dt_load = .2  # Apply gradually over a time span of .2 seconds
 
         T_l = change_load(start_load, end_load, n * timestep, start_time, start_time + dt_load)
 
         # I.B Applied voltage
         # 400 V_RMS symmetrical line voltages are used
+        # Choose the runup mode
         if Vfmode == "constant_freq":
             V_amp = V
             f_amp = V / Vf_ratio * n * timestep
         elif Vfmode == "chirp_linear":
             V_amp = linear_runup(V, n * timestep, 1.5)
-            f_amp = linear_runup_freq(V / Vf_ratio, n * timestep, 1.5)
+            f_amp = linear_runup_freq(V / Vf_ratio, n * timestep, 1.5) # returns the corresponding frequency
         elif Vfmode == "chirp":
             V_amp = immec.smooth_runup(V, n * timestep, 0.0, 1.5)
-            f_amp = chirp_freq(V / Vf_ratio, n * timestep, 1.5)
-
+            f_amp = chirp_freq(V / Vf_ratio, n * timestep, 1.5) # returns the corresponding frequency
         v_u = V_amp * np.sqrt(2) * np.sin(2 * np.pi * f_amp)
         v_v = V_amp * np.sqrt(2) * np.sin(2 * np.pi * f_amp - 2 * np.pi / 3)
         v_w = V_amp * np.sqrt(2) * np.sin(2 * np.pi * f_amp - 4 * np.pi / 3)
@@ -155,13 +165,13 @@ def create_immec_data(
             v_uvw = immec.smooth_runup(v_uvw, n * timestep, 0.0, 1.5)  # change amplitude of voltage
 
         # I.C Rotor eccentricity
-        if (not dynamic_ecc) or n == 0:
-            ecc = initial_ecc * motordict["d_air"]  # static eccentricity
-        elif n != 0:
-            omega = data_logger.quantities['omega_rot'][-1]
-            ex = ecc_value * np.cos(omega * n * timestep + ecc_phi)
-            ey = ecc_value * np.sin(omega * n * timestep + ecc_phi)
-            ecc = np.array([ex[0], ey[0]]) * motordict["d_air"]
+        if (not dynamic_ecc) or n == 0: # static, or at t = 0, apply initial eccentricity
+            ecc = initial_ecc * motordict["d_air"]
+        elif n != 0: # dynamic eccentricity, rotation with the same speed as the rotor speed
+            omega = data_logger.quantities['omega_rot'][-1] # rotor speed
+            x = ecc_value * np.cos(omega * n * timestep + ecc_phi)
+            y = ecc_value * np.sin(omega * n * timestep + ecc_phi)
+            ecc = np.array([x[0], y[0]]) * motordict["d_air"]
 
         # I.D The inputs are concatenated to a single vector
         inputs = np.concatenate([v_uvw, [T_l], ecc])
@@ -169,13 +179,12 @@ def create_immec_data(
         # II. Log the motor model values, time, and inputs
         data_logger.log(n * timestep, inputs)
 
-        # DEBUG: MAGNETIC COENERGY, after datalogger : might consider to skip first step
+        # Calculation of the magnetic coenergy. Can only be done after 1 iteration
+        if n != 0: # calculation is similar to the one in immec.
+            psi_st = data_logger.quantities['potentials_st'][-1, :]
+            psi_rot = data_logger.quantities['potentials_rot'][-1, :]
 
-        if n != 0:
-            psi_st = data_logger.quantities['potentials_st'][-1,:]
-            psi_rot = data_logger.quantities['potentials_rot'][-1,:]
-
-            Psi = np.broadcast_to(psi_st[:, np.newaxis], (psi_st.shape[0], motor_model.N_rot))\
+            Psi = np.broadcast_to(psi_st[:, np.newaxis], (psi_st.shape[0], motor_model.N_rot)) \
                   - np.ones((motor_model.N_st, 1)) * psi_rot[np.newaxis, :]
 
             W = 0.5 * (Psi ** 2 * motor_model.P_air_hl_noskew()).sum(axis=1).sum()  # Total magnetic co energy
@@ -199,13 +208,13 @@ def create_immec_data(
                 except immec.NoConvergenceException:
                     tuner.jump()
 
-        # check if the steady state is reached, every .1 seconds
-        if n % int(0.1 / timestep) == 0 and n*timestep > 0.5: #only check after .5 seconds
+        # Check if the steady state is reached, but only every .1 seconds and after n*dt = .5 seconds
+        if n % int(0.1 / timestep) == 0 and n * timestep > 0.5:
             close_to_steady_state = check_steady_state(
-                    T_em=data_logger.quantities["T_em"],
-                    speed=data_logger.quantities["omega_rot"],
-                    nmbr_of_steps_per_chunk=int(0.03 / timestep),
-                )
+                T_em=data_logger.quantities["T_em"],
+                speed=data_logger.quantities["omega_rot"],
+                nmbr_of_steps_per_chunk=int(0.03 / timestep),
+            )
 
     return data_logger, Wmagcoen
 
@@ -290,8 +299,7 @@ def chirp_freq(values, time: float, end_time: float, start_time: float = 0.0):
 
 def check_steady_state(T_em, speed, nmbr_of_steps_per_chunk, mode="linear"):
     """
-    Checks whether steady state is close to reached, when the last 4 chunks (mean) are whitin 5% of the mean of these chunks
-
+    Checks whether steady state is close to reached, when the last 4 chunks (mean) are within 5% of the mean of these chunks
     :param T_em: Electromagnetic torque
     :param speed: omega, rotation speed
     :param nmbr_of_steps: number of steps taken into account for the convergence
@@ -301,8 +309,10 @@ def check_steady_state(T_em, speed, nmbr_of_steps_per_chunk, mode="linear"):
     meansT = np.array([])
     meansS = np.array([])
     for i in range(4):
-        meansT = np.append(meansT, np.mean(T_em[-(i+1)*nmbr_of_steps_per_chunk: None if i==0 else -i*nmbr_of_steps_per_chunk]))
-        meansS = np.append(meansS, np.mean(speed[-(i+1)*nmbr_of_steps_per_chunk: None if i==0 else -i*nmbr_of_steps_per_chunk]))
+        meansT = np.append(meansT, np.mean(
+            T_em[-(i + 1) * nmbr_of_steps_per_chunk: None if i == 0 else -i * nmbr_of_steps_per_chunk]))
+        meansS = np.append(meansS, np.mean(
+            speed[-(i + 1) * nmbr_of_steps_per_chunk: None if i == 0 else -i * nmbr_of_steps_per_chunk]))
     meanT = np.mean(meansT)
     meanS = np.mean(meansS)
     # all points should be within 5% of the mean
@@ -324,7 +334,6 @@ def change_load(start_load, end_load, time: float, start_time: float, end_time: 
     # Return start_load before the starting time
     if time < start_time:
         return start_load
-
     if start_load < end_load:
         # Use 1 - cos(t) run-up between the start time and the end time
         if time < end_time:

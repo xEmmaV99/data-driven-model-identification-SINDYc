@@ -11,9 +11,13 @@ from libs import get_library_names
 import tqdm
 
 
-def optimize_parameters(path_to_data_files, mode='torque', additional_name=""):
+def optimize_parameters(path_to_data_files:str, mode='torque', additional_name=""):
     """
-    Calculates for various parameters, plots MSE and Sparsity, for SR3 and Lasso optimisation
+    Starts the optuna study for pareto-optimal parameters
+    :param path_to_data_files:
+    :param mode:
+    :param additional_name: name for the study to be saved
+    :return:
     """
     both = True
 

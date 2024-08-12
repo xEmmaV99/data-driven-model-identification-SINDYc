@@ -8,8 +8,8 @@ if __name__ == "__main__":
     generate_testdata = True
 
     motor_path = os.path.join(os.getcwd(), "Cantoni.pkl")
-
-    t_end = 5.0 # debug
+    save_name = '50ecc_nonlinear'
+    t_end = 5.0
 
     ecc_value = 0.0
     ecc_dir = np.array([0, 0])
@@ -20,8 +20,7 @@ if __name__ == "__main__":
         print("No eccentricity")
         ecc = ecc_dir * ecc_value # if ecc_value is 0, ecc is 0
 
-    eccname = "DEBUG"
-    numbr_of_simulations = 50  # number of train simulations (of 5sec)
+    numbr_of_simulations = 50  # number of train simulations
     mode = 'nonlinear'
 
     ecc_random_direction = False
@@ -36,6 +35,7 @@ if __name__ == "__main__":
     if generate_traindata:
         print("Generating training data")
         save_path = os.path.join(os.getcwd(), "train-data/", date.today().strftime("%m-%d"))
+
         # create directory if not exist
         if not os.path.exists(save_path):
             os.makedirs(save_path)
@@ -46,7 +46,7 @@ if __name__ == "__main__":
         save_simulation_data(motor_path, save_path, extra_dict={"V": V_ranges, "load": load_ranges})  # save motor data
 
         print("Starting simulation")
-        p = multiprocessing.Pool(processes=6)
+        p = multiprocessing.Pool(processes=6) # todo change to joblib
         input_data = [(V, motor_path, load_ranges[i], ecc_list[i], t_end, mode) for i, V in enumerate(V_ranges)]
         output_list = p.starmap(do_simulation, input_data)
         p.close()
@@ -77,7 +77,7 @@ if __name__ == "__main__":
                     dataset[key] = np.dstack((dataset[key], simulation[i]))
 
         print("Simulation finished")
-        title = "\\IMMEC_" + eccname + "ecc_" + str(t_end) + "sec"
+        title = "\\IMMEC_" + save_name+ "_" + str(t_end) + "sec"
         np.savez_compressed(
             save_path + title + ".npz",
             i_st=dataset["i_st"],
@@ -97,8 +97,7 @@ if __name__ == "__main__":
         print("Generating test data")
         save_path = os.path.join(os.getcwd(), "test-data/", date.today().strftime("%m-%d"))
         # choose V and (initial) load somewhere between 0.0 and 3.7, but scale with V (so 3.7 is for V=400)
-        V = np.random.randint(40, 400)
-        # load = 1 / 100 * np.random.randint(0.0, 370) * (V / 400.0)
+        #V = np.random.randint(40, 400)
         V = 350
         load = 0.0
 
@@ -123,7 +122,7 @@ if __name__ == "__main__":
         }  # shape t, simulations
 
         print("Simulation finished")
-        title = "\\IMMEC_" + eccname + "ecc_" + str(t_end) + "sec"
+        title = "\\IMMEC_" + save_name + "_" + str(t_end) + "sec"
         np.savez_compressed(
             save_path + title + ".npz",
             i_st=dataset["i_st"],

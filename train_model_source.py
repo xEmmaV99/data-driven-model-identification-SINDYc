@@ -5,25 +5,29 @@ from sklearn.metrics import mean_squared_error
 import datetime
 
 
-def make_model(path_to_data_files, modeltype, optimizer, nmbr_of_train=-1, lib="",
-               alpha=None, nu=None, lamb=None, modelname=None):
+def make_model(path_to_data_files: str, modeltype: str, optimizer: str, nmbr_of_train: int=-1, lib: str="",
+               alpha: float=None, nu: float=None, lamb:float=None, modelname: str=None):
     """
-    Make model
-    :param path_to_data_files:
-    :param modeltype:
-    :param optimizer:
-    :param nmbr_of_train:
-    :param lib:
-    :param alpha:
-    :param nu:
-    :param lamb:
-    :param modelname:
+    Initialises and fits a SINDy model
+    :param path_to_data_files: str, path to the training data
+    :param modeltype: either 'torque', 'ump', 'torque-ump', 'currents', or 'wcoe'
+    :param optimizer: either 'sr3' or 'lasso'
+    :param nmbr_of_train: how many simulations should be considered in the training data, to select 'all', pass -1
+    :param lib: name of the library to be used in SINDy (will be passsed to lib.py)
+    :param alpha: sparsity weighting factor for the lasso optimisation, should be passed if optimizer is 'lasso'
+    :param nu: parameter 1 for sr3 optimisation
+    :param lamb: parameter 2 for sr3 optimisation
+       sr3 optimises the function with objective Ax = b as follows:
+                                (Ax-b) + lamb * L_1(w) + 1/nu ||cx - w||^2 #todo check and cite
+    :param modelname: name for the model to be saved with. If None, default name is modeltype
     :return:
     """
+    # load in training and validation data
     DATA = prepare_data(path_to_data_files, number_of_trainfiles=nmbr_of_train)
     library = get_custom_library_funcs(lib)
 
-    # merge the make-model functions
+    # select inputs for the desired model
+    modeltype = modeltype.lower()
     if modeltype == 'torque':
         train = DATA['T_em_train']
         val = DATA['T_em_val'] # only for MSE calculation
@@ -46,22 +50,28 @@ def make_model(path_to_data_files, modeltype, optimizer, nmbr_of_train=-1, lib="
         val = DATA['wcoe_val'] # only for MSE calculation
         name = "Wcoe"
     else:
-        raise ValueError("Model type not known")
+        raise ValueError("Model type not equal to 'torque', 'ump', 'torque-ump', 'currents' or 'wcoe' ")
 
+    # overwrite saving name if modelname is not None
     if modelname is not None:
-        name = modelname #overwrite default name
+        name = modelname
 
     # Select the correct optimizer
     if optimizer == 'sr3':
         print("SR3_L1 optimisation")
+        if lamb  is None or nu is None:
+            raise ValueError("The values lamb and nu should be passed when using sr3 optimisation")
         opt = ps.SR3(thresholder="l1", threshold=lamb, nu=nu)
 
     elif optimizer == 'lasso':
         print("Lasso optimisation")
+        if alpha is None:
+            raise ValueError("The value alpha should be passed when using lasso optimisation")
         opt = ps.WrappedOptimizer(Lasso(alpha=alpha, fit_intercept=False, precompute=True, max_iter=1000))
     else:
-        raise ValueError("Optimizer not known")
+        raise ValueError("Optimizer not known, only 'sr3' or 'lasso' are possible")
 
+    # initialise model
     model = ps.SINDy(optimizer=opt, feature_library=library,
                      feature_names=DATA['feature_names'])
 
@@ -69,8 +79,7 @@ def make_model(path_to_data_files, modeltype, optimizer, nmbr_of_train=-1, lib="
     model.fit(DATA['x_train'], u=DATA['u_train'], t=None, x_dot=train)
     model.print(precision=10)
 
-
-    print("SPAR", np.count_nonzero(model.coefficients()))
+    print("Non-zero elements: ", np.count_nonzero(model.coefficients()))
     print("MSE: " + str(
         model.score(DATA["x_val"], t=None, x_dot=val, u=DATA['u_val'], metric=mean_squared_error)))
 
@@ -79,13 +88,23 @@ def make_model(path_to_data_files, modeltype, optimizer, nmbr_of_train=-1, lib="
     save_model(model, name + "_model", lib)
 
 
-def simulate_model(model_name, path_to_test_file, modeltype, do_time_simulation=False, show=True):
+def simulate_model(model_name: str, path_to_test_file:str, modeltype:str, do_time_simulation: bool=False, show: bool=True):
+    """
+    Evalueates a fitted model on a new test dataset
+    :param model_name: name of the .pkl file, assumes it is inside the 'models'-directory
+    :param path_to_test_file: path to the data-file
+    :param modeltype: either 'torque', 'ump', 'torque-ump', 'currents' or 'wcoe'
+    :param do_time_simulation: if the modeltype is 'currents', setting this 'True' will call model.simulate to retrieve the currents (instead of their time derivative)
+    :param show: if True, plt.show is called
+    :return: predicted values, test values
+    """
+    #load in the model and the data
     model = load_model(model_name)
     model.print()
     TEST = prepare_data(path_to_test_file, test_data=True)
     ## plot_coefs2(model, show=True, log=True)
-    # merge the simulation functions
 
+    # select the corresponding test_values, depending on modeltype
     if modeltype == 'torque':
         test_values = TEST['T_em'].reshape(-1, 1)
     elif modeltype == 'ump':
@@ -98,7 +117,7 @@ def simulate_model(model_name, path_to_test_file, modeltype, do_time_simulation=
         raise NotImplementedError("Not implemented yet")
         test_values = TEST['wcoe']
     else:
-        raise ValueError("Model type not known")
+        raise ValueError("Model type not equal to 'torque', 'ump', 'torque-ump', 'currents' or 'wcoe' ")
 
     x_test = TEST['x']
     u_test = TEST['u']
@@ -106,15 +125,17 @@ def simulate_model(model_name, path_to_test_file, modeltype, do_time_simulation=
     test_predicted = model.predict(x_test, u_test)
 
     print("MSE on test: ", mean_squared_error(test_values, test_predicted))
-    print("Sparsity: ", np.count_nonzero(model.coefficients()))
+    print("Non-zero elements: ", np.count_nonzero(model.coefficients()))
 
     if modeltype == 'currents':
+        # gather the elements for the plot (to be saved)
         xydata = [np.hstack((t, test_predicted)), np.hstack((t, test_values))]
         xlab = r"$t$"
         ylab = r'$\dot{x}$'
         title = 'Predicted vs computed derivatives on test set V = ' + str(TEST['V'])
         leg = [r"$\partial_t{i_d}$", r"$\partial_t{i_q}$", r"$\partial_t{i_0}$", "computed"]
         specs = [None, "k--"]
+        # save and plot the result
         save_plot_data("currents", xydata, title, xlab, ylab, legend=leg, plot_now=True, specs=specs)
 
         if do_time_simulation:
@@ -141,10 +162,10 @@ def simulate_model(model_name, path_to_test_file, modeltype, do_time_simulation=
                            "Simulated currents on test set V = " + str(TEST['V']),
                            r"$t$", r"$x$", plot_now=True, specs=[None, "k--"],
                            legend=[r"$i_d$", r"$i_q$", r"$i_0$", "test data"])
-            return x_sim, x_test
+            return x_sim, x_test #returns the simulated values of the currents
         if show:
             plt.show()
-        return test_predicted, test_values
+        return test_predicted, test_values #returns the timederivative values of the currents
 
     # Compare with alternative approach for Torque calculation on testdata
     if modeltype == 'torque' or modeltype == 'torque-ump':
@@ -157,7 +178,6 @@ def simulate_model(model_name, path_to_test_file, modeltype, do_time_simulation=
         with open(path_to_data_dir + '/SIMULATION_DATA.pkl', 'rb') as f:
             data = pkl.load(f)
         R = data['R_st']
-        print(R)
         lambda_dq0 = (V.T - np.dot(R, I.T)).T
         Torque_value = lambda_dq0[:, 0] * x[:, 1] - lambda_dq0[:, 1] * x[:, 0]  # lambda_d * i_q - lambda_q * i_d
 
