@@ -18,7 +18,8 @@ def prepare_data(path_to_data_file: str,
                  test_data: bool =False,
                  number_of_trainfiles: int =-1,
                  use_estimate_for_v: bool=False,
-                 usage_per_trainfile: float =0.25):
+                 usage_per_trainfile: float =0.25,
+                 ecc_input: bool =False):
     """
     Prepares the data for pysindy. If not test_data, the output is split and shuffeled into train and validation
     :param path_to_data_file: path to the data files
@@ -26,26 +27,30 @@ def prepare_data(path_to_data_file: str,
     :param number_of_trainfiles: number of simulations to be considered, to use 'all', pass -1
     :param use_estimate_for_v: if True, use the approximation from line voltages to find v_abc, if False, use the more general form
     :param usage_per_trainfile: float between 0 and 1, trim the data in the time-domain to reduce samples
+    :param ecc_input: if True, eccentricity is added as input for the controlvariables
     :return:
     """
-    # check if usage per trainfile is between 0 and 1
+    # check if usage_per_trainfile is between 0 and 1
+    if not 0 <= usage_per_trainfile <= 1:
+        raise ValueError("usage_per_trainfile should be between 0 and 1")
 
     # load numpy file
     print("Loading data")
     dataset = dict(np.load(path_to_data_file))  # should be a dictionary
     print("Done loading data")
 
-    path_to_simulation_data = os.path.join(os.path.dirname(path_to_data_file), 'SIMULATION_DATA.pkl')
     if not test_data:
-        V_range, load_range = read_V_load_from_simulationdata(path_to_simulation_data)
+        V_range = read_V_from_data(path_to_data_file)
     else:
         V_range = np.array([np.max(dataset['v_applied']) / np.sqrt(2)])
 
-    # choose random V from V_range
+    # choose random simulations from the data
+    if not test_data and number_of_trainfiles > dataset['i_st'].shape[2]:
+        raise ValueError("number_of_trainfiles is larger than the amount of simulations in the dataset")
     if number_of_trainfiles == -1 or number_of_trainfiles == 'all':
         number_of_trainfiles = len(V_range)
-
     random_idx = random.sample(range(len(V_range)), number_of_trainfiles)  # the simulations are shuffled
+    # choose random V from V_range
     V_range = V_range[random_idx]
 
     # initialise data
@@ -61,7 +66,8 @@ def prepare_data(path_to_data_file: str,
     if use_estimate_for_v:
         v_stator = reference_abc_to_dq0(v_abc_estimate_from_line(dataset["v_applied"]))  # debug
     else:
-        v_stator = reference_abc_to_dq0(v_abc_calculation(dataset, path_to_motor_info=path_to_simulation_data))  # debug
+        path_to_simulation_data = os.path.join(os.path.dirname(path_to_data_file), 'SIMULATION_DATA.pkl')
+        v_stator = reference_abc_to_dq0(v_abc_calculation(dataset, path_to_motor_info=path_to_simulation_data)) #todo, debug, SIMULATION_DATA is only needed for this
 
     i_st = reference_abc_to_dq0(dataset['i_st'])
 
@@ -132,16 +138,16 @@ def prepare_data(path_to_data_file: str,
                              r'$\gamma$', r'$\omega$', r'$f$']  # ,r'$W_{coe}$']
 
     # add eccentricity to the input data
-    '''
-    if not np.all(dataset['ecc'] < 1e-10):
-        print('Non zero ecc, added to input data')
-        u_data = np.hstack((u_data, dataset['ecc']))
-        DATA['feature_names'].append([r'r_x', r'r_y'])
-    else:
-        print('No ecc')
-    '''
+    if ecc_input:
+        if not np.all(dataset['ecc'] < 1e-10):
+            print('Non zero ecc, added to input data')
+            u_data = np.hstack((u_data, dataset['ecc']))
+            DATA['feature_names'].append([r'r_x', r'r_y'])
+        else:
+            print('No ecc')
 
-    # Now, stack data on top of each other and shuffle! (Note that the transpose is needed otherwise the reshape is wrong)
+    # Now, stack data on top of each other and shuffle!
+    # (Note that the transpose is needed otherwise the reshape is wrong)
     DATA['x'] = x_data.transpose(0, 2, 1).reshape(x_data.shape[0] * x_data.shape[-1], x_data.shape[1])
     DATA['u'] = u_data.transpose(0, 2, 1).reshape(u_data.shape[0] * u_data.shape[-1], u_data.shape[1])
     DATA['xdot'] = xdots.transpose(0, 2, 1).reshape(xdots.shape[0] * xdots.shape[-1], xdots.shape[1])
@@ -165,7 +171,7 @@ def prepare_data(path_to_data_file: str,
     # DATA['wcoe'] = DATA['wcoe'][shuffled_indices]
 
     # split the data into train and validation data
-    p = 0.8  # percentage of data to be used for training
+    p = 0.8  # percentage of data to be used for training, 0.2 is used for parameter tuning
     cutidx = int(p * DATA['x'].shape[0])
 
     DATA['x_train'] = DATA['x'][:cutidx]
@@ -215,6 +221,7 @@ def reference_abc_to_dq0(coord_array: np.array):
 
 @nb.njit(cache=True)
 def reference_abc_to_dq0_CP(coord_array: np.array, gamma):
+    print("Not finished, doesn't work")
     nd = 3
     if np.ndim(gamma) <= 2:
         nd = 2
@@ -292,7 +299,7 @@ def v_abc_estimate_from_line(v_line: np.array):
     T = np.array([[1, -1, 0], [1, 2, 0], [-2, -1, 0]])
     return 1 / 3 * np.tensordot(T, v_line.swapaxes(0, 1), axes=([1], [0])).swapaxes(0, 1)
 
-
+''' # TO BE REMOVED. CAN CAUSE ERRORS
 def read_V_load_from_simulationdata(path_to_simulation_data: str):
     """
     This function reads the voltage and load from the simulation data
@@ -303,6 +310,18 @@ def read_V_load_from_simulationdata(path_to_simulation_data: str):
     with open(path_to_simulation_data, "rb") as file:
         data = pkl.load(file)
     return data["V"], data["load"]
+'''
+
+def read_V_from_data(path_to_data_file: str):
+    """
+    This function reads the voltage from the data file
+    :param path_to_data_file: str, path to the data file
+    :return: np.array, np.array of the voltage
+    """
+    with open(path_to_data_file, "rb") as file:
+        data = np.load(file)
+        V_values = np.max(data['v_applied'], axis = (0,1)) / np.sqrt(2)
+    return V_values
 
 
 def calculate_xdot(x: np.array, t: np.array):
@@ -322,13 +341,12 @@ def calculate_xdot(x: np.array, t: np.array):
 
 
 if __name__ == "__main__":
-    check_trapezoid_integration()
-    '''
+    #check_trapezoid_integration()
+
+    path = os.path.join(os.getcwd(), 'train-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
+
     path = os.path.join(os.getcwd(), 'test-data', '07-29', 'IMMEC_0ecc_5.0sec.npz')
     data = prepare_data(path,
                         test_data=True,
                         number_of_trainfiles=-1,
                         use_estimate_for_v=False)
-    plt.plot(data['xdot'])
-    plt.show()
-    '''
