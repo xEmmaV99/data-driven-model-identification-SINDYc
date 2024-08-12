@@ -132,7 +132,6 @@ def prepare_data(path_to_data_file,
     if pca is None:
         # Scale data before applying PCA
         #scaling = StandardScaler()
-
         #scaling.fit(u_pca)
         #Scaled_data = scaling.transform(u_pca)
         Scaled_data = u_pca
@@ -147,7 +146,7 @@ def prepare_data(path_to_data_file,
                                                 r'\gamma_{rot}', r'\omega_{rot}', r'f'])
             plot_pca_variance_ratio(pca) # use 7 coefs
 
-        pca = decomposition.PCA(n_components=7) #n_components=7
+        pca = decomposition.PCA(n_components=8) #n_components=7
         pca.fit(Scaled_data)
         u_pca = pca.transform(Scaled_data) # use scaled data...
     else: #pca is provided
@@ -382,8 +381,8 @@ if __name__ == "__main__":
     train = data['UMP_train']
     train = data['xdot_train']
     name = "pca"
-    opt = ps.SR3(thresholder="l1", threshold=0.0001, nu=.1)
-    opt = ps.WrappedOptimizer(Lasso(alpha=0.01, fit_intercept=False, precompute=True))
+    opt = ps.SR3(thresholder="l1", threshold=0.01, nu=.1, unbias=True, normalize_columns = True)
+    #opt = ps.WrappedOptimizer(Lasso(alpha=10, fit_intercept=False, precompute=True))
     model = ps.SINDy(optimizer=opt, feature_library=library)
                      #feature_names=data['feature_names'])
 
@@ -403,11 +402,10 @@ if __name__ == "__main__":
     test_values = test['UMP']
     test_values = test['xdot']
 
-    #test_predicted = model.predict(test['u_pca'])
+    test_predicted = model.predict(test['u_pca'])
 
-
-    test_values = test['x']
-    test_predicted = model.simulate(test_values[0,:], t = test['t'].reshape(test['t'].shape[0]))
+    #test_values = test['x']
+    #test_predicted = model.simulate(test_values[0,:], t = test['t'].reshape(test['t'].shape[0]))
 
     print("MSE on test: ", mean_squared_error(test_values, test_predicted))
     print("Sparsity: ", np.count_nonzero(model.coefficients()))

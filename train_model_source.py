@@ -1,3 +1,5 @@
+import matplotlib.pyplot as plt
+
 from source import *
 from prepare_data import prepare_data
 from sklearn.linear_model import Lasso
@@ -17,14 +19,14 @@ def make_model(path_to_data_files: str, modeltype: str, optimizer: str, nmbr_of_
     :param alpha: sparsity weighting factor for the lasso optimisation, should be passed if optimizer is 'lasso'
     :param nu: parameter 1 for sr3 optimisation
     :param lamb: parameter 2 for sr3 optimisation
-       sr3 optimises the function with objective Ax = b as follows:
-                                (Ax-b) + lamb * L_1(w) + 1/nu ||cx - w||^2 #todo check and cite
+       sr3 optimises the function with objective dot(X) = theta(X)*xi as follows (Champion et al. 2020):
+                                ||dot(x)- theta(X)*xi ||**2 + lamb * L_1(W) + 1/(2nu) ||xi - W||^2
     :param modelname: name for the model to be saved with. If None, default name is modeltype
     :return:
     """
     # load in training and validation data
-    DATA = prepare_data(path_to_data_files, number_of_trainfiles=nmbr_of_train)
-    library = get_custom_library_funcs(lib)
+    DATA = prepare_data(path_to_data_files, number_of_trainfiles=nmbr_of_train, ecc_input=True)
+    library = get_custom_library_funcs(lib, nmbr_input_features=DATA['u'].shape[1])
 
     # select inputs for the desired model
     modeltype = modeltype.lower()
@@ -72,8 +74,7 @@ def make_model(path_to_data_files: str, modeltype: str, optimizer: str, nmbr_of_
         raise ValueError("Optimizer not known, only 'sr3' or 'lasso' are possible")
 
     # initialise model
-    model = ps.SINDy(optimizer=opt, feature_library=library,
-                     feature_names=DATA['feature_names'])
+    model = ps.SINDy(optimizer=opt, feature_library=library, feature_names=DATA['feature_names'])
 
     print("Fitting model")
     model.fit(DATA['x_train'], u=DATA['u_train'], t=None, x_dot=train)
@@ -101,7 +102,7 @@ def simulate_model(model_name: str, path_to_test_file:str, modeltype:str, do_tim
     #load in the model and the data
     model = load_model(model_name)
     model.print()
-    TEST = prepare_data(path_to_test_file, test_data=True)
+    TEST = prepare_data(path_to_test_file, test_data=True, ecc_input=True)
     ## plot_coefs2(model, show=True, log=True)
 
     # select the corresponding test_values, depending on modeltype
@@ -181,6 +182,24 @@ def simulate_model(model_name: str, path_to_test_file:str, modeltype:str, do_tim
         lambda_dq0 = (V.T - np.dot(R, I.T)).T
         Torque_value = lambda_dq0[:, 0] * x[:, 1] - lambda_dq0[:, 1] * x[:, 0]  # lambda_d * i_q - lambda_q * i_d
 
+        print("MSE simplified model", mean_squared_error(Torque_value, test_values[:, 0]))
+
+        '''       
+        def running_mean(x, N):
+            cumsum = np.cumsum(np.insert(x, 0, 0))
+            res = (cumsum[N:] - cumsum[:-N]) / float(N)
+            # add nan to start of arra
+            res = np.insert(res, 0, np.full(N-1, np.nan))
+            return res 
+        
+        rmean = running_mean(np.array(test_predicted), 200)
+        print(rmean.shape)
+        plt.plot(rmean)
+        plt.plot(test_predicted)
+        plt.plot(test_values, 'k--')
+        plt.plot(Torque_value, 'r--')
+        plt.show()
+        '''
         # Save the plots, torque first
         xydata = [np.hstack((t, test_predicted[:, 0].reshape(-1, 1))), np.hstack((t, test_values[:, 0].reshape(-1, 1))),
                   np.hstack((t, Torque_value.reshape(-1, 1)))]

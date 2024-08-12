@@ -4,8 +4,8 @@ from optimize_parameters import plot_optuna_data
 from source import *
 from train_model_source import simulate_model
 
-process = 1
-coefs = False
+process = 2
+coefs = True
 
 ## 1 linear model currents
 if process == 1:
@@ -29,11 +29,14 @@ if process == 1:
         path = os.path.join(os.getcwd(), 'plot_data', 'currents_linear')
         plot_everything(path)
 
-## 2 linear model torque : todo: data in LEUVEN
+## 2 linear model torque
 elif process == 2:
     testdata = os.path.join(os.getcwd(), 'test-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
-    plot_optuna_data('')
-    models = []
+    testdata = os.path.join(os.getcwd(), 'test-data', '07-29', 'IMMEC_0ecc_3.0sec.npz')
+
+    plot_optuna_data("torqueLinear-optuna-study")
+    #models = ['torque_linear', 'torque_linear_2', 'torque_linear_3']
+    models = ['torque_linear_4']
     pref = "torque_linear\\"
     pltdata_present = False
     if not pltdata_present:

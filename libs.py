@@ -6,7 +6,7 @@ def get_library_names():
     Returns the library names to be considered for the parameter optimisation
     :return: list of str
     """
-    return ['poly_2nd_order', 'linear-specific', 'torque', 'nonlinear_terms', 'nonlinear_terms_with_f']
+    return ['poly_2nd_order', 'linear-specific', 'torque', 'nonlinear_terms']
 
     #return ['nonlinear_terms', 'nonlinear_terms_with_f', 'poly_2nd_order', 'torque']
 
@@ -35,7 +35,7 @@ def get_custom_library_funcs(type, nmbr_input_features = 15):
                                            tensor_array=None,  # don't merge the libraries
                                            inputs_per_library=inputs_per_library)
     elif type == 'pca':
-        custom_lib = ps.PolynomialLibrary(degree=2, include_interaction=True)
+        custom_lib = ps.PolynomialLibrary(degree=2, interaction_only=True)
     elif type == 'nonlinear_terms':
         inputs_per_library = [all_but_gamma, gamma]
         custom_lib = ps.GeneralizedLibrary([ps.PolynomialLibrary(degree=2, include_interaction=True),

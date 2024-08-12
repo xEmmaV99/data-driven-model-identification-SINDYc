@@ -7,20 +7,21 @@ from train_model_source import make_model, simulate_model
 do_part1 = False
 do_part2 = False
 do_part3 = False
-do_part4 = False
+do_part4 = True
 
 ### DATA TRAINING FILES
 #path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
 #path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-31-ecc-50', 'IMMEC_50ecc_5.0sec.npz')
 #path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-31-nonlin', 'IMMEC_nonlinear-0ecc_5.0sec.npz')
 #path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-31-nonlin50', 'IMMEC_nonlinear-50ecc_5.0sec.npz')
-path_to_data_files = os.path.join(os.getcwd(), 'train-data', 'ecc_random_direction', 'IMMEC_lin_ecc_randomecc_5.0sec.npz')
+#path_to_data_files = os.path.join(os.getcwd(), 'train-data', 'ecc_random_direction', 'IMMEC_lin_ecc_randomecc_5.0sec.npz')
+path_to_data_files = os.path.join(os.getcwd(), 'train-data', '08-09', 'IMMEC_dynamic_50ecc_5.0sec.npz')
 
 ### TEST FILES
+path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-09', 'IMMEC_dynamic_50ecc_5.0sec.npz')
 #path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-07', 'IMMEC_nonlin_0ecc_5.0sec.npz') # for A B examples
-
 #path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz') #
-path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-07', 'IMMEC_lin_ecc_randomecc_5.0sec.npz')
+#path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-07', 'IMMEC_lin_ecc_randomecc_5.0sec.npz')
 #path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-05', 'IMMEC_50eccecc_5.0sec.npz')
 #path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-02', 'IMMEC_y50ecc_5.0sec.npz')
 
@@ -28,15 +29,34 @@ path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-07', 'IMMEC_lin_e
 if do_part1:
     # mode is either "currents", "torque" or "ump" (TO BE IMPLEMENTED W_mag)
     # Creates an optuna study to optimize the parameters of the
-    optimize_parameters(path_to_data_files, mode="currents", additional_name="nonlinear-50-specific")
+    optimize_parameters(path_to_data_files, mode="ump", additional_name="_dynamic")
 
 ### PART 2: plot the optuna study to choose the hyperparameters
 if do_part2:
     #plot_optuna_data('currents-optuna-study', dirs = 'w3-presentation-0208//')
-    plot_optuna_data('currentsLinear-specific-optuna-study')
+    #plot_optuna_data('currentsLinear-specific-optuna-study')
+    plot_optuna_data('ump_dynamic-optuna-study')
 
 ### PART 3: TRAIN MODEL
 if do_part3:
+    make_model(path_to_data_files, modeltype='ump', optimizer='sr3',
+               nmbr_of_train=-1, lib='poly_2nd_order', nu=0.00029, lamb=0.00578,
+               modelname='dynamic')
+    '''
+    make_model(path_to_data_files, modeltype='torque', optimizer='lasso',
+               nmbr_of_train=-1, lib='linear-specific', alpha=1.23, modelname='torque_linear_4')
+    '''
+    '''
+    make_model(path_to_data_files, modeltype='torque', optimizer='sr3',
+               nmbr_of_train=-1, lib='torque', nu=0.00029, lamb=0.00578,
+               modelname='torque_linear')
+    make_model(path_to_data_files, modeltype='torque', optimizer='sr3',
+               nmbr_of_train=-1, lib='torque', nu=4e-6, lamb=0.0020,
+               modelname='torque_linear_2')
+    make_model(path_to_data_files, modeltype='torque', optimizer='sr3',
+               nmbr_of_train=-1, lib='torque', nu=4.9e-7, lamb=9.8e-5,
+               modelname='torque_linear_3')
+    '''
     '''
     make_model(path_to_data_files, modeltype='currents', optimizer='lasso',
                nmbr_of_train=-1, lib='nonlinear_terms', alpha=86.47,
@@ -95,10 +115,12 @@ if do_part3:
 if do_part4:
     models = [ "example_A_currents"] #"example_A_currents",
     models = ["linear_example_new_1_currents", "linear_example_2_currents", "linear_example_3_currents"]
-
+    models = ["currents_nonlinear"]
+    models = ["torque_linear", "torque_linear_2"]
+    models = ["dynamic"]
     pref = "0908//"
     pref = ""
-    models = ["ump_direction"]
+
     for m in models:
         # simulate the model and plot the results
         pr, test = simulate_model(pref+m+'_model', path_to_test_file, modeltype="ump", do_time_simulation=False, show=False)

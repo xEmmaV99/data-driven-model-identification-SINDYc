@@ -2,7 +2,9 @@ import matplotlib.pyplot as plt
 
 from source import *
 from optimize_parameters import plot_optuna_data
+plot_immec_data(os.path.join(os.getcwd(), 'train-data', '08-09', 'IMMEC_dynamic_50ecc_5.0sec.npz'), simulation_number=0)
 
+"""
 path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-31-ecc-50', 'IMMEC_50ecc_5.0sec.npz')
 DATA = prepare_data(path_to_data_files, number_of_trainfiles=-1)
 library = get_custom_library_funcs("poly_2nd_order")
@@ -20,7 +22,7 @@ model = ps.SINDy(optimizer=opt, feature_library=library,
                  feature_names=DATA['feature_names'])
 model.fit(np.hstack((DATA['x_train'],DATA['u_train'])), t=None, x_dot=train)
 model.print(precision=10)
-
+"""
 
 """
 #model = load_model('linear_example_2_currents_model')

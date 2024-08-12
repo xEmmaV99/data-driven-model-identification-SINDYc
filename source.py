@@ -113,7 +113,6 @@ def plot_data(path="plotdata.pkl", show=False, limits=None):
     Example: [[0, 5],[-10,10]] to set ylim [0,5] and ylim [-10,10], for a plot with multiple axis.
     :return:
     """
-    # todo adapt such that fourier is plotted too
     suppres_title = False
     if type(path) == str:
         paths = [path]
@@ -181,8 +180,8 @@ def plot_data(path="plotdata.pkl", show=False, limits=None):
             if limits is not None:
                 plt.ylim(limits[0])
 
-            # plot the fourier data
-            plot_fourier(yvalues[:,:yid], yvalues[:,yid:], dt=1e-4, tmax = data["plots"]["0"][-1,0], show=False)
+            # plot the fourier data, reference, predicted
+            plot_fourier(yvalues[:,yid:],yvalues[:,:yid], dt=1e-4, tmax = data["plots"]["0"][-1,0], show=False)
     if show:
         plt.show()
     return
@@ -282,7 +281,7 @@ def save_model(model, name:str, libstr:str):
     :return:
     """
     print("Saving model")
-    path = os.path.join(os.getcwd(), "models", name + get_date() + ".pkl")
+    path = os.path.join(os.getcwd(), "models", name + get_date()+ ".pkl") # add date to avoid overwriting
 
     x = model.n_features_in_ - model.n_control_features_
     u = model.n_control_features_
@@ -309,11 +308,11 @@ def load_model(name: str):
         model_data = pkl.load(file)
 
     # initialize pysindy model
-    lib = get_custom_library_funcs(model_data["library"])
+    x_shape, u_shape, xdot_shape = model_data["shapes"]
+    lib = get_custom_library_funcs(model_data["library"], u_shape[1] ) #debug
     new_model = ps.SINDy(optimizer=None, feature_names=model_data["features"], feature_library=lib)
 
     # Trick SINDy to fit a model
-    x_shape, u_shape, xdot_shape = model_data["shapes"]
     new_model.fit(np.zeros(x_shape), u=np.zeros(u_shape), t=None, x_dot=np.zeros(xdot_shape))
 
     # overwrite the coefficients of the 'fitted' model :)
@@ -339,10 +338,7 @@ def plot_immec_data(path: str, simulation_number: int=None, title:str=None):
 
     d_air = 0.000477  # for the Cantoni motor, todo DEBUG hardcoded
 
-    if "wcoe" in dataset.keys():  # some datasets have magnetic coenergy
-        rows, cols = 2, 4
-    else:
-        rows, cols = 2, 3 # others don't
+    rows, cols = 2, 4
 
     if simulation_number is None:  # testfile
         plt.subplot(rows, cols, 1)
@@ -350,7 +346,7 @@ def plot_immec_data(path: str, simulation_number: int=None, title:str=None):
         plt.plot(dataset["time"], dataset["omega_rot"])
 
         plt.subplot(rows, cols, 2)
-        plt.title("i_st in dq0"), plt.xlabel("time (s)"), plt.ylabel("A")  # debug
+        plt.title("i_st in dq0"), plt.xlabel("time (s)"), plt.ylabel("A")
         plt.plot(dataset["time"], reference_abc_to_dq0(dataset["i_st"]))
 
         plt.subplot(rows, cols, 3)
@@ -363,7 +359,6 @@ def plot_immec_data(path: str, simulation_number: int=None, title:str=None):
         plt.subplot(rows, cols, 5)
         plt.title("Applied line Voltages"), plt.xlabel("time (s)"), plt.ylabel("V")
         plt.plot(dataset["time"], dataset['v_applied'])
-        # debug
 
         plt.subplot(rows, cols, 4)
         plt.title("UMP"), plt.xlabel("time (s)"), plt.ylabel("N")
@@ -372,6 +367,7 @@ def plot_immec_data(path: str, simulation_number: int=None, title:str=None):
         plt.subplot(rows, cols, 6)
         plt.title("Eccentricity"), plt.xlabel("time (s)"), plt.ylabel("% airgap")
         plt.plot(dataset["time"], dataset["ecc"] / d_air)
+        plt.plot(dataset["time"], np.linalg.norm(dataset["ecc"]) / d_air, "k--")
 
         # if wcoe not in keys, don't do the enxt plot
         if "wcoe" in dataset.keys():
@@ -386,7 +382,7 @@ def plot_immec_data(path: str, simulation_number: int=None, title:str=None):
         plt.plot(dataset["time"][:, 0, simulation_number], dataset["omega_rot"][:, 0, simulation_number])
 
         plt.subplot(rows, cols, 2)
-        plt.title("i_st in dq0"), plt.xlabel("time (s)"), plt.ylabel("A")  # debug
+        plt.title("i_st in dq0"), plt.xlabel("time (s)"), plt.ylabel("A")
         plt.plot(dataset["time"][:, 0, simulation_number],
                  reference_abc_to_dq0(dataset["i_st"][:, :, simulation_number]))
 
@@ -407,12 +403,17 @@ def plot_immec_data(path: str, simulation_number: int=None, title:str=None):
         plt.subplot(rows, cols, 6)
         plt.title("Eccentricity"), plt.xlabel("time (s)"), plt.ylabel("% airgap")
         plt.plot(dataset["time"][:, 0, simulation_number], dataset["ecc"][:, :, simulation_number] / d_air)
+        plt.plot(dataset["time"][:, 0, simulation_number], np.linalg.norm(dataset["ecc"][:, :, simulation_number], axis=1) / d_air, "k--")
         plt.legend(["x", "y"])
+
+        plt.subplot(rows, cols, 8)
+        plt.title("Eccentricity"), plt.xlabel("r_x"), plt.ylabel("r_y")
+        plt.plot(dataset["ecc"][:, 0, simulation_number] / d_air, dataset["ecc"][:, 1, simulation_number] / d_air)
 
         if "wcoe" in dataset.keys():
             plt.subplot(rows, cols, 7)
             plt.title("Magnetic coenergy"), plt.xlabel("time (s)"), plt.ylabel("J")
-            plt.plot(dataset["time"], dataset["wcoe"])
+            plt.plot(dataset["time"][:,0,simulation_number], dataset["wcoe"][:,:,simulation_number])
 
     if title is not None:
         plt.suptitle(title)

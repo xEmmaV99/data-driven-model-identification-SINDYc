@@ -10,16 +10,12 @@ try:
 except ImportError:
     print("Skipping import of pysindy")
 
-
-# todo consider multithreading here, as one CPU might be the bottleneck
-
-
 def prepare_data(path_to_data_file: str,
                  test_data: bool =False,
                  number_of_trainfiles: int =-1,
                  use_estimate_for_v: bool=False,
                  usage_per_trainfile: float =0.5,
-                 ecc_input: bool = False):
+                 ecc_input: bool =False):
     """
     Prepares the data for pysindy. If not test_data, the output is split and shuffeled into train and validation
     :param path_to_data_file: path to the data files
@@ -140,19 +136,9 @@ def prepare_data(path_to_data_file: str,
     # add eccentricity to the input data
     if ecc_input:
         if not np.all(dataset['ecc'] < 1e-10):
-            if not test_data:
-                print('Non zero ecc, added to input data')
-                u_data = np.hstack((u_data, dataset['ecc']))
-                # DEBUGGGGGGGG
-                # add r = sqrt(x^2 + y^2) to the input data, and the angle theta
-                #r = np.sqrt(dataset['ecc'][:, 0] ** 2 + dataset['ecc'][:, 1] ** 2)
-                #theta = np.arctan2(dataset['ecc'][:, 1], dataset['ecc'][:, 0])
-                #u_data = np.hstack((u_data, r[:,np.newaxis,:], np.cos(theta[:,np.newaxis,:])))
-            else:
-                print('Non zero ecc, added to input data')
-                u_data = np.hstack((u_data, dataset['ecc'][:, :, np.newaxis]))
-
-            DATA['feature_names']= DATA['feature_names'].append([r'r_x', r'r_y'])
+            print('Non zero ecc, added to input data')
+            u_data = np.hstack((u_data, dataset['ecc']))
+            DATA['feature_names'].append([r'r_x', r'r_y'])
         else:
             print('No ecc')
 
@@ -171,15 +157,6 @@ def prepare_data(path_to_data_file: str,
         DATA['t'] = t_data
         return DATA
 
-    # shuffle the DATA entirely, but according to the same shuffle
-    shuffled_indices = np.random.permutation(DATA['x'].shape[0])
-    DATA['x'] = DATA['x'][shuffled_indices]
-    DATA['u'] = DATA['u'][shuffled_indices]
-    DATA['xdot'] = DATA['xdot'][shuffled_indices]
-    DATA['T_em'] = DATA['T_em'][shuffled_indices]
-    DATA['UMP'] = DATA['UMP'][shuffled_indices]
-    # DATA['wcoe'] = DATA['wcoe'][shuffled_indices]
-
     # split the data into train and validation data
     p = 0.8  # percentage of data to be used for training, 0.2 is used for parameter tuning
     cutidx = int(p * DATA['x'].shape[0])
@@ -196,6 +173,19 @@ def prepare_data(path_to_data_file: str,
     DATA['T_em_val'] = DATA['T_em'][cutidx:]
     DATA['UMP_val'] = DATA['UMP'][cutidx:]
     # DATA['wcoe_val'] = DATA['wcoe'][cutidx:]
+
+
+
+    '''# shuffle the DATA entirely, but according to the same shuffle
+    shuffled_indices = np.random.permutation(DATA['x'].shape[0])
+    DATA['x'] = DATA['x'][shuffled_indices]
+    DATA['u'] = DATA['u'][shuffled_indices]
+    DATA['xdot'] = DATA['xdot'][shuffled_indices]
+    DATA['T_em'] = DATA['T_em'][shuffled_indices]
+    DATA['UMP'] = DATA['UMP'][shuffled_indices]
+    # DATA['wcoe'] = DATA['wcoe'][shuffled_indices]'''
+
+
 
     return DATA
 
@@ -341,6 +331,7 @@ def calculate_xdot(x: np.array, t: np.array):
     :param t: array of shape (N , 1) or (N, )
     :return: array of shape (N , 3) with the time derivative of x, pySINDy does not remove one value.
     """
+    # print('debug, 4th order of xdot')
     if np.ndim(t) == 3:
         print("Assume all t_vec are equal")
         t_ = t[:, 0, 0].reshape(t.shape[0])
@@ -354,9 +345,8 @@ if __name__ == "__main__":
 
     path = os.path.join(os.getcwd(), 'train-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
 
-    path = os.path.join(os.getcwd(), 'test-data', '07-31-leuven', 'IMMEC_90ecc_5.0sec.npz')
+    path = os.path.join(os.getcwd(), 'test-data', '07-29', 'IMMEC_0ecc_5.0sec.npz')
     data = prepare_data(path,
                         test_data=True,
                         number_of_trainfiles=-1,
-                        use_estimate_for_v=False, ecc_input=True)
-    print(data['u'].shape)
+                        use_estimate_for_v=False)
