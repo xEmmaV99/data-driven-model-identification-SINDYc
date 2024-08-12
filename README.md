@@ -1,7 +1,8 @@
 # Sparse Identification of Induction Motor Nonlinear Dynamics in Unbalanced Conditions
 
 **Table of Contents**
-[TOC]
+<!-- TOC -->
+<!-- TOC -->
 
 ## Description
 
