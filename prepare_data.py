@@ -14,11 +14,22 @@ except ImportError:
 # todo consider multithreading here, as one CPU might be the bottleneck
 
 
-def prepare_data(path_to_data_file,
-                 test_data=False,
-                 number_of_trainfiles=-1,
-                 use_estimate_for_v=False,
-                 usage_per_trainfile=0.25):
+def prepare_data(path_to_data_file: str,
+                 test_data: bool =False,
+                 number_of_trainfiles: int =-1,
+                 use_estimate_for_v: bool=False,
+                 usage_per_trainfile: float =0.25):
+    """
+    Prepares the data for pysindy. If not test_data, the output is split and shuffeled into train and validation
+    :param path_to_data_file: path to the data files
+    :param test_data: if True, the path_to_data_file should point to a test file.
+    :param number_of_trainfiles: number of simulations to be considered, to use 'all', pass -1
+    :param use_estimate_for_v: if True, use the approximation from line voltages to find v_abc, if False, use the more general form
+    :param usage_per_trainfile: float between 0 and 1, trim the data in the time-domain to reduce samples
+    :return:
+    """
+    # check if usage per trainfile is between 0 and 1
+
     # load numpy file
     print("Loading data")
     dataset = dict(np.load(path_to_data_file))  # should be a dictionary

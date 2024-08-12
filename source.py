@@ -438,7 +438,17 @@ def plot_everything(path_to_directory: str):
 
 
 def plot_fourier(reference, result, dt, tmax, leg=None, show=True):
-    def fun(w, n, s):
+    """
+    Plots the fourier spectrum of a signal and its reference
+    :param reference: np.array of shape (n,k) with k the number of pulses, n is the number of timesteps
+    :param result: np.array of shape (n,k) with k the number of pulses with n the number of timesteps
+    :param dt: size of the time step
+    :param tmax: maximum simulation time
+    :param leg: Contains the entries of the legend, if None, no legend is plotted
+    :param show: if True, plt.show() is called
+    :return:
+    """
+    def transform_fft(w, n, s):
         # Perform FFT
         fft = np.fft.fft(w, axis=0)
         p = np.abs(fft / n)[:int(n / 2 + 1)]
@@ -449,28 +459,32 @@ def plot_fourier(reference, result, dt, tmax, leg=None, show=True):
         return p, freq
 
     # cols = [['tab:blue','tab:red','tab:green'], ['tab:cyan','tab:orange','tab:olive']]
-    cols = [['C0', 'C3', 'C2'], ['C9', 'C1', 'C8']]
+    cols = [['C0', 'C3', 'C2'], ['C9', 'C1', 'C8']] # line colors
 
     n_fft = tmax / dt
     sampling_freq = 1 / dt
 
-    ref, f1 = fun(reference, n_fft, sampling_freq)
-    res, f2 = fun(result, n_fft, sampling_freq)
+    ref, f1 = transform_fft(reference, n_fft, sampling_freq)
+    res, f2 = transform_fft(result, n_fft, sampling_freq)
 
     plt.figure(figsize=(10, 6))
     plt.subplot(2, 1, 1)
     for line in range(ref.shape[1]):
-        plt.semilogy(f1, ref[:, line], cols[0][line], label="Current Signal")
-        plt.semilogy(f2, res[:, line], cols[1][line] + '--', label="Current Signal")
+        plt.semilogy(f1, ref[:, line], cols[0][line], label = "Reference")
+        plt.semilogy(f2, res[:, line], cols[1][line] + '--', label = "Predicted")
     plt.xlabel("Frequency (Hz)")
     plt.ylabel("Amplitude")
     plt.title("Reference Signal FFT")
     plt.grid()
     if leg is not None:
         plt.legend(leg)
+    else:
+        plt.legend()
 
     plt.subplot(2, 1, 2)
-    plt.semilogy(f2, np.abs(res - ref), 'k:', label="FFT")
+    d = np.abs(res - ref)
+    for line in range(ref.shape[1]):
+        plt.semilogy(f2, d[:,line],  cols[0][line])
     plt.xlabel("Frequency (Hz)")
     plt.ylabel("Amplitude")
     plt.title("Delta of FFT")
@@ -484,6 +498,10 @@ def plot_fourier(reference, result, dt, tmax, leg=None, show=True):
 
 
 def test_plot_fourier():
+    """
+    Simple test function to check if plot_fourier works
+    :return:
+    """
     tmax = 5.0
     dt = 4e-5
     t = np.arange(0, tmax, dt)
@@ -495,19 +513,23 @@ def test_plot_fourier():
 
 
 def model_simulate(
-        x0,
-        u,
+        x0: np.array,
+        u: np.array,
         model,
-        t,
-        integrator="solve_ivp"
-):
+        t: np.array):
+    """
+    Implementation of model.simulate, or at least they should be identical
+    :param x0: start value (1, k) with k the number of equations (usually 3)
+    :param u: control parameters, shape (n, k) with k the number of control parameters
+    :param model: pysindy model instance
+    :param t: time to simulate for
+    :return:
+    """
     x = np.zeros((u.shape[0], model.n_features_in_ - model.n_control_features_))
     x[0] = x0
     u_fun = interp1d(
         t, u, axis=0, kind="cubic", fill_value="extrapolate"
     )
-
     def rhs(t, x):
         return model.predict(x[np.newaxis, :], u_fun(t))[0]
-
     return solve_ivp(rhs, np.array([t[0], t[-1]]), np.array([0, 0, 0]), method='RK45', t_eval=t)
