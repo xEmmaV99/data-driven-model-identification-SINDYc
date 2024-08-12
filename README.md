@@ -1,8 +1,7 @@
 # Sparse Identification of Induction Motor Nonlinear Dynamics in Unbalanced Conditions
 
 **Table of Contents**
-<!-- TOC -->
-<!-- TOC -->
+[TOC]
 
 ## Description
 This project aims to identify a model feasible for control purposes of an induction machine. 
