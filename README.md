@@ -1,8 +1,23 @@
 # Sparse Identification of Induction Motor Nonlinear Dynamics in Unbalanced Conditions
 
-## Table of Contents ##
-
-
+**Table of Contents**
+<!-- TOC -->
+* [Sparse Identification of Induction Motor Nonlinear Dynamics in Unbalanced Conditions](#sparse-identification-of-induction-motor-nonlinear-dynamics-in-unbalanced-conditions)
+  * [Description](#description)
+  * [Installation](#installation)
+    * [Prerequisites](#prerequisites)
+    * [Dependencies](#dependencies)
+  * [Configuration](#configuration)
+    * [Choice of Regulagization](#choice-of-regulagization-)
+    * [Choice of Library](#choice-of-library)
+  * [Usage](#usage)
+    * [1) Data Generation](#1-data-generation)
+    * [2) Data Preparation](#2-data-preparation)
+    * [3) Optimization of hyperparameters](#3-optimization-of-hyperparameters)
+    * [4) Model Identification](#4-model-identification)
+    * [5) Model Evaluation](#5-model-evaluation)
+  * [Additional Info](#additional-info)
+<!-- TOC -->
 
 ## Description
 This project aims to identify a model feasible for control purposes of an induction machine. 
