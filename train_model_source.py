@@ -25,8 +25,9 @@ def make_model(path_to_data_files: str, modeltype: str, optimizer: str, nmbr_of_
     :return:
     """
     # load in training and validation data
+    print("ecc input: True")
     DATA = prepare_data(path_to_data_files, number_of_trainfiles=nmbr_of_train, ecc_input=True)
-    library = get_custom_library_funcs(lib, nmbr_input_features=DATA['u'].shape[1])
+    library = get_custom_library_funcs(lib, nmbr_input_features=DATA['u'].shape[1]+DATA['x'].shape[1])
 
     # select inputs for the desired model
     modeltype = modeltype.lower()
@@ -61,7 +62,7 @@ def make_model(path_to_data_files: str, modeltype: str, optimizer: str, nmbr_of_
     # Select the correct optimizer
     if optimizer == 'sr3':
         print("SR3_L1 optimisation")
-        if lamb  is None or nu is None:
+        if lamb is None or nu is None:
             raise ValueError("The values lamb and nu should be passed when using sr3 optimisation")
         opt = ps.SR3(thresholder="l1", threshold=lamb, nu=nu)
 

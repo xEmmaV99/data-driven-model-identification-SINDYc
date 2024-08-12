@@ -309,7 +309,7 @@ def load_model(name: str):
 
     # initialize pysindy model
     x_shape, u_shape, xdot_shape = model_data["shapes"]
-    lib = get_custom_library_funcs(model_data["library"], u_shape[1] ) #debug
+    lib = get_custom_library_funcs(model_data["library"], u_shape[1]+x_shape[1] ) #debug
     new_model = ps.SINDy(optimizer=None, feature_names=model_data["features"], feature_library=lib)
 
     # Trick SINDy to fit a model

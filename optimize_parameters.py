@@ -20,29 +20,24 @@ def optimize_parameters(path_to_data_files:str, mode='torque', additional_name="
     :return:
     """
     both = True
-
+    print("ecc_input = True")
     DATA = prepare_data(path_to_data_files, number_of_trainfiles=30, usage_per_trainfile=.50, ecc_input=True) #use 30 random samples, each 25% data
     if mode == "currents":
         XDOT = [DATA['xdot_train'], DATA['xdot_val']]
         namestr = "currents"
-
     elif mode == "torque":
         XDOT = [DATA['T_em_train'], DATA['T_em_val']]
         namestr = "torque"
-
     elif mode == "ump":
         XDOT = [DATA['UMP_train'], DATA['UMP_val']]
         namestr = "ump"
-
     elif mode == "wcoe":
-        raise NotImplementedError("Magnetic coenergy is not fully implemented yet")
-        XDOT = [DATA['wcoe_train'], DATA['wcoe_mag']]
+        #raise NotImplementedError("Magnetic coenergy is not fully implemented yet")
+        XDOT = [DATA['wcoe_train'], DATA['wcoe_val']]
         namestr= "W"
     elif mode == "merged":
         # now, the xdot_train contains i and V and I,
         raise NotImplementedError("Merged mode is not fully implemented yet")
-
-
     else:
         raise ValueError("mode is either currents, torque or ump")
 
@@ -72,7 +67,7 @@ def optimize_parameters(path_to_data_files:str, mode='torque', additional_name="
     elif both:
         print("SR3_L1 and lasso optimisation")
         n = 1
-        trials = 1000
+        trials = 100
         a_range = [1e-5, 1e2]
         l_range = [1e-10, 1e2]
         n_range = [1e-12, 1e2]
@@ -80,12 +75,6 @@ def optimize_parameters(path_to_data_files:str, mode='torque', additional_name="
         with joblib.parallel_config(n_jobs = n, backend = "loky", inner_max_num_threads=1):
             joblib.Parallel(n_jobs=n)(joblib.delayed(optuna_search_both)(DATA, XDOT, l_range, n_range, a_range, namestr+additional_name, trials) for _ in range(n))
 
-        #with multiprocessing.Pool(n) as pool:
-        #    pool.starmap(optuna_search_both, [[DATA, XDOT, l_range, n_range, a_range, namestr, trials] for _ in range(n)])
-        #pool.join()
-        #pool.close()
-
-    # 32Gb ram -> 4 cores (yikes)
     return
 
 
@@ -96,7 +85,7 @@ def optuna_search_both(DATA, XDOT, lminmax, nminmax, aminmax, studyname, iter):
         lib_choice = trial.suggest_categorical('lib_choice',
                                                get_library_names())
 
-        lib = get_custom_library_funcs(lib_choice)
+        lib = get_custom_library_funcs(lib_choice, DATA["u"].shape[1]+DATA["x"].shape[1])
         optimizer_name = trial.suggest_categorical('optimizer', ['lasso', 'sr3'])
         if optimizer_name == 'lasso':
             alphas = trial.suggest_float('alphas', aminmax[0], aminmax[1], log=True)
@@ -136,7 +125,7 @@ def optuna_search_lasso(DATA, XDOT, minmax, studyname, iter):
         lib_choice = trial.suggest_categorical('lib_choice',
                                                get_library_names())
 
-        lib = get_custom_library_funcs(lib_choice)
+        lib = get_custom_library_funcs(lib_choice, DATA['u'].shape[1]+DATA['x'].shape[1])
 
         optimizer = ps.WrappedOptimizer(Lasso(alpha=alphas, fit_intercept=False))
 
@@ -171,11 +160,10 @@ def optuna_search_sr3(DATA, XDOT, l_minmax, n_minmax, studyname, iter):
         lambdas = trial.suggest_float('lambdas', l_minmax[0], l_minmax[1], log=True)
         nus = trial.suggest_float('nus', n_minmax[0], n_minmax[1], log=True)
 
-        # todo maybe leave out this?
         lib_choice = trial.suggest_categorical('lib_choice',
                                                get_library_names())  # 'best' eats all the memory
 
-        lib = get_custom_library_funcs(lib_choice)
+        lib = get_custom_library_funcs(lib_choice, data['u'].shape[1]+data['x'].shape[1])
 
         optimizer = ps.SR3(thresholder='l1', nu=nus,
                            threshold=lambdas)
@@ -205,6 +193,7 @@ def optuna_search_sr3(DATA, XDOT, l_minmax, n_minmax, studyname, iter):
 
 
 def plot_optuna_data(name, dirs = ""):
+    print(optuna.study.get_all_study_names(storage="sqlite:///"+ "optuna_studies/"+dirs+ name +".db"))
     stud = optuna.load_study(study_name = None , storage="sqlite:///" + "optuna_studies/"+dirs+ name + ".db")
     optuna.visualization.plot_pareto_front(stud, target_names=["MSE", "SPAR"]).show(renderer="browser")
     print(f"Trial count: {len(stud.trials)}")

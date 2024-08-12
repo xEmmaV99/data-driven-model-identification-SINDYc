@@ -15,7 +15,7 @@ def get_custom_library_funcs(type, nmbr_input_features = 15):
     """
     Returns a pysindy library corresponding to the "type"
     :param type: str, name of the library
-    :param nmbr_input_features: number of input features, important for 'inputs_per_library'
+    :param nmbr_input_features: number of input features, important for 'inputs_per_library', should contain both x and u
     :return: library
     """
     # Generalized library, sine and cos functions for gamma

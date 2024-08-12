@@ -27,7 +27,7 @@ def prepare_data(path_to_data_file: str,
     :param number_of_trainfiles: number of simulations to be considered, to use 'all', pass -1
     :param use_estimate_for_v: if True, use the approximation from line voltages to find v_abc, if False, use the more general form
     :param usage_per_trainfile: float between 0 and 1, trim the data in the time-domain to reduce samples
-    :param ecc_input: if True, eccentricity is added as input for the controlvariables
+    :param ecc_input: if True, eccentricity is added as input for the control variables
     :return:
     """
     # check if usage_per_trainfile is between 0 and 1
@@ -55,7 +55,7 @@ def prepare_data(path_to_data_file: str,
 
     # initialise data
     DATA = {'x': np.array([]), 'u': np.array([]), 'xdot': np.array([]),
-            'T_em': np.array([]), 'UMP': np.array([]), 'feature_names': np.array([])}  # ,'wcoe':np.array([])}
+            'T_em': np.array([]), 'UMP': np.array([]), 'feature_names': np.array([]), 'wcoe':np.array([])}
 
     # crop dataset to desired amount of simulations (random_idx)
     if not test_data:
@@ -67,7 +67,8 @@ def prepare_data(path_to_data_file: str,
         v_stator = reference_abc_to_dq0(v_abc_estimate_from_line(dataset["v_applied"]))  # debug
     else:
         path_to_simulation_data = os.path.join(os.path.dirname(path_to_data_file), 'SIMULATION_DATA.pkl')
-        v_stator = reference_abc_to_dq0(v_abc_calculation(dataset, path_to_motor_info=path_to_simulation_data)) #todo, debug, SIMULATION_DATA is only needed for this
+        v_stator = reference_abc_to_dq0(v_abc_calculation(dataset, path_to_motor_info=path_to_simulation_data))
+        #todo, debug, SIMULATION_DATA is only needed for this
 
     i_st = reference_abc_to_dq0(dataset['i_st'])
 
@@ -77,7 +78,7 @@ def prepare_data(path_to_data_file: str,
         dataset["time"] = np.expand_dims(dataset['time'], axis=2)
         dataset['T_em'] = np.expand_dims(dataset['T_em'], axis=2)
         dataset['F_em'] = np.expand_dims(dataset['F_em'], axis=2)
-        # dataset['wcoe'] = np.expand_dims(dataset['wcoe'], axis=2)
+        dataset['wcoe'] = np.expand_dims(dataset['wcoe'], axis=2)
 
     # get u data: potentials_st, i_st, omega_rot, gamma_rot, and the integrals.
     for simul in range(number_of_trainfiles):
@@ -131,11 +132,11 @@ def prepare_data(path_to_data_file: str,
                         dataset['omega_rot'].reshape(t_data.shape),
                         np.repeat(freqs, dataset['omega_rot'].shape[0], axis=0)))
 
-    DATA['feature_names'] = [r'$i_d$', r'$i_q$', r'$i_0$',
-                             r'$v_d$', r'$v_q$', r'$v_0$',
-                             r'$I_d$', r'$I_q$', r'$I_0$',
-                             r'$V_d$', r'$V_q$', r'$V_0$',
-                             r'$\gamma$', r'$\omega$', r'$f$']  # ,r'$W_{coe}$']
+    DATA['feature_names'] = [r'i_d', r'i_q', r'i_0',
+                             r'v_d', r'v_q', r'v_0',
+                             r'I_d', r'I_q', r'I_0',
+                             r'V_d', r'V_q', r'V_0',
+                             r'\gamma', r'\omega', r'f']
 
     # add eccentricity to the input data
     if ecc_input:
@@ -148,11 +149,14 @@ def prepare_data(path_to_data_file: str,
                 #r = np.sqrt(dataset['ecc'][:, 0] ** 2 + dataset['ecc'][:, 1] ** 2)
                 #theta = np.arctan2(dataset['ecc'][:, 1], dataset['ecc'][:, 0])
                 #u_data = np.hstack((u_data, r[:,np.newaxis,:], np.cos(theta[:,np.newaxis,:])))
+                #u_data = np.hstack((u_data, np.sin(theta[:, np.newaxis, :]), np.cos(theta[:, np.newaxis, :])))
             else:
                 print('Non zero ecc, added to input data')
                 u_data = np.hstack((u_data, dataset['ecc'][:, :, np.newaxis]))
 
-            DATA['feature_names']= DATA['feature_names'].append([r'r_x', r'r_y'])
+            #DATA['feature_names'].append([r'r_x', r'r_y'])
+            [DATA['feature_names'].append(j) for j in [r'r_x', r'r_y']]
+
         else:
             print('No ecc')
 
@@ -164,7 +168,7 @@ def prepare_data(path_to_data_file: str,
     DATA['T_em'] = dataset["T_em"].transpose(0, 2, 1).reshape(dataset["T_em"].shape[0] * dataset["T_em"].shape[-1])
     DATA['UMP'] = dataset["F_em"].transpose(0, 2, 1).reshape(dataset["F_em"].shape[0] * dataset["F_em"].shape[-1],
                                                              dataset["F_em"].shape[1])
-    # DATA['wcoe'] = dataset['wcoe'].transpose(0, 2, 1).reshape(dataset['wcoe'].shape[0] * dataset['wcoe'].shape[-1])
+    DATA['wcoe'] = dataset['wcoe'].transpose(0, 2, 1).reshape(dataset['wcoe'].shape[0] * dataset['wcoe'].shape[-1])
 
     if test_data:
         DATA['V'] = V_range
@@ -178,7 +182,7 @@ def prepare_data(path_to_data_file: str,
     DATA['xdot'] = DATA['xdot'][shuffled_indices]
     DATA['T_em'] = DATA['T_em'][shuffled_indices]
     DATA['UMP'] = DATA['UMP'][shuffled_indices]
-    # DATA['wcoe'] = DATA['wcoe'][shuffled_indices]
+    DATA['wcoe'] = DATA['wcoe'][shuffled_indices]
 
     # split the data into train and validation data
     p = 0.8  # percentage of data to be used for training, 0.2 is used for parameter tuning
@@ -189,13 +193,13 @@ def prepare_data(path_to_data_file: str,
     DATA['xdot_train'] = DATA['xdot'][:cutidx]
     DATA['T_em_train'] = DATA['T_em'][:cutidx]
     DATA['UMP_train'] = DATA['UMP'][:cutidx]
-    # DATA['wcoe_train'] = DATA['wcoe'][:cutidx]
+    DATA['wcoe_train'] = DATA['wcoe'][:cutidx]
     DATA['x_val'] = DATA['x'][cutidx:]
     DATA['u_val'] = DATA['u'][cutidx:]
     DATA['xdot_val'] = DATA['xdot'][cutidx:]
     DATA['T_em_val'] = DATA['T_em'][cutidx:]
     DATA['UMP_val'] = DATA['UMP'][cutidx:]
-    # DATA['wcoe_val'] = DATA['wcoe'][cutidx:]
+    DATA['wcoe_val'] = DATA['wcoe'][cutidx:]
 
     return DATA
 
