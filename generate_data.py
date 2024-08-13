@@ -4,11 +4,11 @@ from datetime import date
 from generate_data_source import *
 
 if __name__ == "__main__":
-    generate_traindata = False
+    generate_traindata = True
     generate_testdata = True
 
     motor_path = os.path.join(os.getcwd(), "Cantoni.pkl")
-    save_name = '50ecc_nonlinear'
+    save_name = 'default_linear'
     t_end = 5.0
 
     ecc_value = 0.0
@@ -21,7 +21,7 @@ if __name__ == "__main__":
         ecc = ecc_dir * ecc_value # if ecc_value is 0, ecc is 0
 
     numbr_of_simulations = 50  # number of train simulations
-    mode = 'nonlinear'
+    mode = 'linear'
 
     ecc_random_direction = False
     if ecc_random_direction:

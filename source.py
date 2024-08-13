@@ -157,10 +157,14 @@ def plot_data(path="plotdata.pkl", show=False, limits=None):
             specs = data["specs"]
             # shape should be (2, t), where t is the number of time points and 2 number of solution
             # it is saved as [x, y, reference] or for torque [x, ref, simplified model] or currents [di, ref]
+            # wcoe has [x,ref]
             # Gather y-values for the fourier plot later
             if data["plots"]['0'].shape[-1]==4: #currents
                 yvalues = np.hstack((data["plots"]['0'][:,1:],data["plots"]['1'][:,1:]))
                 yid = 3
+            elif len(data["plots"].keys()) == 2: #this is currents or wcoe
+                yvalues =  np.hstack((data["plots"]['0'][:,1:],data["plots"]['1'][:,1:]))
+                yid = 1
             elif data["plots"]['2'].shape[-1] == 2: #torque
                 yvalues = np.hstack((data["plots"]['0'][:,1:],data["plots"]['1'][:,1:]))
                 yid = 1

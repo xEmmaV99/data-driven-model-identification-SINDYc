@@ -48,7 +48,6 @@ def make_model(path_to_data_files: str, modeltype: str, optimizer: str, nmbr_of_
         val = DATA['xdot_val'] # only for MSE calculation
         name = "Currents"
     elif modeltype == 'wcoe':
-        raise NotImplementedError("Not implemented yet")
         train = DATA['wcoe_train']
         val = DATA['wcoe_val'] # only for MSE calculation
         name = "Wcoe"
@@ -116,7 +115,7 @@ def simulate_model(model_name: str, path_to_test_file:str, modeltype:str, do_tim
     elif modeltype == 'currents':
         test_values = TEST['xdot']
     elif modeltype == 'wcoe':
-        raise NotImplementedError("Not implemented yet")
+        #raise NotImplementedError("Not implemented yet")
         test_values = TEST['wcoe']
     else:
         raise ValueError("Model type not equal to 'torque', 'ump', 'torque-ump', 'currents' or 'wcoe' ")
@@ -230,6 +229,12 @@ def simulate_model(model_name: str, path_to_test_file:str, modeltype:str, do_tim
         legend = [r"Predicted UMP_x", r"Predicted UMP_y", r"Reference"]
         specs = ["b", "r", "k--"]
         save_plot_data("UMP", xydata, title, xlab, ylab, legend=legend, plot_now=True, specs=specs)
+
+    if modeltype == 'wcoe':
+        # save and plot the result
+        save_plot_data("wcoe", [np.hstack((t, test_predicted)), np.hstack((t, test_values.reshape((-1,1))))],
+                       "Predicted vs Reference on test set V = " + str(TEST['V']), r"$t$", r"$W_{coe}$",
+                       plot_now=True, specs=[None, "k--"], legend=[r"Predicted", r"Reference"])
     if show:
         plt.show()
     return test_predicted, test_values

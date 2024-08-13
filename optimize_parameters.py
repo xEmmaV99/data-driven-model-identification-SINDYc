@@ -67,7 +67,7 @@ def optimize_parameters(path_to_data_files:str, mode='torque', additional_name="
     elif both:
         print("SR3_L1 and lasso optimisation")
         n = 1
-        trials = 100
+        trials = 300
         a_range = [1e-5, 1e2]
         l_range = [1e-10, 1e2]
         n_range = [1e-12, 1e2]

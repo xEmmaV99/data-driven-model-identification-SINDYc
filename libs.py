@@ -6,7 +6,8 @@ def get_library_names():
     Returns the library names to be considered for the parameter optimisation
     :return: list of str
     """
-    return ['poly_2nd_order', 'linear-specific', 'torque', 'nonlinear_terms']
+    return ['w_co_linear_0ecc','poly_2nd_order', 'torque']
+    #return ['poly_2nd_order', 'linear-specific', 'torque', 'nonlinear_terms']
 
     #return ['nonlinear_terms', 'nonlinear_terms_with_f', 'poly_2nd_order', 'torque']
 
@@ -34,6 +35,28 @@ def get_custom_library_funcs(type, nmbr_input_features = 15):
                                             ps.FourierLibrary(n_frequencies=1, include_cos=True, include_sin=True)],
                                            tensor_array=None,  # don't merge the libraries
                                            inputs_per_library=inputs_per_library)
+    elif type == 'w_co':
+        all_but_grf = [i for i in range(nmbr_input_features) if i not in [13, 14,15,16]]
+        poly = ps.PolynomialLibrary(degree=2, include_interaction=True)
+        polygr = ps.PolynomialLibrary(degree=1, include_interaction=True)
+        custom_lib = ps.GeneralizedLibrary([poly, polygr], tensor_array=None, inputs_per_library=[all_but_grf, [13,15,16]])
+
+    elif type == 'w_co_linear_0ecc':
+        library_functions2 = [
+            lambda x, y: x * y
+        ]
+        library_function_names2 = [
+            lambda x, y: x + y
+        ]
+        # i i i v v v I I I V V V om gam f
+        input_per_library = [[9, 10, 0, 1, 6, 7] , [13]]
+
+
+        custom_lib = ps.GeneralizedLibrary(
+            [ps.CustomLibrary(library_functions2, library_function_names2, interaction_only=False), ps.PolynomialLibrary(degree=1)],
+            tensor_array=[[1,0],[1,1]],
+            inputs_per_library=input_per_library)
+
     elif type == 'pca':
         custom_lib = ps.PolynomialLibrary(degree=2, interaction_only=True)
     elif type == 'nonlinear_terms':
