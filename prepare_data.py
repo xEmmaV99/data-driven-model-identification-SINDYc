@@ -37,6 +37,10 @@ def prepare_data(path_to_data_file: str,
     # load numpy file
     print("Loading data")
     dataset = dict(np.load(path_to_data_file))  # should be a dictionary
+
+    if 'wcoe' not in dataset.keys():
+        dataset['wcoe'] = np.zeros_like(dataset['T_em'])
+
     print("Done loading data")
 
     if not test_data:
