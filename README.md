@@ -115,6 +115,8 @@ Additionally, as one might want to fit a SINDy model for the torque or UMP (by r
 - `T_em` - Electromagnetic torque
 - `wcoe` - The magentic coenergy
 
+
+
 If the data is trainingsdata, it is split up into train and validation data (80% - 20%),    
 in which case the dictionary also contains all the previous values but ending with `_train` and `_val`. 
 
