@@ -8,7 +8,7 @@
     * [Prerequisites](#prerequisites)
     * [Dependencies](#dependencies)
   * [Configuration](#configuration)
-    * [Choice of Regulagization](#choice-of-regulagization-)
+    * [Choice of Regulagization](#choice-of-regulagization)
     * [Choice of Library](#choice-of-library)
   * [Usage](#usage)
     * [1) Data Generation](#1-data-generation)
@@ -121,7 +121,7 @@ If the data is trainingsdata, it is split up into train and validation data (80%
 in which case the dictionary also contains all the previous values but ending with `_train` and `_val`. 
 
 ### 3) Optimization of hyperparameters
-As described in [click on this link](#choice-of-regularisation), the Lasso and SR3 regulators are considered, yielding 1 and 2 hyperparameters respectively.
+As described in [this section](#choice-of-regularization), the Lasso and SR3 regulators are considered, yielding 1 and 2 hyperparameters respectively.
 Hence, the validation data is used to select the best parameter values. This can be combined with a different selection of
 library candidate functions
 
