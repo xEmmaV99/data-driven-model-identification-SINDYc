@@ -43,7 +43,7 @@ if do_part2:
 ### PART 3: TRAIN MODEL
 if do_part3:
     make_model(path_to_data_files, modeltype='wcoe', optimizer='sr3',
-               nmbr_of_train=-1, lib='w_co_linear_0ecc', nu=1.978e-10, lamb=5.3e-4,
+               nmbr_of_train=-1, lib='w_co_linear_0ecc', nu=1.978e-10, lamb=5.3e-5,
                modelname='W_lin_sparser')
     '''
     make_model(path_to_data_files, modeltype='torque', optimizer='lasso',
