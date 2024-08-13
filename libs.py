@@ -24,6 +24,7 @@ def get_custom_library_funcs(type, nmbr_input_features = 15):
     fr = [14]
     i0_idx = [2,6]
 
+    # DEBUG REMOVE OMEGA
     all = [i for i in range(nmbr_input_features)]
     all_but_gamma = [i for i in range(nmbr_input_features) if i not in gamma]
     all_but_gammafr = [i for i in range(nmbr_input_features) if i not in gamma and i not in fr]
@@ -48,13 +49,13 @@ def get_custom_library_funcs(type, nmbr_input_features = 15):
         library_function_names2 = [
             lambda x, y: x + y
         ]
-        # i i i v v v I I I V V V om gam f
-        input_per_library = [[9, 10, 0, 1, 6, 7] , [13]]
+        # i i i v v v I I I V V V gam om f
+        input_per_library = [[9, 10, 0, 1, 6, 7] , [12]]
 
 
         custom_lib = ps.GeneralizedLibrary(
             [ps.CustomLibrary(library_functions2, library_function_names2, interaction_only=False), ps.PolynomialLibrary(degree=1)],
-            tensor_array=[[1,0],[1,1]],
+            tensor_array=[[1,1]],
             inputs_per_library=input_per_library)
 
     elif type == 'pca':

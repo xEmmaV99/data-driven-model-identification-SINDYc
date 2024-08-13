@@ -69,7 +69,7 @@ def optimize_parameters(path_to_data_files:str, mode='torque', additional_name="
         l_range = [1e-10, 1e2]
         n_range = [1e-12, 1e2]
         with joblib.parallel_config(n_jobs = n_jobs, backend = "loky", inner_max_num_threads=1):
-            joblib.Parallel(n_jobs=n_jobs)(joblib.delayed(optuna_search_both)(DATA, XDOT, l_range, n_range, a_range, namestr+additional_name, n_trials) for _ in range(n_trials))
+            joblib.Parallel(n_jobs=n_jobs)(joblib.delayed(optuna_search_both)(DATA, XDOT, l_range, n_range, a_range, namestr+additional_name, n_trials) for _ in range(n_jobs))
     return
 
 

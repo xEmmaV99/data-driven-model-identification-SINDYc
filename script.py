@@ -2,7 +2,17 @@ import matplotlib.pyplot as plt
 
 from source import *
 from optimize_parameters import plot_optuna_data
-plot_immec_data(os.path.join(os.getcwd(), 'train-data', '08-09', 'IMMEC_dynamic_50ecc_5.0sec.npz'), simulation_number=0)
+#plot_immec_data(os.path.join(os.getcwd(), 'train-data', '08-09', 'IMMEC_dynamic_50ecc_5.0sec.npz'), simulation_number=0)
+
+plot_immec_data(os.path.join(os.getcwd(), 'train-data', '08-13', 'IMMEC_default_linear_5.0sec.npz'), simulation_number=0)
+W_model = load_model('w_linear//W_lin_model')
+W_model.print(precision=20)
+
+
+
+
+
+
 
 """
 path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-31-ecc-50', 'IMMEC_50ecc_5.0sec.npz')

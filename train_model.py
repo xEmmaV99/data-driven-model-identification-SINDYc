@@ -4,9 +4,9 @@ from optimize_parameters import parameter_search, optimize_parameters, plot_optu
 from source import *
 from train_model_source import make_model, simulate_model
 
-do_part1 = True
+do_part1 = False
 do_part2 = False
-do_part3 = False
+do_part3 = True
 do_part4 = False
 
 ### DATA TRAINING FILES
@@ -16,8 +16,10 @@ do_part4 = False
 #path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-31-nonlin50', 'IMMEC_nonlinear-50ecc_5.0sec.npz')
 #path_to_data_files = os.path.join(os.getcwd(), 'train-data', 'ecc_random_direction', 'IMMEC_lin_ecc_randomecc_5.0sec.npz')
 #path_to_data_files = os.path.join(os.getcwd(), 'train-data', '08-09', 'IMMEC_dynamic_50ecc_5.0sec.npz')
+path_to_data_files = os.path.join(os.getcwd(), 'train-data', '08-13', 'IMMEC_default_linear_5.0sec.npz') # for A B examples
 
 ### TEST FILES
+path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-13', 'IMMEC_default_linear_5.0sec.npz')
 #path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-09', 'IMMEC_dynamic_50ecc_5.0sec.npz')
 #path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-07', 'IMMEC_nonlin_0ecc_5.0sec.npz') # for A B examples
 #path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz') #
@@ -41,8 +43,8 @@ if do_part2:
 ### PART 3: TRAIN MODEL
 if do_part3:
     make_model(path_to_data_files, modeltype='wcoe', optimizer='sr3',
-               nmbr_of_train=-1, lib='poly_3rd_order', nu=1.978e-10, lamb=5.3e-9,
-               modelname='W_3')
+               nmbr_of_train=-1, lib='w_co_linear_0ecc', nu=1.978e-10, lamb=5.3e-4,
+               modelname='W_lin_sparser')
     '''
     make_model(path_to_data_files, modeltype='torque', optimizer='lasso',
                nmbr_of_train=-1, lib='linear-specific', alpha=1.23, modelname='torque_linear_4')
@@ -118,9 +120,9 @@ if do_part4:
     models = ["linear_example_new_1_currents", "linear_example_2_currents", "linear_example_3_currents"]
     models = ["currents_nonlinear"]
     models = ["torque_linear", "torque_linear_2"]
-    models = ["W_120"]
+    models = ["W_lin"]
     pref = "0908//"
-    pref = ""
+    pref = "w_linear//"
 
     for m in models:
         # simulate the model and plot the results
