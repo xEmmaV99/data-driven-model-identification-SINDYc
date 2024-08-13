@@ -8,7 +8,7 @@
     * [Prerequisites](#prerequisites)
     * [Dependencies](#dependencies)
   * [Configuration](#configuration)
-    * [Choice of Regulagization](#choice-of-regulagization)
+    * [Choice of Regularization](#choice-of-regularization)
     * [Choice of Library](#choice-of-library)
   * [Usage](#usage)
     * [1) Data Generation](#1-data-generation)
