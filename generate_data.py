@@ -4,7 +4,7 @@ from datetime import date
 from generate_data_source import *
 
 if __name__ == "__main__":
-    generate_traindata = True
+    generate_traindata = False
     generate_testdata = True
 
     motor_path = os.path.join(os.getcwd(), "Cantoni.pkl")

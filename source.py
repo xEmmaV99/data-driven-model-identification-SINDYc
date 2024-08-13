@@ -342,7 +342,8 @@ def plot_immec_data(path: str, simulation_number: int=None, title:str=None):
 
     d_air = 0.000477  # for the Cantoni motor, todo DEBUG hardcoded
 
-    rows, cols = 2, 4
+    rows, cols = 4,2
+    plt.subplots(4,2, figsize = (8,20))
 
     if simulation_number is None:  # testfile
         plt.subplot(rows, cols, 1)
@@ -371,13 +372,15 @@ def plot_immec_data(path: str, simulation_number: int=None, title:str=None):
         plt.subplot(rows, cols, 6)
         plt.title("Eccentricity"), plt.xlabel("time (s)"), plt.ylabel("% airgap")
         plt.plot(dataset["time"], dataset["ecc"] / d_air)
-        plt.plot(dataset["time"], np.linalg.norm(dataset["ecc"]) / d_air, "k--")
-
-        # if wcoe not in keys, don't do the enxt plot
+        # if wcoe not in keys, don't do the next plot
         if "wcoe" in dataset.keys():
             plt.subplot(rows, cols, 7)
             plt.title("Magnetic co-energy"), plt.xlabel("time (s)"), plt.ylabel("J")
             plt.plot(dataset["time"], dataset["wcoe"])
+
+        plt.subplot(rows, cols, 8)
+        plt.title("Eccentricity"), plt.xlabel("r_x"), plt.ylabel("r_y")
+        plt.plot(dataset["ecc"][:, 0, simulation_number] / d_air, dataset["ecc"][:, 1, simulation_number] / d_air)
 
     else:  # train file
         plt.subplot(rows, cols, 1)
@@ -407,7 +410,6 @@ def plot_immec_data(path: str, simulation_number: int=None, title:str=None):
         plt.subplot(rows, cols, 6)
         plt.title("Eccentricity"), plt.xlabel("time (s)"), plt.ylabel("% airgap")
         plt.plot(dataset["time"][:, 0, simulation_number], dataset["ecc"][:, :, simulation_number] / d_air)
-        plt.plot(dataset["time"][:, 0, simulation_number], np.linalg.norm(dataset["ecc"][:, :, simulation_number], axis=1) / d_air, "k--")
         plt.legend(["x", "y"])
 
         plt.subplot(rows, cols, 8)

@@ -6,8 +6,8 @@ def get_library_names():
     Returns the library names to be considered for the parameter optimisation
     :return: list of str
     """
-    return ['w_co_linear_0ecc','poly_2nd_order', 'torque']
-    #return ['poly_2nd_order', 'linear-specific', 'torque', 'nonlinear_terms']
+    #return ['w_co_linear_0ecc','poly_2nd_order', 'torque']
+    return ['poly_2nd_order', 'linear-specific', 'torque', 'nonlinear_terms']
 
     #return ['nonlinear_terms', 'nonlinear_terms_with_f', 'poly_2nd_order', 'torque']
 
