@@ -57,7 +57,7 @@ The data is obtained from simulations using the Python package IMMEC.
 
 ### Choice of Library
 For pySINDy to work, a library of candidate functions must be defined. 
-Pre-defined libraries from pySINDy are polynomials or Fourier terms, though pySINDy allows for
+Predefined libraries from pySINDy are polynomials or Fourier terms, though pySINDy allows for
 custom libraries to be defined and fine-tuned for each input variable. 
 Some of our own libraries are predefined in `libs.py` and can be called by the user: `get_custom_library_funcs('nonlinear_terms')`.
 
