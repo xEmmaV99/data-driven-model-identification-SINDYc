@@ -8,7 +8,7 @@
     * [Prerequisites](#prerequisites)
     * [Dependencies](#dependencies)
   * [Configuration](#configuration)
-    * [Choice of Regulagization](#choice-of-regulagization-)
+    * [Choice of Regularization](#choice-of-regularization)
     * [Choice of Library](#choice-of-library)
   * [Usage](#usage)
     * [1) Data Generation](#1-data-generation)
@@ -52,7 +52,7 @@ The data is obtained from simulations using the Python package IMMEC.
 
 ## Configuration
 ### Choice of Regularization
-
+example text
 
 
 ### Choice of Library
@@ -95,13 +95,13 @@ COMMENT FOR THE AUTHOR: this function is just very important and useful if the `
 
 
 In order to create a model, the training data must be prepared. This is done in the script `data_preparation.py`, which is 
-called by the  `prepare_data` function during training and postprocessing by other scripts. The user can call this function if desired,
+called by the  `prepare_data()` function during training and postprocessing by other scripts. The user can call this function if desired,
 but this is not necessary. The function takes the following arguments:
 - `path_to_data_file` - Path to the `.npz`-file containing the data
-- `test_data` - default False, this omits the extra preperation needed for trainingdata
-- `number_of_trainfiles` - default -1 (all files), can be set to a number if not all simulations should be considered. The choise of selected simualtions is random. This can be useful to reduce the trainingssamples for large datasets.
+- `test_data` - default False, this omits the extra preparation needed for trainingdata
+- `number_of_trainfiles` - default -1 (all files), can be set to a number if not all simulations should be considered. The choice of selected simulations is random. This can be useful to reduce the training samples for large datasets.
 - `use_estimate_for_v` - default False, if True, the `v_abc` are estimated from the line voltages.
-- `usage_per_trainfile` - default 0.5, the percentage of the data used from each simulations.
+- `usage_per_trainfile` - default 0.5, the percentage of the data used from each simulation.
 - `ecc_input`- default False, if True, the eccentricity is used as an input variable to the model.
 
 The function returns a dictionary containing the following arrays:
@@ -115,19 +115,64 @@ Additionally, as one might want to fit a SINDy model for the torque or UMP (by r
 - `T_em` - Electromagnetic torque
 - `wcoe` - The magentic coenergy
 
-
-
 If the data is trainingsdata, it is split up into train and validation data (80% - 20%),    
 in which case the dictionary also contains all the previous values but ending with `_train` and `_val`. 
 
 ### 3) Optimization of hyperparameters
-As described in [click on this link](#choice-of-regularisation), the Lasso and SR3 regulators are considered, yielding 1 and 2 hyperparameters respectively.
-Hence, the validation data is used to select the best parameter values. This can be combined with a different selection of
-library candidate functions
+Assuming the data generation is done, the user can start the optimization of the hyperparameters. 
+
+<!-- insert here the tutorial for the optuna study and also the plot itself to choose parameters -->
+
+
+As described in [this section](#choice-of-regularisation), the Lasso and SR3 regulators are considered, 
+yielding 1 and 2 hyperparameters respectively. Hence, the validation data is used to select the best parameter values. 
+This can be combined with various selections of library candidate functions, enlarging the search-space.
+
+For this purpose, a Python package called `Optuna` is used, which searches for the pareto-optimal solution. 
+The user can initialise a study by calling the function `optimize_parameters()` from the script `optimize_parameters.py`, by which a study is created.
+The function requires the following arguments:
+- `path_to_data_files` - Path to the `.npz`-file containing the training data
+- `mode`- default 'torque', can be set to 'ump', 'currents' or 'wcoe', specifying what the model predicts
+- `additional_name` - default None, a string that is added to the name of the study
+- `n_jobs` - default 1, number of cores to be used for the optimization, to run in paralell
+- `n_trials` - default 100, number of trials to be performed per core
+
+The ranges of the parameters are predefined inside the function, but can be changed by the user. 
+The library candidate functions are called from `libs.py` by the function `get_library_names()` during the search. 
+The user should set the desired libraries by changing the returned values of this function. 
+
+The resulting study is saved in the `optuna_studies` folder, which can be accessed by calling the `plot_optuna_data()` function from the same script.
+
+<!-- insert an optuna plot here -->
+
 
 
 ### 4) Model Identification
+Now the desired hyperparameters and optimiser are known, the user can start the model identification. 
+This is done by calling the function `make_model()` from the script `train_model_source.py`. The function requires the following arguments:
+- `path_to_data_files` - Path to the `.npz`-file containing the training data
+- `modeltype`- Can be set to 'torque', 'ump', 'torque-ump', 'currents' or 'wcoe', specifying what the model predicts
+- `optimizer`- Either 'lasso' or 'sr3', specifying the regularisation method
+- `lib` - The chosen library candidate functions
+- `nmbr_of_train` - default -1 (all files), can be set to a number if not all simulations should be considered.
+- `alpha` - default None, the regularisation parameter for lasso
+- `nu` - default None, the first regularisation parameter for sr3
+- `lamb` - default None, the second regularisation parameter for sr3
+- `model_name` - default None, a string that is added to the name of the model
+
+When a model is created, it is saved as a `.pkl`-file in the `models` folder. The model can be loaded by calling the `load_model()` function from `source.py`.
+
+
 ### 5) Model Evaluation
+Now, the model's performance can be evaluated on the test data. This is done by calling the function `simulate_model()`
+from the script `train_model_source.py`. The function requires the following arguments:
+- `model_name` - The name of the model from the `models` folder
+- `path_to_test_file` - Path to the `.npz`-file containing the test data
+- `modeltype`- Can be set to 'torque', 'ump', 'torque-ump', 'currents' or 'wcoe', specifying what the model predicts
+- `do_time_simulation` - default False, only relevant if `modeltype` == 'currents'. Then the `xdot` is solved by `solve_ivp` 
+to retrieve the prediction of `x`
+
+This function returns the predicted and expected values. These can also be plotted in the frequency domain by the `plot_fourier()` function from `source.py`.
 
 
 ## Additional Information

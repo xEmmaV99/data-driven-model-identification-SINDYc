@@ -7,7 +7,7 @@ from sklearn.metrics import mean_squared_error
 import datetime
 
 
-def make_model(path_to_data_files: str, modeltype: str, optimizer: str, nmbr_of_train: int=-1, lib: str="",
+def make_model(path_to_data_files: str, modeltype: str, optimizer: str,  lib: str="", nmbr_of_train: int=-1,
                alpha: float=None, nu: float=None, lamb:float=None, modelname: str=None):
     """
     Initialises and fits a SINDy model
@@ -100,7 +100,7 @@ def simulate_model(model_name: str, path_to_test_file:str, modeltype:str, do_tim
     :return: predicted values, test values
     """
     #load in the model and the data
-    model = load_model(model_name)
+    model = load_model(model_name) #todo optinoal; pass a model instead ofa model name
     model.print()
     TEST = prepare_data(path_to_test_file, test_data=True, ecc_input=True)
     ## plot_coefs2(model, show=True, log=True)

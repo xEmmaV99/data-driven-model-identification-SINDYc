@@ -11,7 +11,7 @@ from libs import get_library_names
 import tqdm
 
 
-def optimize_parameters(path_to_data_files:str, mode='torque', additional_name=""):
+def optimize_parameters(path_to_data_files:str, mode='torque', additional_name="", n_jobs = 1, n_trials = 100):
     """
     Starts the optuna study for pareto-optimal parameters
     :param path_to_data_files:
@@ -41,7 +41,7 @@ def optimize_parameters(path_to_data_files:str, mode='torque', additional_name="
     else:
         raise ValueError("mode is either currents, torque or ump")
 
-    if not both:
+    if not both: # TO BE REMOVED
         print("SR3_L1 optimisation")
         n = 1
         trials = 1
@@ -65,16 +65,11 @@ def optimize_parameters(path_to_data_files:str, mode='torque', additional_name="
         # plot_optuna_data(name=namestr + "-lasso-study")
 
     elif both:
-        print("SR3_L1 and lasso optimisation")
-        n = 1
-        trials = 300
         a_range = [1e-5, 1e2]
         l_range = [1e-10, 1e2]
         n_range = [1e-12, 1e2]
-
-        with joblib.parallel_config(n_jobs = n, backend = "loky", inner_max_num_threads=1):
-            joblib.Parallel(n_jobs=n)(joblib.delayed(optuna_search_both)(DATA, XDOT, l_range, n_range, a_range, namestr+additional_name, trials) for _ in range(n))
-
+        with joblib.parallel_config(n_jobs = n_jobs, backend = "loky", inner_max_num_threads=1):
+            joblib.Parallel(n_jobs=n_jobs)(joblib.delayed(optuna_search_both)(DATA, XDOT, l_range, n_range, a_range, namestr+additional_name, n_trials) for _ in range(n))
     return
 
 
