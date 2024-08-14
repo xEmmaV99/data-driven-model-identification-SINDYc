@@ -15,17 +15,19 @@ do_part4 = False
 #path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-31-nonlin', 'IMMEC_nonlinear-0ecc_5.0sec.npz')
 #path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-31-nonlin50', 'IMMEC_nonlinear-50ecc_5.0sec.npz')
 #path_to_data_files = os.path.join(os.getcwd(), 'train-data', 'ecc_random_direction', 'IMMEC_lin_ecc_randomecc_5.0sec.npz')
-#path_to_data_files = os.path.join(os.getcwd(), 'train-data', '08-09', 'IMMEC_dynamic_50ecc_5.0sec.npz')
-path_to_data_files = os.path.join(os.getcwd(), 'train-data', '08-13', 'IMMEC_default_linear_5.0sec.npz') # for A B examples
+path_to_data_files = os.path.join(os.getcwd(), 'train-data', '08-09', 'IMMEC_dynamic_50ecc_5.0sec.npz')
+#path_to_data_files = os.path.join(os.getcwd(), 'train-data', '08-13', 'IMMEC_default_linear_5.0sec.npz')
 
 ### TEST FILES
-path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-13', 'IMMEC_default_linear_5.0sec.npz')
-#path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-09', 'IMMEC_dynamic_50ecc_5.0sec.npz')
-#path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-07', 'IMMEC_nonlin_0ecc_5.0sec.npz') # for A B examples
-#path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz') #
+#path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-13', 'IMMEC_default_linear_5.0sec.npz')
+path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-09', 'IMMEC_dynamic_50ecc_5.0sec.npz')
+#path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-07', 'IMMEC_nonlin_0ecc_5.0sec.npz')
+#path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
 #path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-07', 'IMMEC_lin_ecc_randomecc_5.0sec.npz')
 #path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-05', 'IMMEC_50eccecc_5.0sec.npz')
 #path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-02', 'IMMEC_y50ecc_5.0sec.npz')
+
+plot_immec_data(path_to_test_file)
 
 ### PART 1: OPTIMIZE PARAMETERS
 if do_part1:
@@ -42,15 +44,11 @@ if do_part2:
 
 ### PART 3: TRAIN MODEL
 if do_part3:
-    name = make_model(path_to_data_files, modeltype='currents', optimizer='STLSQ',
-               nmbr_of_train=-1, lib='poly_2nd_order', alpha=10, threshold = .1,
-               modelname='curr')
-    simulate_model(name, path_to_test_file, modeltype='currents')
+    name = make_model(path_to_data_files, modeltype='torque', optimizer='STLSQ',
+               nmbr_of_train=-1, lib='poly_2nd_order', alpha = 0.001, threshold = 0.1,
+               modelname='T_ecc')
+    simulate_model(name, path_to_test_file, modeltype='torque')
 
-    name = make_model(path_to_data_files, modeltype='wcoe', optimizer='sr3',
-               nmbr_of_train=-1, lib='w_', nu=1e-10, lamb = 1e-10,
-               modelname='w')
-    simulate_model(name, path_to_test_file, modeltype='currents')
     '''
     make_model(path_to_data_files, modeltype='torque', optimizer='lasso',
                nmbr_of_train=-1, lib='linear-specific', alpha=1.23, modelname='torque_linear_4')

@@ -9,7 +9,7 @@ if __name__ == "__main__":
 
     motor_path = os.path.join(os.getcwd(), "Cantoni.pkl")
     save_name = 'default_linear'
-    t_end = 5.0
+    t_end = 2.0
 
     ecc_value = 0.0
     ecc_dir = np.array([0, 0])

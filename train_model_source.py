@@ -22,6 +22,7 @@ def make_model(path_to_data_files: str, modeltype: str, optimizer: str,  lib: st
        sr3 optimises the function with objective dot(X) = theta(X)*xi as follows (Champion et al. 2020):
                                 ||dot(x)- theta(X)*xi ||**2 + lamb * L_1(W) + 1/(2nu) ||xi - W||^2
     :param modelname: name for the model to be saved with. If None, default name is modeltype
+    :param threshold: threshold for the STLSQ optimisation
     :return:
     """
     # load in training and validation data
@@ -77,7 +78,7 @@ def make_model(path_to_data_files: str, modeltype: str, optimizer: str,  lib: st
         opt = ps.STLSQ(alpha=alpha, threshold=threshold)
 
     else:
-        raise ValueError("Optimizer not known, only 'sr3' or 'lasso' are possible")
+        raise ValueError("Optimizer not known, only 'sr3', 'STLSQ' or 'lasso' are possible")
 
     # initialise model
     model = ps.SINDy(optimizer=opt, feature_library=library, feature_names=DATA['feature_names'])
@@ -108,7 +109,7 @@ def simulate_model(model_name: str, path_to_test_file:str, modeltype:str, do_tim
     #load in the model and the data
     if model_name.endswith('.pkl'):
         model_name = model_name[:-4]
-    model = load_model(model_name) #todo optinoal; pass a model instead ofa model name
+    model = load_model(model_name) #todo optinoal; pass a model instead of a model name
     model.print()
     TEST = prepare_data(path_to_test_file, test_data=True, ecc_input=True)
     ## plot_coefs2(model, show=True, log=True)

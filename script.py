@@ -3,41 +3,58 @@ from pysindy.utils import equations
 from source import *
 from optimize_parameters import plot_optuna_data
 #plot_immec_data(os.path.join(os.getcwd(), 'train-data', '08-09', 'IMMEC_dynamic_50ecc_5.0sec.npz'), simulation_number=0)
-def predict_torque_from_wcoe(TEST, model):
-    # gamma has index 12
-    V_q = TEST['u'][:,7]
-    V_d = TEST['u'][:,6]
-    i_d = TEST['x'][:,1]
-    i_q = TEST['x'][:,2]
-    I_q = TEST['u'][:,5]
-    I_d = TEST['u'][:,4]
 
-    #Torque = -0.000671231*V_q*I_q + 0.0071744948*I_d*I_d-0.0111459674 *I_d*I_q  + 0.0234216089 *I_q*I_q
-    Torque = -0.0003399000 + 0.0001159129*V_d*V_d -0.0000097121*V_d*V_q+ 0.0000211628* V_d*i_d + 0.0000186160* V_d*i_q\
-             -0.0009442238* V_d*I_d -0.0008396915 *V_d*I_q + 0.0001362879 *V_q*V_q -0.0000082135* V_q*i_d  \
-             + 0.0000182042 *V_q*i_q+ 0.0003252983* V_q*I_d -0.0022287857 *V_q*I_q -0.0000018198* i_d*i_d \
-             + 0.0000017657* i_d*i_q -0.0004000769 *i_d*I_d+ 0.0005311589* i_d*I_q -0.0000030588* i_q*i_q \
-             -0.0006351558* i_q*I_d+ 0.0007915737* i_q*I_q + 0.0084331950 *I_d*I_d -0.0125999376 *I_d*I_q + 0.0245331808* I_q*I_q
-    # torque calculation seems too difficult
-    return Torque
+''' # testing the difference method by using virtual work 
+def numerical_diff(TEST, W_model):
+    dth = 0.001*2*np.pi
+    pr1 = W_model.predict(TEST['x'], u = TEST['u'])
+    pr1 = np.array(pr1)
+    u = np.copy(TEST['u'])
+    u[:,9] += dth
+    u[:,9] = u[:,9] % (2*np.pi)
+    pr2 = W_model.predict(TEST['x'], u = u)
 
-#plot_immec_data(os.path.join(os.getcwd(), 'train-data', '08-13', 'IMMEC_default_linear_5.0sec.npz'), simulation_number=0)
-W_model = load_model('w_linear//W_lin_model')
-print(W_model.equations(precision=10))
+    torque = (pr2 - pr1) / dth
+    #torque = np.diff(pr1[1:,0], pr1[:-1,0]) / np.diff(TEST['u'][:,9])
+    #plt.plot(u[:,9])
+    #plt.plot(TEST['u'][:,9])
+    #plt.show()
+    return torque
+    
+plot_immec_data(os.path.join(os.getcwd(), 'test-data', '08-14', 'IMMEC_default_linear_2.0sec.npz'))
+
+#W_model = load_model('w_linear//w_model')
+#print(W_model.equations(precision=10))
 
 # model.equations is somehting else then the equations function form utils
 
 
-TEST = prepare_data(os.path.join(os.getcwd(), 'test-data', '08-13', 'IMMEC_default_linear_5.0sec.npz'), test_data=True)
-pr = W_model.predict(TEST['x'], u = TEST['u'])
+TEST = prepare_data(os.path.join(os.getcwd(), 'test-data', '08-14', 'IMMEC_default_linear_2.0sec.npz'), test_data=True)
+#pr1 = W_model.predict(TEST['x'], u=TEST['u'])
+#pr1 = np.array(pr1)
+
+#plt.figure()
+#plt.plot(pr1)
+#plt.plot(TEST['wcoe'])
+#plt.plot(numerical_diff(TEST, W_model))
+
+plt.plot(TEST['T_em'])
+plt.title("T_em")
 plt.figure()
-plt.plot(pr)
+plt.plot(TEST['u'][:,9])
+plt.title("gamma")
 plt.figure()
-plt.plot(predict_torque_from_wcoe(TEST, W_model))
-#plt.plot(TEST['T_em'])
+# if np.diff (u) is 0, replace by NaN
+dtheta = np.diff(TEST['u'][:,9])
+dtheta[np.isclose(dtheta, 0)] = np.nan
+#plt.plot(np.diff(TEST['wcoe']) / dtheta)
+plt.plot(TEST['wcoe'])
+plt.title("dW/dgamma")
+
+#torque = np.diff(pr1[:,0]) / dtheta
+#plt.plot(torque)
 plt.show()
-
-
+'''
 
 
 

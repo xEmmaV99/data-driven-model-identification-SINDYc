@@ -24,7 +24,6 @@ def get_custom_library_funcs(type, nmbr_input_features = 15):
     fr = [14]
     i0_idx = [2,6]
 
-    # DEBUG REMOVE OMEGA
     all = [i for i in range(nmbr_input_features)]
     all_but_gamma = [i for i in range(nmbr_input_features) if i not in gamma]
     all_but_gammafr = [i for i in range(nmbr_input_features) if i not in gamma and i not in fr]
@@ -36,8 +35,9 @@ def get_custom_library_funcs(type, nmbr_input_features = 15):
                                             ps.FourierLibrary(n_frequencies=1, include_cos=True, include_sin=True)],
                                            tensor_array=None,  # don't merge the libraries
                                            inputs_per_library=inputs_per_library)
+
     elif type == 'w_co':
-        all_but_grf = [i for i in range(nmbr_input_features) if i not in [13, 14,15,16]]
+        all_but_grf = [i for i in range(nmbr_input_features) if i not in [13,14,15,16]]
         poly = ps.PolynomialLibrary(degree=2, include_interaction=True)
         polygr = ps.PolynomialLibrary(degree=1, include_interaction=True)
         custom_lib = ps.GeneralizedLibrary([poly, polygr], tensor_array=None, inputs_per_library=[all_but_grf, [13,15,16]])
@@ -60,12 +60,15 @@ def get_custom_library_funcs(type, nmbr_input_features = 15):
 
     elif type == 'pca':
         custom_lib = ps.PolynomialLibrary(degree=2, interaction_only=True)
+
+
     elif type == 'nonlinear_terms':
         inputs_per_library = [all_but_gamma, gamma]
         custom_lib = ps.GeneralizedLibrary([ps.PolynomialLibrary(degree=2, include_interaction=True),
                                             ps.FourierLibrary(n_frequencies=1, include_cos=True, include_sin=True)],
                                            tensor_array= [[1,1]],  # merge libraries
                                            inputs_per_library=inputs_per_library)
+
     elif type == 'nonlinear_terms_with_f':
         library_functions = [
             lambda x: np.sin(2*np.pi*x),
@@ -183,7 +186,7 @@ def get_custom_library_funcs(type, nmbr_input_features = 15):
         library_function_names2 = [
             lambda x,y: x+y
         ]
-        # i i i v v v I I I V V V om gam f
+        # i i i v v v I I I V V V gam om f
         input_per_library = [[9,10,0,1,6,7]]
         custom_lib = ps.GeneralizedLibrary([ps.CustomLibrary(library_functions2, library_function_names2, interaction_only=False)],
                                            tensor_array=None,  # don't merge the libraries
@@ -202,7 +205,7 @@ def get_custom_library_funcs(type, nmbr_input_features = 15):
         library_function_names2 = [
             lambda x,y: x+y
         ]
-        # i i i v v v I I I V V V om gam f
+        # i i i v v v I I I V V V gam om f
         input_per_library = [[0,1,2,3,4,5,6,7,8,9,10,11],[0,1,2,6,7,8,9,10,11,12]]
         custom_lib = ps.GeneralizedLibrary([ps.CustomLibrary(library_functions , library_function_names , interaction_only=False),
                                             ps.CustomLibrary(library_functions2, library_function_names2, interaction_only=False)],
@@ -211,7 +214,7 @@ def get_custom_library_funcs(type, nmbr_input_features = 15):
 
     elif type == 'linear-specific':
         ins = [0,1,2,3,4,5,6,7,8,9,10,11] # i i i v v v I I I V V V
-        ins2 = [12,13,3,4,5] # omega gamma v v v
+        ins2 = [12,13,3,4,5] # gamma omega v v v
         ins3 = [0,1,2,6,7,8,9,10,11] # i i i I I I V V V
         lin = [
             lambda x: x

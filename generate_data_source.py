@@ -183,12 +183,21 @@ def create_immec_data(
         if n != 0: # calculation is similar to the one in immec.
             psi_st = data_logger.quantities['potentials_st'][-1, :]
             psi_rot = data_logger.quantities['potentials_rot'][-1, :]
+            #state_em = motor_model.state[:143]
+
+            #psi_st = (state_em[0:motor_model.N_st]).flatten()
+            #psi_rot = (state_em[motor_model.N_st: motor_model.N_st+motor_model.N_rot]).flatten()
 
             Psi = np.broadcast_to(psi_st[:, np.newaxis], (psi_st.shape[0], motor_model.N_rot)) \
                   - np.ones((motor_model.N_st, 1)) * psi_rot[np.newaxis, :]
 
-            W = 0.5 * (Psi ** 2 * motor_model.P_air_hl_noskew()).sum(axis=1).sum()  # Total magnetic co energy
-            Wmagcoen[n] = W
+            #W1 = 0.5 * (Psi ** 2 * motor_model.P_air_hl_AISM()).sum(axis=1).sum()  # Total magnetic co energy
+            #old_gamma = motor_model.gamma_hl
+            #motor_model.gamma_hl = old_gamma + 0.001
+            #W2 = 0.5 * (Psi ** 2 * motor_model.P_air_hl_AISM()).sum(axis=1).sum()  # Total magnetic co energy
+            #Wmagcoen[n] = (W2- W1) / 0.001   # TORQUE
+            #motor_model.gamma_hl = old_gamma
+            Wmagcoen[n] = 0.5 * (Psi ** 2 * motor_model.P_air_hl_AISM()).sum(axis=1).sum()  # Total magnetic co energy
 
         # III. Step the motor model
         if mode == "linear":

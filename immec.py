@@ -262,7 +262,7 @@ spec = [
     ('stator_leakage_inductance', nb.float64)]
 
 
-@jitclass(spec)
+#@jitclass(spec)
 class MotorModel:
     """
     Main induction motor model class object
@@ -1242,9 +1242,6 @@ class MotorModel:
         # Using all teeth potentials
         if self.torque_method == 'nodal':
             T_em_t = 0.5 * (Psi ** 2 * dP_dgamma).sum(axis=1)  # Torque produced per tooth
-            # DEBUG: MAGNETIC COENERGY
-            W = 0.5*(Psi ** 2 * self.P_air_hl_noskew()).sum(axis=1).sum() # Total magnetic co energy
-
             T_em = T_em_t.sum()  # Total rotor electromagnetic torque
 
         # Using Clarke-transformed quantities
