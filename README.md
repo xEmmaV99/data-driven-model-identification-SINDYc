@@ -39,6 +39,8 @@ The data is obtained from simulations using the Python package IMMEC.
 ### Prerequisites
 ### Dependencies
 <!-- pip install or conda install !-->
+### User Manual
+The user manual is available as a Jupyter Notebook called `User_Manual.ipynb`.
 
 
 
