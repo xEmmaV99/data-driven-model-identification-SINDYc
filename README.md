@@ -37,8 +37,29 @@ The data is obtained from simulations using the Python package IMMEC.
 
 ## Installation
 ### Prerequisites
+
+
 ### Dependencies
-<!-- pip install or conda install !-->
+After installing the package manager [Conda](https://docs.conda.io/en/latest/), a new virtual environment can be created in the command line using:
+~~~
+conda create -n environment_name
+conda activate environment_name
+~~~
+Then, the dependencies are installed by:
+~~~
+conda install numpy numba matplotlib tqdm 
+conda install -c conda-forge optuna
+~~~
+To install pysindy either clone it from their Github
+~~~
+git clone https://github.com/dynamicslab/pysindy.git
+pip install .
+~~~
+or
+~~~
+conda install conda-forge::pysindy 
+~~~
+
 ### User Manual
 The user manual is available as a Jupyter Notebook called `User_Manual.ipynb`.
 
