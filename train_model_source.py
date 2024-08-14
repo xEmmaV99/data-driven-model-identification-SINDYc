@@ -8,7 +8,7 @@ import datetime
 
 
 def make_model(path_to_data_files: str, modeltype: str, optimizer: str,  lib: str="", nmbr_of_train: int=-1,
-               alpha: float=None, nu: float=None, lamb:float=None, modelname: str=None):
+               alpha: float=None, nu: float=None, lamb:float=None, modelname: str=None, threshold:float=0.1):
     """
     Initialises and fits a SINDy model
     :param path_to_data_files: str, path to the training data
@@ -70,6 +70,12 @@ def make_model(path_to_data_files: str, modeltype: str, optimizer: str,  lib: st
         if alpha is None:
             raise ValueError("The value alpha should be passed when using lasso optimisation")
         opt = ps.WrappedOptimizer(Lasso(alpha=alpha, fit_intercept=False, precompute=True, max_iter=1000))
+
+    elif optimizer == 'STLSQ':
+        if alpha is None:
+            raise ValueError("Alpha should be provided")
+        opt = ps.STLSQ(alpha=alpha, threshold=threshold)
+
     else:
         raise ValueError("Optimizer not known, only 'sr3' or 'lasso' are possible")
 
@@ -86,7 +92,7 @@ def make_model(path_to_data_files: str, modeltype: str, optimizer: str,  lib: st
 
     # plot_coefs2(model, show = False, log = True)
 
-    save_model(model, name + "_model", lib)
+    return save_model(model, name + "_model", lib)
 
 
 def simulate_model(model_name: str, path_to_test_file:str, modeltype:str, do_time_simulation: bool=False, show: bool=True):
@@ -100,6 +106,8 @@ def simulate_model(model_name: str, path_to_test_file:str, modeltype:str, do_tim
     :return: predicted values, test values
     """
     #load in the model and the data
+    if model_name.endswith('.pkl'):
+        model_name = model_name[:-4]
     model = load_model(model_name) #todo optinoal; pass a model instead ofa model name
     model.print()
     TEST = prepare_data(path_to_test_file, test_data=True, ecc_input=True)

@@ -11,17 +11,21 @@ from libs import get_library_names
 import tqdm
 
 
-def optimize_parameters(path_to_data_files:str, mode='torque', additional_name="", n_jobs = 1, n_trials = 100):
+def optimize_parameters(path_to_data_files:str, mode:str='torque', additional_name:str="", n_jobs:int = 1, n_trials:int = 100):
     """
-    Starts the optuna study for pareto-optimal parameters
-    :param path_to_data_files:
-    :param mode:
-    :param additional_name: name for the study to be saved
+    This function is used to optimize the parameters of the SINDy model. It uses the Optuna package to select the libaray, optimizer and the hyperparameters of the optimizer.
+    :param path_to_data_files: str, path to the data files
+    :param mode: what the model should predict, can be 'torque', 'currents', 'ump' or 'wcoe' (merged = currents + I + V is not implemented)
+    :param additional_name: str, additional name to add to the study name
+    :param n_jobs: number of cores to use
+    :param n_trials: number of trials for optuna to run for each job
     :return:
     """
-    both = True
+
     print("ecc_input = True")
-    DATA = prepare_data(path_to_data_files, number_of_trainfiles=30, usage_per_trainfile=.50, ecc_input=True) #use 30 random samples, each 25% data
+    DATA = prepare_data(path_to_data_files, number_of_trainfiles=30, usage_per_trainfile=.50, ecc_input=True)
+
+    # Select the desired mode
     if mode == "currents":
         XDOT = [DATA['xdot_train'], DATA['xdot_val']]
         namestr = "currents"
@@ -32,7 +36,6 @@ def optimize_parameters(path_to_data_files:str, mode='torque', additional_name="
         XDOT = [DATA['UMP_train'], DATA['UMP_val']]
         namestr = "ump"
     elif mode == "wcoe":
-        #raise NotImplementedError("Magnetic coenergy is not fully implemented yet")
         XDOT = [DATA['wcoe_train'], DATA['wcoe_val']]
         namestr= "W"
     elif mode == "merged":
@@ -41,47 +44,29 @@ def optimize_parameters(path_to_data_files:str, mode='torque', additional_name="
     else:
         raise ValueError("mode is either currents, torque or ump")
 
-    if not both: # TO BE REMOVED
-        print("SR3_L1 optimisation")
-        n = 1
-        trials = 1
-        l_range = [1e-5, 1e2]
-        n_range = [1e-11, 1e-5]
-        with multiprocessing.Pool(n) as pool:
-            pool.starmap(optuna_search_sr3, [[DATA, XDOT, l_range, n_range, namestr, trials] for _ in range(n)])
-        pool.join()
-        pool.close()
-        # plot_optuna_data(name=namestr + "-sr3-study")
-
-        print("Lasso optimisation")
-        n = 1
-        trials = 1
-        a_range = [1e-5, 1e2]
-        with multiprocessing.Pool(n) as pool:
-            pool.starmap(optuna_search_lasso, [[DATA, XDOT, a_range, namestr, trials] for _ in range(n)])
-
-        pool.join()
-        pool.close()
-        # plot_optuna_data(name=namestr + "-lasso-study")
-
-    elif both:
-        a_range = [1e-5, 1e2]
-        l_range = [1e-10, 1e2]
-        n_range = [1e-12, 1e2]
-        with joblib.parallel_config(n_jobs = n_jobs, backend = "loky", inner_max_num_threads=1):
-            joblib.Parallel(n_jobs=n_jobs)(joblib.delayed(optuna_search_both)(DATA, XDOT, l_range, n_range, a_range, namestr+additional_name, n_trials) for _ in range(n_jobs))
+    a_range = [1e-5, 1e2]
+    l_range = [1e-10, 1e2]
+    n_range = [1e-12, 1e2]
+    with joblib.parallel_config(n_jobs = n_jobs, backend = "loky", inner_max_num_threads=1):
+        joblib.Parallel(n_jobs=n_jobs)(joblib.delayed(optuna_search)(DATA, XDOT, l_range, n_range, a_range, namestr+additional_name, n_trials) for _ in range(n_jobs))
     return
 
 
-def optuna_search_both(DATA, XDOT, lminmax, nminmax, aminmax, studyname, iter):
+def optuna_search(DATA, XDOT, lminmax, nminmax, aminmax, studyname, iter):
     # from https://optuna.readthedocs.io/en/stable/index.html
     # XDOT = f(DATA) with first element training, second validation
+    # todo: easily acces the library iguess
+
+    # Set some parameters
+    optimizer_list = ['lasso', 'sr3', 'stlsq']
+    library_list = get_library_names()
+
     def objective(trial):
         lib_choice = trial.suggest_categorical('lib_choice',
-                                               get_library_names())
+                                               library_list)
 
         lib = get_custom_library_funcs(lib_choice, DATA["u"].shape[1]+DATA["x"].shape[1])
-        optimizer_name = trial.suggest_categorical('optimizer', ['lasso', 'sr3'])
+        optimizer_name = trial.suggest_categorical('optimizer', optimizer_list)
         if optimizer_name == 'lasso':
             alphas = trial.suggest_float('alphas', aminmax[0], aminmax[1], log=True)
             optimizer = ps.WrappedOptimizer(Lasso(alpha=alphas, fit_intercept=False, precompute=True))
@@ -91,6 +76,10 @@ def optuna_search_both(DATA, XDOT, lminmax, nminmax, aminmax, studyname, iter):
             nus = trial.suggest_float('nus', nminmax[0], nminmax[1], log=True)
             optimizer = ps.SR3(thresholder='l1', nu=nus,
                                threshold=lambdas)
+        elif optimizer_name == 'stlsq':
+            alphas = trial.suggest_float('alphas', aminmax[0], aminmax[1], log=True) # alpha is penalising the l2 norm of the coefficients (ridge regression)
+            threshold = trial.suggest_float('threshold', 0.001, 1, log=True)
+            optimizer = ps.STLSQ(alpha=alphas, threshold=threshold)
 
         model = ps.SINDy(optimizer=optimizer, feature_library=lib)
         model.fit(DATA["x_train"], u=DATA["u_train"], t=None, x_dot=XDOT[0])
@@ -101,89 +90,19 @@ def optuna_search_both(DATA, XDOT, lminmax, nminmax, aminmax, studyname, iter):
 
         return MSE, SPAR
 
-    study_name = studyname + "-optuna-study"  # Unique identifier of the study.
+    study_name = "optuna_studies//" + studyname + "-optuna-study"  # Unique identifier of the study.
+
+    # check if the directory exists
+    if not os.path.exists("optuna_studies"):
+        os.makedirs("optuna_studies")
+
     storage_name = "sqlite:///{}.db".format(study_name)
-    study = optuna.create_study(directions=['minimize', 'minimize'],
+    study = optuna.create_study(directions=['minimize', 'minimize'], # minimize MSE and sparsity
                                 study_name=study_name,
                                 storage=storage_name,
                                 load_if_exists=True)
 
     study.optimize(objective, n_trials=iter, n_jobs=1)
-    return
-
-
-def optuna_search_lasso(DATA, XDOT, minmax, studyname, iter):
-    # from https://optuna.readthedocs.io/en/stable/index.html
-    # XDOT = f(DATA) with first element training, second validation
-    def objective(trial):
-        alphas = trial.suggest_float('alphas', minmax[0], minmax[1], log=True)
-        lib_choice = trial.suggest_categorical('lib_choice',
-                                               get_library_names())
-
-        lib = get_custom_library_funcs(lib_choice, DATA['u'].shape[1]+DATA['x'].shape[1])
-
-        optimizer = ps.WrappedOptimizer(Lasso(alpha=alphas, fit_intercept=False))
-
-        model = ps.SINDy(optimizer=optimizer,
-                         feature_library=lib)
-
-        model.fit(DATA["x_train"], u=DATA["u_train"], t=None, x_dot=XDOT[0])
-
-        MSE = model.score(DATA["x_val"], u=DATA["u_val"], x_dot=XDOT[1],
-                          t=None, metric=mean_squared_error)
-        SPAR = np.count_nonzero(model.coefficients())
-
-        return MSE, SPAR
-
-    study_name = studyname + "-lasso-study"  # Unique identifier of the study.
-    storage_name = "sqlite:///{}.db".format(study_name)
-    study = optuna.create_study(directions=['minimize', 'minimize'],
-                                study_name=study_name,
-                                storage=storage_name,
-                                load_if_exists=True)
-
-    study.optimize(objective, n_trials=iter, n_jobs=1)
-
-    return
-
-
-def optuna_search_sr3(DATA, XDOT, l_minmax, n_minmax, studyname, iter):
-    # from https://optuna.readthedocs.io/en/stable/index.html
-    # XDOT same meaning as from SINDy, with the first element being the training data, second validation
-
-    def objective(trial):
-        lambdas = trial.suggest_float('lambdas', l_minmax[0], l_minmax[1], log=True)
-        nus = trial.suggest_float('nus', n_minmax[0], n_minmax[1], log=True)
-
-        lib_choice = trial.suggest_categorical('lib_choice',
-                                               get_library_names())  # 'best' eats all the memory
-
-        lib = get_custom_library_funcs(lib_choice, data['u'].shape[1]+data['x'].shape[1])
-
-        optimizer = ps.SR3(thresholder='l1', nu=nus,
-                           threshold=lambdas)
-        model = ps.SINDy(optimizer=optimizer,
-                         feature_library=lib)
-        model.fit(DATA["x_train"], u=DATA["u_train"], t=None, x_dot=XDOT[0])
-
-        MSE = model.score(DATA["x_val"], u=DATA["u_val"], x_dot=XDOT[1],
-                          t=None, metric=mean_squared_error)
-        SPAR = np.count_nonzero(model.coefficients())
-
-        return MSE, SPAR
-
-    study_name = studyname + "-sr3-study"  # Unique identifier of the study.
-    storage_name = "sqlite:///{}.db".format(study_name)
-    study = optuna.create_study(directions=['minimize', 'minimize'],
-                                study_name=study_name,
-                                storage=storage_name,
-                                load_if_exists=True)
-
-    study.optimize(objective, n_trials=iter, n_jobs=1)
-
-    # DON't turn on when multiprocessing
-    # optuna.visualization.plot_pareto_front(study, target_names= ["MSE","SPAR"]).show(renderer="browser")
-
     return
 
 

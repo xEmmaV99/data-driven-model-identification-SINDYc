@@ -285,7 +285,8 @@ def save_model(model, name:str, libstr:str):
     :return:
     """
     print("Saving model")
-    path = os.path.join(os.getcwd(), "models", name + get_date()+ ".pkl") # add date to avoid overwriting
+    saving_name = name + get_date()+".pkl"
+    path = os.path.join(os.getcwd(), "models", saving_name) # add date to avoid overwriting
 
     x = model.n_features_in_ - model.n_control_features_
     u = model.n_control_features_
@@ -298,7 +299,7 @@ def save_model(model, name:str, libstr:str):
     }
     with open(path, "wb") as file:
         pkl.dump(lib, file)
-
+    return saving_name
 
 def load_model(name: str):
     """

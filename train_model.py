@@ -42,9 +42,15 @@ if do_part2:
 
 ### PART 3: TRAIN MODEL
 if do_part3:
-    make_model(path_to_data_files, modeltype='wcoe', optimizer='sr3',
-               nmbr_of_train=-1, lib='w_co_linear_0ecc', nu=1.978e-10, lamb=5.3e-5,
-               modelname='W_lin_sparser')
+    name = make_model(path_to_data_files, modeltype='currents', optimizer='STLSQ',
+               nmbr_of_train=-1, lib='poly_2nd_order', alpha=10, threshold = .1,
+               modelname='curr')
+    simulate_model(name, path_to_test_file, modeltype='currents')
+
+    name = make_model(path_to_data_files, modeltype='wcoe', optimizer='sr3',
+               nmbr_of_train=-1, lib='w_', nu=1e-10, lamb = 1e-10,
+               modelname='w')
+    simulate_model(name, path_to_test_file, modeltype='currents')
     '''
     make_model(path_to_data_files, modeltype='torque', optimizer='lasso',
                nmbr_of_train=-1, lib='linear-specific', alpha=1.23, modelname='torque_linear_4')
@@ -120,7 +126,8 @@ if do_part4:
     models = ["linear_example_new_1_currents", "linear_example_2_currents", "linear_example_3_currents"]
     models = ["currents_nonlinear"]
     models = ["torque_linear", "torque_linear_2"]
-    models = ["W_lin"]
+    models = ["W_lin", "W_lin_sparser"]
+    models = ["W_lin_2"]
     pref = "0908//"
     pref = "w_linear//"
 
