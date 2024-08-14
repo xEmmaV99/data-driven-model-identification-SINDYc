@@ -52,20 +52,26 @@ def optimize_parameters(path_to_data_files:str, mode:str='torque', additional_na
     return
 
 
-def optuna_search(DATA, XDOT, lminmax, nminmax, aminmax, studyname, iter):
-    # from https://optuna.readthedocs.io/en/stable/index.html
-    # XDOT = f(DATA) with first element training, second validation
-    # todo: easily acces the library iguess
-
+def optuna_search(DATA:dict, XDOT:np.array, lminmax:list, nminmax:list, aminmax:list, studyname:str, iter:int):
+    """
+    This function handles the optuna search for the best parameters for the SINDy model. Uses code from https://optuna.readthedocs.io/en/stable/index.html
+    :param DATA: The data dictionary
+    :param XDOT: The desired output of the model, assumes first element is training, second is validation
+    :param lminmax: lambda range [min, max]
+    :param nminmax: nu range [min, max]
+    :param aminmax: alpha range [min, max]
+    :param studyname: additional name for the study
+    :param iter: number of trials for the optuna study
+    :return:
+    """
     # Set some parameters
     optimizer_list = ['lasso', 'sr3', 'stlsq']
     library_list = get_library_names()
 
     def objective(trial):
-        lib_choice = trial.suggest_categorical('lib_choice',
-                                               library_list)
-
+        lib_choice = trial.suggest_categorical('lib_choice', library_list)
         lib = get_custom_library_funcs(lib_choice, DATA["u"].shape[1]+DATA["x"].shape[1])
+
         optimizer_name = trial.suggest_categorical('optimizer', optimizer_list)
         if optimizer_name == 'lasso':
             alphas = trial.suggest_float('alphas', aminmax[0], aminmax[1], log=True)
@@ -77,7 +83,8 @@ def optuna_search(DATA, XDOT, lminmax, nminmax, aminmax, studyname, iter):
             optimizer = ps.SR3(thresholder='l1', nu=nus,
                                threshold=lambdas)
         elif optimizer_name == 'stlsq':
-            alphas = trial.suggest_float('alphas', aminmax[0], aminmax[1], log=True) # alpha is penalising the l2 norm of the coefficients (ridge regression)
+            alphas = trial.suggest_float('alphas', aminmax[0], aminmax[1], log=True)
+            # alpha is penalising the l2 norm of the coefficients (ridge regression)
             threshold = trial.suggest_float('threshold', 0.001, 1, log=True)
             optimizer = ps.STLSQ(alpha=alphas, threshold=threshold)
 
@@ -106,16 +113,30 @@ def optuna_search(DATA, XDOT, lminmax, nminmax, aminmax, studyname, iter):
     return
 
 
-def plot_optuna_data(name, dirs = ""):
-    print(optuna.study.get_all_study_names(storage="sqlite:///"+ "optuna_studies/"+dirs+ name +".db"))
-    stud = optuna.load_study(study_name = None , storage="sqlite:///" + "optuna_studies/"+dirs+ name + ".db")
+def plot_optuna_data(name):
+    """
+    Plots the pareto front of the optuna study
+    :param name: name of the optuna study, usually ends with '-optuna-study', assuming it is in the optuna_studies directory
+    :return:
+    """
+    print(optuna.study.get_all_study_names(storage="sqlite:///"+ "optuna_studies/"+ name +".db"))
+    stud = optuna.load_study(study_name = None , storage="sqlite:///" + "optuna_studies/"+ name + ".db")
     optuna.visualization.plot_pareto_front(stud, target_names=["MSE", "SPAR"]).show(renderer="browser")
     print(f"Trial count: {len(stud.trials)}")
     return
 
 
 def parameter_search(parameter_array, train_and_validation_data, method="lasso", name="", plot_now=True, library=None):
-    # THIS IS UNUSED, TO BE REMOVED
+    """
+    Old implementation of the parameter search, is not used as Optuna does a better job, including multi-parameter search
+    :param parameter_array:
+    :param train_and_validation_data:
+    :param method:
+    :param name:
+    :param plot_now:
+    :param library:
+    :return:
+    """
     if name == "":
         name = method
     method = method.lower()
