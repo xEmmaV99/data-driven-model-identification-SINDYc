@@ -4,42 +4,42 @@ from optimize_parameters import optimize_parameters
 
 if __name__ == "__main__":
     linear = False
+    n_cores = 2
+    n_trials = 500
 
     if linear:
         data = os.path.join("train-data", "07-29-default", "IMMEC_0ecc_5.0sec.npz")
         # 1) linear currents
         print("1")
-        optimize_parameters(data, mode='currents', additional_name="linear", n_jobs=2, n_trials=1000, ecc_input=False)
+        optimize_parameters(data, mode='currents', additional_name="linear", n_jobs=n_cores, n_trials=n_trials, ecc_input=False)
         # 2) linear torque
         print("2")
-        optimize_parameters(data, mode='torque', additional_name="linear", n_jobs=2, n_trials=1000, ecc_input=False)
+        optimize_parameters(data, mode='torque', additional_name="linear", n_jobs=n_cores, n_trials=n_trials, ecc_input=False)
 
         data = os.path.join("train-data", "07-31-ecc-50", "IMMEC_50ecc_5.0sec.npz")
         # 3) linear currents 50% ecc
         print("3")
-        optimize_parameters(data, mode='currents', additional_name="linear_50ecc", n_jobs=2, n_trials=1000, ecc_input=False)
+        optimize_parameters(data, mode='currents', additional_name="linear_50ecc", n_jobs=n_cores, n_trials=n_trials, ecc_input=False)
         # 4) linear torque 50% ecc
         print("4")
-        optimize_parameters(data, mode='torque', additional_name="linear_50ecc", n_jobs=2, n_trials=1000, ecc_input=False)
+        optimize_parameters(data, mode='torque', additional_name="linear_50ecc", n_jobs=n_cores, n_trials=n_trials, ecc_input=False)
         # 5) linear ump 50% ecc
         print("5")
-        optimize_parameters(data, mode='ump', additional_name="linear_50ecc", n_jobs=2, n_trials=1000, ecc_input=False)
+        optimize_parameters(data, mode='ump', additional_name="linear_50ecc", n_jobs=n_cores, n_trials=n_trials, ecc_input=False)
 
         data = os.path.join("train-data", "08-13", "IMMEC_50ecc_linear_5.0sec.npz")
         # 6) linear currents dynamic ecc
         print("6")
-        optimize_parameters(data, mode='currents', additional_name="linear_dynamic_50ecc", n_jobs=2, n_trials=1000, ecc_input=True)
+        optimize_parameters(data, mode='currents', additional_name="linear_dynamic_50ecc", n_jobs=n_cores, n_trials=n_trials, ecc_input=True)
         # 7) linear torque dynamic ecc
         print("7")
-        optimize_parameters(data, mode='torque', additional_name="linear_dynamic_50ecc", n_jobs=2, n_trials=1000, ecc_input=True)
+        optimize_parameters(data, mode='torque', additional_name="linear_dynamic_50ecc", n_jobs=n_cores, n_trials=n_trials, ecc_input=True)
         # 8) linear ump dynamic ecc
         print("8")
-        optimize_parameters(data, mode='ump', additional_name="linear_dynamic_50ecc", n_jobs=2, n_trials=1000, ecc_input=True)
+        optimize_parameters(data, mode='ump', additional_name="linear_dynamic_50ecc", n_jobs=n_cores, n_trials=n_trials, ecc_input=True)
 
     else:
         data = os.path.join("train-data", "07-31-nonlin", "IMMEC_nonlinear-0ecc_5.0sec.npz")
-        n_cores = 2
-        n_trials = 500
         # 9) nonlinear currents
         print("1")
         optimize_parameters(data, mode='currents', additional_name="nonlinear", n_jobs=n_cores, n_trials=n_trials, ecc_input=False)

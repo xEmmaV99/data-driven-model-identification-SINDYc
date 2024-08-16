@@ -96,7 +96,7 @@ def make_model(path_to_data_files: str, modeltype: str, optimizer: str,  lib: st
     return save_model(model, name + "_model", lib)
 
 
-def simulate_model(model_name: str, path_to_test_file:str, modeltype:str, do_time_simulation: bool=False, show: bool=True):
+def simulate_model(model_name: str, path_to_test_file:str, modeltype:str, do_time_simulation: bool=False, show: bool=True, ecc_input=False):
     """
     Evalueates a fitted model on a new test dataset
     :param model_name: name of the .pkl file, assumes it is inside the 'models'-directory
@@ -104,6 +104,7 @@ def simulate_model(model_name: str, path_to_test_file:str, modeltype:str, do_tim
     :param modeltype: either 'torque', 'ump', 'torque-ump', 'currents' or 'wcoe'
     :param do_time_simulation: if the modeltype is 'currents', setting this 'True' will call model.simulate to retrieve the currents (instead of their time derivative)
     :param show: if True, plt.show is called
+    :param ecc_input: if True, the eccentricity is added as input variable
     :return: predicted values, test values
     """
     #load in the model and the data
@@ -111,7 +112,8 @@ def simulate_model(model_name: str, path_to_test_file:str, modeltype:str, do_tim
         model_name = model_name[:-4]
     model = load_model(model_name) #todo optinoal; pass a model instead of a model name
     model.print()
-    TEST = prepare_data(path_to_test_file, test_data=True, ecc_input=True)
+    print("ecc input:", model.ecc_input)
+    TEST = prepare_data(path_to_test_file, test_data=True, ecc_input=ecc_input)
     ## plot_coefs2(model, show=True, log=True)
 
     # select the corresponding test_values, depending on modeltype

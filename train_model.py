@@ -4,18 +4,18 @@ from optimize_parameters import parameter_search, optimize_parameters, plot_optu
 from source import *
 from train_model_source import make_model, simulate_model
 
-do_part1 = True
+do_part1 = False
 do_part2 = False
-do_part3 = False
+do_part3 = True
 do_part4 = False
 
 ### DATA TRAINING FILES
 #path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
 #path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-31-ecc-50', 'IMMEC_50ecc_5.0sec.npz')
-#path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-31-nonlin', 'IMMEC_nonlinear-0ecc_5.0sec.npz')
+path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-31-nonlin', 'IMMEC_nonlinear-0ecc_5.0sec.npz')
 #path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-31-nonlin50', 'IMMEC_nonlinear-50ecc_5.0sec.npz')
 #path_to_data_files = os.path.join(os.getcwd(), 'train-data', 'ecc_random_direction', 'IMMEC_lin_ecc_randomecc_5.0sec.npz')
-path_to_data_files = os.path.join(os.getcwd(), 'train-data', '08-09', 'IMMEC_dynamic_50ecc_5.0sec.npz')
+#path_to_data_files = os.path.join(os.getcwd(), 'train-data', '08-09', 'IMMEC_dynamic_50ecc_5.0sec.npz')
 #path_to_data_files = os.path.join(os.getcwd(), 'train-data', '08-13', 'IMMEC_default_linear_5.0sec.npz')
 
 ### TEST FILES
@@ -33,7 +33,7 @@ plot_immec_data(path_to_test_file)
 if do_part1:
     # mode is either "currents", "torque" or "ump" or "wcoe"
     # Creates an optuna study to optimize the parameters of the
-    optimize_parameters(path_to_data_files, mode="wcoe", additional_name="optuna_test", n_trials = 3, n_jobs = 2)
+    optimize_parameters(path_to_data_files, mode="o", additional_name="o", n_trials = 3, n_jobs = 2)
 
 ### PART 2: plot the optuna study to choose the hyperparameters
 if do_part2:
@@ -44,10 +44,15 @@ if do_part2:
 
 ### PART 3: TRAIN MODEL
 if do_part3:
-    name = make_model(path_to_data_files, modeltype='torque', optimizer='STLSQ',
-               nmbr_of_train=-1, lib='poly_2nd_order', alpha = 0.001, threshold = 0.1,
-               modelname='T_ecc')
-    simulate_model(name, path_to_test_file, modeltype='torque')
+    '''
+    name = make_model(path_to_data_files, modeltype='currents', optimizer='STLSQ',
+               nmbr_of_train=-1, lib='linear-specific', alpha = 0.00056, threshold = 0.132,
+               modelname='nonlinear_currents_tstlsq80')
+    name = make_model(path_to_data_files, modeltype='currents', optimizer='STLSQ',
+               nmbr_of_train=-1, lib='poly_2nd_order', alpha = 0.55, threshold = 0.4,
+               modelname='nonlinear_currents_tstlsq150')
+    '''
+    #simulate_model(name, path_to_test_file, modeltype='torque')
 
     '''
     make_model(path_to_data_files, modeltype='torque', optimizer='lasso',
