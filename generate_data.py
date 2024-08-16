@@ -1,6 +1,9 @@
 import os
 import multiprocessing
 from datetime import date
+
+import joblib
+
 from generate_data_source import *
 
 if __name__ == "__main__":
@@ -46,11 +49,17 @@ if __name__ == "__main__":
         save_simulation_data(motor_path, save_path, extra_dict={"V": V_ranges, "load": load_ranges})  # save motor data
 
         print("Starting simulation")
-        p = multiprocessing.Pool(processes=6) # todo change to joblib
         input_data = [(V, motor_path, load_ranges[i], ecc_list[i], t_end, mode) for i, V in enumerate(V_ranges)]
+        '''
+        p = multiprocessing.Pool(processes=6) # todo change to joblib
         output_list = p.starmap(do_simulation, input_data)
         p.close()
         p.join()
+        '''
+        n_jobs = 6
+        # run simulations in parallel, with n_jobs number of simulations
+        with joblib.parallel_config(n_jobs=n_jobs, backend="loky", inner_max_num_threads=1):
+            output_list = joblib.Parallel(n_jobs=n_jobs)(joblib.delayed(do_simulation)(data) for data in input_data)
 
         # if dataset library not initialised, create it, else append to it
         dataset = None
