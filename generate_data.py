@@ -59,7 +59,8 @@ if __name__ == "__main__":
         n_jobs = 6
         # run simulations in parallel, with n_jobs number of simulations
         with joblib.parallel_config(n_jobs=n_jobs, backend="loky", inner_max_num_threads=1):
-            output_list = joblib.Parallel(n_jobs=n_jobs)(joblib.delayed(do_simulation)(data) for data in input_data)
+            # unpack tuples and run simulations
+            output_list = joblib.Parallel(n_jobs=n_jobs)(joblib.delayed(do_simulation)(*data) for data in input_data)
 
         # if dataset library not initialised, create it, else append to it
         dataset = None

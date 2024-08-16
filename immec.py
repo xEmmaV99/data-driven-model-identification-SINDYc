@@ -262,7 +262,7 @@ spec = [
     ('stator_leakage_inductance', nb.float64)]
 
 
-#@jitclass(spec)
+@jitclass(spec) # dit moet aanliggen oeps DEBUG
 class MotorModel:
     """
     Main induction motor model class object

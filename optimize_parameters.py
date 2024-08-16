@@ -50,7 +50,7 @@ def optimize_parameters(path_to_data_files: str, mode: str = 'torque', additiona
     l_range = [1e-10, 1e2]
     n_range = [1e-12, 1e2]
 
-    _study(namestr+additional_name) # initialize the study
+    _study(namestr + additional_name)  # initialize the study
     with joblib.parallel_config(n_jobs=n_jobs, backend="loky", inner_max_num_threads=1):
         joblib.Parallel(n_jobs=n_jobs)(
             joblib.delayed(optuna_search)(DATA, XDOT, l_range, n_range, a_range, namestr + additional_name, n_trials)
@@ -71,7 +71,7 @@ def optuna_search(DATA: dict, XDOT: np.array, lminmax: list, nminmax: list, amin
     :return:
     """
     # Set some parameters
-    optimizer_list = ['lasso', 'sr3', 'STLSQ']
+    optimizer_list = ['lasso', 'sr3', 'stlsq']
     library_list = get_library_names()
 
     def objective(trial):
