@@ -110,7 +110,7 @@ def create_immec_data(
     # Other initialising parameters
     steps_total = int(t_end // timestep)  # Total number of steps to simulate
     Vf_ratio = 400 / 50 # Assume a constant V/f ratio
-    dynamic_ecc = False # using a dynamic eccentricity
+    dynamic_ecc = True # using a dynamic eccentricity
     ecc_value = np.linalg.norm(initial_ecc) # the size of eccentricity
     ecc_phi = np.arctan2(initial_ecc[1], initial_ecc[0]) # the anlge of rotor displacement
     start_load = 0.0 # always start with 0.0 load, but increase it up to the desired load value
