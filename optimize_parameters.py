@@ -93,9 +93,15 @@ def optuna_search(DATA: dict, XDOT: np.array, lminmax: list, nminmax: list, amin
             # alpha is penalising the l2 norm of the coefficients (ridge regression)
             threshold = trial.suggest_float('threshold', 0.001, 1, log=True)
             optimizer = ps.STLSQ(alpha=alphas, threshold=threshold)
+        else:
+            raise ValueError("Optimizer not known.")
 
-        model = ps.SINDy(optimizer=optimizer, feature_library=lib)
-        model.fit(DATA["x_train"], u=DATA["u_train"], t=None, x_dot=XDOT[0])
+        try: # OOM error handling
+            model = ps.SINDy(optimizer=optimizer, feature_library=lib)
+            model.fit(DATA["x_train"], u=DATA["u_train"], t=None, x_dot=XDOT[0])
+        except Exception as e:
+            print("Exception in model fitting:", e)
+            raise optuna.TrialPruned()
 
         MSE = model.score(DATA["x_val"], u=DATA["u_val"], x_dot=XDOT[1],
                           t=None, metric=mean_squared_error)
