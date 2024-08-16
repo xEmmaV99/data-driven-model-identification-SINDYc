@@ -11,7 +11,8 @@ from libs import get_library_names
 import tqdm
 
 
-def optimize_parameters(path_to_data_files:str, mode:str='torque', additional_name:str="", n_jobs:int = 1, n_trials:int = 100):
+def optimize_parameters(path_to_data_files: str, mode: str = 'torque', additional_name: str = "", n_jobs: int = 1,
+                        n_trials: int = 100, ecc_input=False):
     """
     This function is used to optimize the parameters of the SINDy model. It uses the Optuna package to select the libaray, optimizer and the hyperparameters of the optimizer.
     :param path_to_data_files: str, path to the data files
@@ -19,11 +20,12 @@ def optimize_parameters(path_to_data_files:str, mode:str='torque', additional_na
     :param additional_name: str, additional name to add to the study name
     :param n_jobs: number of cores to use
     :param n_trials: number of trials for optuna to run for each job
+    :param ecc_input: bool, if True, the eccentricity will be added as input to the model
     :return:
     """
 
-    print("ecc_input = True")
-    DATA = prepare_data(path_to_data_files, number_of_trainfiles=30, usage_per_trainfile=.50, ecc_input=True)
+    print("ecc_input =", ecc_input)
+    DATA = prepare_data(path_to_data_files, number_of_trainfiles=30, usage_per_trainfile=.50, ecc_input=ecc_input)
 
     # Select the desired mode
     if mode == "currents":
@@ -37,7 +39,7 @@ def optimize_parameters(path_to_data_files:str, mode:str='torque', additional_na
         namestr = "ump"
     elif mode == "wcoe":
         XDOT = [DATA['wcoe_train'], DATA['wcoe_val']]
-        namestr= "W"
+        namestr = "W"
     elif mode == "merged":
         # now, the xdot_train contains i and V and I,
         raise NotImplementedError("Merged mode is not fully implemented yet")
@@ -47,12 +49,16 @@ def optimize_parameters(path_to_data_files:str, mode:str='torque', additional_na
     a_range = [1e-5, 1e2]
     l_range = [1e-10, 1e2]
     n_range = [1e-12, 1e2]
-    with joblib.parallel_config(n_jobs = n_jobs, backend = "loky", inner_max_num_threads=1):
-        joblib.Parallel(n_jobs=n_jobs)(joblib.delayed(optuna_search)(DATA, XDOT, l_range, n_range, a_range, namestr+additional_name, n_trials) for _ in range(n_jobs))
+
+    _study(namestr+additional_name) # initialize the study
+    with joblib.parallel_config(n_jobs=n_jobs, backend="loky", inner_max_num_threads=1):
+        joblib.Parallel(n_jobs=n_jobs)(
+            joblib.delayed(optuna_search)(DATA, XDOT, l_range, n_range, a_range, namestr + additional_name, n_trials)
+            for _ in range(n_jobs))
     return
 
 
-def optuna_search(DATA:dict, XDOT:np.array, lminmax:list, nminmax:list, aminmax:list, studyname:str, iter:int):
+def optuna_search(DATA: dict, XDOT: np.array, lminmax: list, nminmax: list, aminmax: list, studyname: str, iter: int):
     """
     This function handles the optuna search for the best parameters for the SINDy model. Uses code from https://optuna.readthedocs.io/en/stable/index.html
     :param DATA: The data dictionary
@@ -65,12 +71,12 @@ def optuna_search(DATA:dict, XDOT:np.array, lminmax:list, nminmax:list, aminmax:
     :return:
     """
     # Set some parameters
-    optimizer_list = ['lasso', 'sr3', 'stlsq']
+    optimizer_list = ['lasso', 'sr3', 'STLSQ']
     library_list = get_library_names()
 
     def objective(trial):
         lib_choice = trial.suggest_categorical('lib_choice', library_list)
-        lib = get_custom_library_funcs(lib_choice, DATA["u"].shape[1]+DATA["x"].shape[1])
+        lib = get_custom_library_funcs(lib_choice, DATA["u"].shape[1] + DATA["x"].shape[1])
 
         optimizer_name = trial.suggest_categorical('optimizer', optimizer_list)
         if optimizer_name == 'lasso':
@@ -97,6 +103,13 @@ def optuna_search(DATA:dict, XDOT:np.array, lminmax:list, nminmax:list, aminmax:
 
         return MSE, SPAR
 
+    study = _study(studyname)
+
+    study.optimize(objective, n_trials=iter, n_jobs=1)
+    return
+
+
+def _study(studyname):
     study_name = "optuna_studies//" + studyname + "-optuna-study"  # Unique identifier of the study.
 
     # check if the directory exists
@@ -104,13 +117,11 @@ def optuna_search(DATA:dict, XDOT:np.array, lminmax:list, nminmax:list, aminmax:
         os.makedirs("optuna_studies")
 
     storage_name = "sqlite:///{}.db".format(study_name)
-    study = optuna.create_study(directions=['minimize', 'minimize'], # minimize MSE and sparsity
+    study = optuna.create_study(directions=['minimize', 'minimize'],  # minimize MSE and sparsity
                                 study_name=study_name,
                                 storage=storage_name,
                                 load_if_exists=True)
-
-    study.optimize(objective, n_trials=iter, n_jobs=1)
-    return
+    return study
 
 
 def plot_optuna_data(name):
@@ -119,8 +130,8 @@ def plot_optuna_data(name):
     :param name: name of the optuna study, usually ends with '-optuna-study', assuming it is in the optuna_studies directory
     :return:
     """
-    print(optuna.study.get_all_study_names(storage="sqlite:///"+ "optuna_studies/"+ name +".db"))
-    stud = optuna.load_study(study_name = None , storage="sqlite:///" + "optuna_studies/"+ name + ".db")
+    print(optuna.study.get_all_study_names(storage="sqlite:///" + "optuna_studies/" + name + ".db"))
+    stud = optuna.load_study(study_name=None, storage="sqlite:///" + "optuna_studies/" + name + ".db")
     optuna.visualization.plot_pareto_front(stud, target_names=["MSE", "SPAR"]).show(renderer="browser")
     print(f"Trial count: {len(stud.trials)}")
     return

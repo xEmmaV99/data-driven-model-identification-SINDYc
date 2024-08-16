@@ -438,6 +438,7 @@ def plot_everything(path_to_directory: str):
     """
     files = os.listdir(path_to_directory)
     for file in files:
+        print(file)
         if file.endswith(".pkl"):
             path = os.path.join(path_to_directory, file)
             plot_data(path, show=False)

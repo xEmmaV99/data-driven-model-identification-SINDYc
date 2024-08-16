@@ -4,9 +4,9 @@ from optimize_parameters import parameter_search, optimize_parameters, plot_optu
 from source import *
 from train_model_source import make_model, simulate_model
 
-do_part1 = False
+do_part1 = True
 do_part2 = False
-do_part3 = True
+do_part3 = False
 do_part4 = False
 
 ### DATA TRAINING FILES
@@ -31,9 +31,9 @@ plot_immec_data(path_to_test_file)
 
 ### PART 1: OPTIMIZE PARAMETERS
 if do_part1:
-    # mode is either "currents", "torque" or "ump" (TO BE IMPLEMENTED W_mag)
+    # mode is either "currents", "torque" or "ump" or "wcoe"
     # Creates an optuna study to optimize the parameters of the
-    optimize_parameters(path_to_data_files, mode="wcoe", additional_name="W_linear")
+    optimize_parameters(path_to_data_files, mode="wcoe", additional_name="optuna_test", n_trials = 3, n_jobs = 2)
 
 ### PART 2: plot the optuna study to choose the hyperparameters
 if do_part2:

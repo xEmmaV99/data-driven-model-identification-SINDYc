@@ -39,8 +39,10 @@ def prepare_data(path_to_data_file: str,
     dataset = dict(np.load(path_to_data_file))  # should be a dictionary
     print("Done loading data")
 
-    if 'wcoe' not in dataset.keys():
+    if 'wcoe' not in dataset.keys(): #debug
         dataset['wcoe'] = np.zeros_like(dataset['T_em'])
+    if dataset['wcoe'].shape != dataset['T_em'].shape:
+        dataset['wcoe'] = np.expand_dims(dataset['wcoe'], axis=1) #make sure wcoe is same shape as T-em
 
     if not test_data:
         V_range = read_V_from_data(path_to_data_file)
