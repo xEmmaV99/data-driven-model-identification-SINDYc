@@ -8,7 +8,7 @@ def get_library_names():
     :return: list of str
     """
     # return ['w_co_linear_0ecc','poly_2nd_order', 'torque']
-    return ['poly_2nd_order', 'linear-specific', 'torque', 'nonlinear_terms']
+    return ['poly_2nd_order', 'linear-specific', 'torque', 'nonlinear_terms', 'interaction_only']
 
     # return ['nonlinear_terms', 'poly_2nd_order', 'torque']
 
@@ -64,6 +64,11 @@ def get_custom_library_funcs(type, nmbr_input_features=15):
 
     elif type == 'pca':
         custom_lib = ps.PolynomialLibrary(degree=2, interaction_only=True)
+
+    elif type == 'interaction_only':
+        custom_lib = ps.GeneralizedLibrary([ps.PolynomialLibrary(degree=3, interaction_only =True),
+                                            ps.FourierLibrary(n_frequencies=1)], tensor_array = None,
+                                             inputs_per_library=[all_but_gamma, gamma])
 
 
     elif type == 'nonlinear_terms':
