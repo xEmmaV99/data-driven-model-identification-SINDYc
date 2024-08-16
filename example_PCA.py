@@ -25,7 +25,7 @@ def prepare_data(path_to_data_file,
                  test_data=False,
                  number_of_trainfiles=-1,
                  use_estimate_for_v=False,
-                 usage_per_trainfile=0.5, pca = None, scaling = None):
+                 usage_per_trainfile=0.25, pca = None, scaling = None):
     # load numpy file
     print("Loading data")
     dataset = dict(np.load(path_to_data_file))  # should be a dictionary
@@ -119,7 +119,7 @@ def prepare_data(path_to_data_file,
     # u_data contains ALL variables needed for prediction
     # principal component analysis on u_data
     # First, I need to reshape the data to be 2D
-    u_pca =  np.hstack((x_data, v_stator,
+    u_pca = np.hstack((x_data, v_stator,
                         I.reshape(v_stator.shape),
                         V.reshape(v_stator.shape),
                         dataset['gamma_rot'].reshape(t_data.shape) % (2 * np.pi),
@@ -128,13 +128,13 @@ def prepare_data(path_to_data_file,
     u_pca = u_pca.transpose(0, 2, 1).reshape(u_pca.shape[0] * u_pca.shape[-1], u_pca.shape[1])
 
     # Use fit and transform method
-    do_pca_analysis = False
+    do_pca_analysis = True
     if pca is None:
         # Scale data before applying PCA
-        #scaling = StandardScaler()
-        #scaling.fit(u_pca)
-        #Scaled_data = scaling.transform(u_pca)
-        Scaled_data = u_pca
+        scaling = StandardScaler()
+        scaling.fit(u_pca)
+        Scaled_data = scaling.transform(u_pca)
+        Non_Scaled_data = u_pca
 
         if do_pca_analysis:
             pca = decomposition.PCA()
@@ -143,16 +143,27 @@ def prepare_data(path_to_data_file,
             print(pca.components_)
             plot_pca_heatmap(pca, featurenames=[r'i_d', r'i_q', r'i_0',r'v_d',r'v_q',r'v_0',
                                                 r'I_d', r'I_q', r'I_0',r'V_d', r'V_q', r'V_0',
-                                                r'\gamma_{rot}', r'\omega_{rot}', r'f'])
-            plot_pca_variance_ratio(pca) # use 7 coefs
+                                                r'\gamma_{rot}', r'\omega_{rot}', r'f'],
+                             title = "Scaled data")
+            plot_pca_variance_ratio(pca, title="on Scaled data")
+            pca = decomposition.PCA()
+            pca.fit(Non_Scaled_data)
+
+            print(pca.components_)
+            plot_pca_heatmap(pca, featurenames=[r'i_d', r'i_q', r'i_0', r'v_d', r'v_q', r'v_0',
+                                                r'I_d', r'I_q', r'I_0', r'V_d', r'V_q', r'V_0',
+                                                r'\gamma_{rot}', r'\omega_{rot}', r'f'],
+                             title = "Non-scaled data")
+            plot_pca_variance_ratio(pca, title = "on Non-scaled data")
 
         pca = decomposition.PCA(n_components=8) #n_components=7
-        pca.fit(Scaled_data)
-        u_pca = pca.transform(Scaled_data) # use scaled data...
+        pca.fit(Non_Scaled_data)
+        u_pca = pca.transform(Non_Scaled_data)
     else: #pca is provided
-        #Scaled_data = scaling.transform(u_pca)
-        Scaled_data = u_pca
-        u_pca = pca.transform(Scaled_data)
+        Scaled_data = scaling.transform(u_pca)
+        Non_Scaled_data = u_pca
+
+        u_pca = pca.transform(Non_Scaled_data)
     DATA['u_pca'] = u_pca
 
     # Now, stack data on top of each other and shuffle! (Note that the transpose is needed otherwise the reshape is wrong)
@@ -201,18 +212,19 @@ def prepare_data(path_to_data_file,
     return DATA, pca, scaling
 
 
-def plot_pca_heatmap(pca, featurenames):
+def plot_pca_heatmap(pca, featurenames, title=""):
     plt.figure()
     d = pd.DataFrame(pca.components_, columns=featurenames)
     sns.heatmap(d, cmap='coolwarm', center=0)
     plt.ylabel("Principal component")
+    plt.title(title)
     plt.tight_layout()
     plt.show()
 
     return
-def plot_pca_variance_ratio(pca):
+def plot_pca_variance_ratio(pca, title=""):
     plt.figure()
-    plt.title("Variance ratio")
+    plt.title("Variance ratio "+title)
     plt.xlabel("Number of components")
     plt.ylabel("Percentage of variance")
     plt.ylim([-0.1,1.1])
@@ -220,7 +232,7 @@ def plot_pca_variance_ratio(pca):
     plt.plot(np.cumsum(pca.explained_variance_ratio_))
     plt.legend(["Variance ratio", "Cumulative variance ratio"])
     plt.figure()
-    plt.title("Cumulative variance ratio")
+    plt.title("Cumulative variance ratio "+title)
     plt.xlabel("Number of components")
     plt.ylabel("Percentage of variance")
     plt.plot(np.cumsum(pca.explained_variance_ratio_))
@@ -367,21 +379,24 @@ def calculate_xdot(x: np.array, t: np.array):
 
 
 if __name__ == "__main__":
-    #check_trapezoid_integration()
+    #path = os.path.join(os.getcwd(), 'train-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
+    path = os.path.join(os.getcwd(), 'train-data', '07-31-ecc-50', 'IMMEC_50ecc_5.0sec.npz')
+    #testpath = os.path.join(os.getcwd(), 'test-data', '07-29', 'IMMEC_0ecc_5.0sec.npz')
+    testpath = os.path.join(os.getcwd(), 'test-data', '08-05','IMMEC_50eccecc_5.0sec.npz')
 
-    path = os.path.join(os.getcwd(), 'train-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
-    #path = os.path.join(os.getcwd(), 'train-data', '07-31-ecc-50', 'IMMEC_50ecc_5.0sec.npz')
     data,pca,scaling = prepare_data(path,
                         test_data=False,
                         number_of_trainfiles=-1,
                         use_estimate_for_v=False)
     library = libs.get_custom_library_funcs("pca", nmbr_input_features=data['u_pca_train'].shape[1])
 
-    train = data['T_em_train']
+    #train = data['T_em_train']
     train = data['UMP_train']
-    train = data['xdot_train']
+    #train = data['xdot_train']
+
     name = "pca"
-    opt = ps.SR3(thresholder="l1", threshold=0.01, nu=.1, unbias=True, normalize_columns = True)
+    opt = ps.STLSQ(threshold=0.01)
+    #opt = ps.SR3(thresholder="l1", threshold=0.01, nu=.01, unbias=True, normalize_columns = True)
     #opt = ps.WrappedOptimizer(Lasso(alpha=10, fit_intercept=False, precompute=True))
     model = ps.SINDy(optimizer=opt, feature_library=library)
                      #feature_names=data['feature_names'])
@@ -391,16 +406,14 @@ if __name__ == "__main__":
     model.print(precision=10)
 
 
-    path = os.path.join(os.getcwd(), 'test-data', '07-29', 'IMMEC_0ecc_5.0sec.npz')
-    #path = os.path.join(os.getcwd(), 'test-data', '08-05','IMMEC_50eccecc_5.0sec.npz')
-    test = prepare_data(path,
+    test = prepare_data(testpath,
                      test_data=True,
                      number_of_trainfiles=-1,
                      use_estimate_for_v=False, pca=pca, scaling=scaling)
 
-    test_values = test['T_em']
+    #test_values = test['T_em'] # for the torque, it is a bad idea to tranform coordinates, don't need to show
     test_values = test['UMP']
-    test_values = test['xdot']
+    #test_values = test['xdot']
 
     test_predicted = model.predict(test['u_pca'])
 
