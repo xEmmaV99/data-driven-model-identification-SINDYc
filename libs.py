@@ -185,7 +185,7 @@ def get_custom_library_funcs(type, nmbr_input_features=15):
         # i i i v v v I I I V V V gam om f
         input_per_library = [[9, 10, 0, 1, 6, 7]]
         custom_lib = ps.GeneralizedLibrary(
-            [ps.CustomLibrary(library_functions2, library_function_names2, interaction_only=False)],
+            [ps.CustomLibrary(library_functions2, library_function_names2, interaction_only=True)],
             tensor_array=None,  # don't merge the libraries
             inputs_per_library=input_per_library)
 
