@@ -37,11 +37,10 @@ def prepare_data(path_to_data_file: str,
     # load numpy file
     print("Loading data")
     dataset = dict(np.load(path_to_data_file))  # should be a dictionary
+    print("Done loading data")
 
     if 'wcoe' not in dataset.keys():
         dataset['wcoe'] = np.zeros_like(dataset['T_em'])
-
-    print("Done loading data")
 
     if not test_data:
         V_range = read_V_from_data(path_to_data_file)
@@ -126,7 +125,7 @@ def prepare_data(path_to_data_file: str,
         V = V[time_trim]
 
     # u_data add supply frequency to the input data
-    freqs = V_range * 50 / 400  # constant proportion
+    freqs = V_range * 50 / 400  # constant proportion DEBUG todo check if this is correct
 
     freqs = freqs.reshape(1, 1, len(freqs))  # along third axis
     u_data = np.hstack((v_stator,
@@ -148,8 +147,8 @@ def prepare_data(path_to_data_file: str,
             if not test_data:
                 print('Non zero ecc, added to input data')
                 u_data = np.hstack((u_data, dataset['ecc']))
-                # DEBUGGGGGGGG
-                # add r = sqrt(x^2 + y^2) to the input data, and the angle theta
+                #DEBUGGGGGGGG
+
                 #r = np.sqrt(dataset['ecc'][:, 0] ** 2 + dataset['ecc'][:, 1] ** 2)
                 #theta = np.arctan2(dataset['ecc'][:, 1], dataset['ecc'][:, 0])
                 #u_data = np.hstack((u_data, r[:,np.newaxis,:], np.cos(theta[:,np.newaxis,:])))
@@ -160,7 +159,6 @@ def prepare_data(path_to_data_file: str,
 
             #DATA['feature_names'].append([r'r_x', r'r_y'])
             [DATA['feature_names'].append(j) for j in [r'r_x', r'r_y']]
-
         else:
             print('No ecc')
 
