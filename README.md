@@ -61,7 +61,7 @@ or
 ~~~
 conda install conda-forge::pysindy
 ~~~
-The tutorials are present as an .ipynb file, which can be opened by installing
+The tutorials are present as a .ipynb file, which can be opened by installing
 ~~~
 conda install notebook
 ~~~
