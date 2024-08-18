@@ -6,8 +6,12 @@ import numpy as np
 from scipy.interpolate import interp1d
 
 import pysindy as ps
-import seaborn as sns
-import os
+try:
+    import seaborn as sns
+
+except ImportError:
+    pass
+
 from libs import get_custom_library_funcs
 from prepare_data import *
 from scipy.integrate import solve_ivp

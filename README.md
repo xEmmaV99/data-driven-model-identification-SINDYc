@@ -45,11 +45,13 @@ After installing the package manager [Conda](https://docs.conda.io/en/latest/), 
 conda create -n environment_name
 conda activate environment_name
 ~~~
-Then, the dependencies are installed by:
+Then, the dependencies are installed by (note that cvxpy only works with pip):
 ~~~
 conda install numpy numba matplotlib tqdm 
 conda install -c conda-forge optuna
+pip install cvxpy
 ~~~
+
 To install pysindy either clone it from their Github
 ~~~
 git clone https://github.com/dynamicslab/pysindy.git
@@ -57,9 +59,17 @@ pip install .
 ~~~
 or
 ~~~
-conda install conda-forge::pysindy 
+conda install conda-forge::pysindy
 ~~~
-
+The tutorials are present as an .ipynb file, which can be opened by installing
+~~~
+conda install notebook
+~~~
+and running
+~~~
+jupyter notebook
+~~~
+in the command line.
 ### User Manual
 The user manual is available as a Jupyter Notebook called `User_Manual.ipynb`.
 
