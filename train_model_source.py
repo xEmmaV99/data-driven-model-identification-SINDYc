@@ -112,7 +112,7 @@ def simulate_model(model_name: str, path_to_test_file:str, modeltype:str, do_tim
         model_name = model_name[:-4]
     model = load_model(model_name) #todo optinoal; pass a model instead of a model name
     model.print()
-    print("ecc input:", model.ecc_input)
+    print("ecc input:", ecc_input)
     TEST = prepare_data(path_to_test_file, test_data=True, ecc_input=ecc_input)
     ## plot_coefs2(model, show=True, log=True)
 
