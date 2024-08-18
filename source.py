@@ -285,7 +285,8 @@ def save_model(model, name:str, libstr:str):
     :return:
     """
     print("Saving model")
-    saving_name = name + get_date()+".pkl"
+    print("No date added")  #  + get_date()
+    saving_name = name+".pkl"
     path = os.path.join(os.getcwd(), "models", saving_name) # add date to avoid overwriting
 
     x = model.n_features_in_ - model.n_control_features_
