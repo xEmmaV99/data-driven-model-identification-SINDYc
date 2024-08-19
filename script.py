@@ -4,7 +4,7 @@ from source import *
 from optimize_parameters import plot_optuna_data
 #plot_immec_data(os.path.join(os.getcwd(), 'train-data', '08-09', 'IMMEC_dynamic_50ecc_5.0sec.npz'), simulation_number=0)
 
-''' # testing the difference method by using virtual work 
+# testing the difference method by using virtual work
 def numerical_diff(TEST, W_model):
     dth = 0.001*2*np.pi
     pr1 = W_model.predict(TEST['x'], u = TEST['u'])
@@ -54,7 +54,7 @@ plt.title("dW/dgamma")
 #torque = np.diff(pr1[:,0]) / dtheta
 #plt.plot(torque)
 plt.show()
-'''
+
 
 
 
