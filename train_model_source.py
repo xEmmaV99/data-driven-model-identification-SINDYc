@@ -21,13 +21,13 @@ def make_model(
     """
     Initialises and fits a SINDy model
         sr3 optimises the function with objective dot(X) = theta(X)*xi as follows (Champion et al. 2020):
-                                ||dot(x)- theta(X)*xi ||**2 + lamb * L_1(W) + 1/(2nu) * ||xi - W||^2
+                                ||dot(X)- theta(X)*xi ||**2_2 + lamb * L_1(W) + 1/(2nu) * ||xi - W||^2_2
 
         STLSQ optimises the objective (Brunton et al. 2016) by using hard thresholding on the coefficients:
-                                ||dot(x)- theta(X)*xi ||^2_2 + alpha * ||xi||^2_2
+                                ||dot(X)- theta(X)*xi ||^2_2 + alpha * ||xi||^2_2
 
         Lasso optimises the objective (see sklearn documentation) as follows:
-                                1/(2*n_samples) * ||dot(x)- theta(X)*xi ||^2_2 + alpha * ||xi||_1
+                                1/(2*n_samples) * ||dot(X)- theta(X)*xi ||^2_2 + alpha * ||xi||_1
 
     :param path_to_data_files: str, path to the training data
     :param modeltype: either 'torque', 'ump', 'torque-ump', 'currents', or 'wcoe'
