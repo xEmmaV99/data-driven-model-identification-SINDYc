@@ -7,11 +7,11 @@ import joblib
 from generate_data_source import *
 
 if __name__ == "__main__":
-    generate_traindata = True
+    generate_traindata = False
     generate_testdata = True
 
     motor_path = os.path.join(os.getcwd(), "Cantoni.pkl")
-    save_name = 'dynamic_nonlinear'
+    save_name = 'dynamic_linear'
     t_end = 5.0
 
     ecc_value = 0.5
@@ -24,7 +24,7 @@ if __name__ == "__main__":
         ecc = ecc_dir * ecc_value # if ecc_value is 0, ecc is 0
 
     numbr_of_simulations = 50  # number of train simulations
-    mode = 'nonlinear'
+    mode = 'linear'
 
     ecc_random_direction = True
     if ecc_random_direction:
@@ -108,7 +108,7 @@ if __name__ == "__main__":
         save_path = os.path.join(os.getcwd(), "test-data/", date.today().strftime("%m-%d"))
         # choose V and (initial) load somewhere between 0.0 and 3.7, but scale with V (so 3.7 is for V=400)
         #V = np.random.randint(40, 400)
-        V = 350
+        V = 300
         load = 0.0
 
         if not os.path.exists(save_path):

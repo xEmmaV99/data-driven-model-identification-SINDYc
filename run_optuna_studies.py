@@ -36,7 +36,7 @@ if __name__ == "__main__":
         print("5")
         optimize_parameters(data, mode='ump', additional_name="linear_50ecc", n_jobs=n_cores, n_trials=n_trials, ecc_input=False)
 
-        data = os.path.join("train-data", "08-13", "IMMEC_50ecc_linear_5.0sec.npz")
+        data = os.path.join("train-data", "08-09", "IMMEC_dynamic_50ecc_5.0sec.npz")
         # 6) linear currents dynamic ecc
         print("6")
         optimize_parameters(data, mode='currents', additional_name="linear_dynamic_50ecc", n_jobs=n_cores, n_trials=n_trials, ecc_input=True)

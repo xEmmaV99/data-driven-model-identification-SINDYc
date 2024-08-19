@@ -14,6 +14,7 @@ from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import StandardScaler
 import pysindy as ps
 import libs
+plt.rcParams['text.usetex'] = True
 
 try:
     from pysindy import FiniteDifference
@@ -141,29 +142,30 @@ def prepare_data(path_to_data_file,
             pca.fit(Scaled_data)
 
             print(pca.components_)
-            plot_pca_heatmap(pca, featurenames=[r'i_d', r'i_q', r'i_0',r'v_d',r'v_q',r'v_0',
-                                                r'I_d', r'I_q', r'I_0',r'V_d', r'V_q', r'V_0',
-                                                r'\gamma_{rot}', r'\omega_{rot}', r'f'],
+            plot_pca_heatmap(pca, featurenames=[r'$i_d$', r'$i_q$', r'$i_0$',r'$v_d$',r'$v_q$',r'$v_0$',
+                                                r'$I_d$', r'$I_q$', r'$I_0$',r'$V_d$', r'$V_q$', r'$V_0$',
+                                                r'$\gamma_{rot}$', r'$\omega_{rot}$', r'$f$'],
                              title = "Scaled data")
             plot_pca_variance_ratio(pca, title="on Scaled data")
             pca = decomposition.PCA()
             pca.fit(Non_Scaled_data)
 
             print(pca.components_)
-            plot_pca_heatmap(pca, featurenames=[r'i_d', r'i_q', r'i_0', r'v_d', r'v_q', r'v_0',
-                                                r'I_d', r'I_q', r'I_0', r'V_d', r'V_q', r'V_0',
-                                                r'\gamma_{rot}', r'\omega_{rot}', r'f'],
+            plot_pca_heatmap(pca, featurenames=[r'$i_d$', r'$i_q$', r'$i_0$',r'$v_d$',r'$v_q$',r'$v_0$',
+                                                r'$I_d$', r'$I_q$', r'$I_0$',r'$V_d$', r'$V_q$', r'$V_0$',
+                                                r'$\gamma_{rot}$', r'$\omega_{rot}$', r'$f$'],
                              title = "Non-scaled data")
             plot_pca_variance_ratio(pca, title = "on Non-scaled data")
 
-        pca = decomposition.PCA(n_components=8) #n_components=7
-        pca.fit(Non_Scaled_data)
-        u_pca = pca.transform(Non_Scaled_data)
+        pca = decomposition.PCA(n_components=10) #n_components=7
+
+        pca.fit(Scaled_data)
+        u_pca = pca.transform(Scaled_data)
     else: #pca is provided
         Scaled_data = scaling.transform(u_pca)
         Non_Scaled_data = u_pca
 
-        u_pca = pca.transform(Non_Scaled_data)
+        u_pca = pca.transform(Scaled_data)
     DATA['u_pca'] = u_pca
 
     # Now, stack data on top of each other and shuffle! (Note that the transpose is needed otherwise the reshape is wrong)
@@ -391,8 +393,8 @@ if __name__ == "__main__":
     library = libs.get_custom_library_funcs("pca", nmbr_input_features=data['u_pca_train'].shape[1])
 
     #train = data['T_em_train']
-    train = data['UMP_train']
-    #train = data['xdot_train']
+    #train = data['UMP_train']
+    train = data['xdot_train']
 
     name = "pca"
     opt = ps.STLSQ(threshold=0.01)
@@ -412,8 +414,8 @@ if __name__ == "__main__":
                      use_estimate_for_v=False, pca=pca, scaling=scaling)
 
     #test_values = test['T_em'] # for the torque, it is a bad idea to tranform coordinates, don't need to show
-    test_values = test['UMP']
-    #test_values = test['xdot']
+    #test_values = test['UMP']
+    test_values = test['xdot']
 
     test_predicted = model.predict(test['u_pca'])
 
@@ -423,6 +425,7 @@ if __name__ == "__main__":
     print("MSE on test: ", mean_squared_error(test_values, test_predicted))
     print("Sparsity: ", np.count_nonzero(model.coefficients()))
     plt.figure()
-    plt.plot(test_values)
     plt.plot(test_predicted)
+    plt.plot(test_values, 'k:')
+
     plt.show()
