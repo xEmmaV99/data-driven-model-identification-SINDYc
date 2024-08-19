@@ -1,21 +1,26 @@
+"""
+This file is used for preparing data for the merged model, i.e. the model that predicts the currents and the I and V.
+This can be merged with prepare_data.py, but for now it is kept separate for clarity, especially because the SINDy solver
+works better on smaller problems.
+
+This .py file is not used and might be outdated.
+"""
 import random
 import scipy
 from source import *
-
+from prepare_data import v_abc_calculation, v_abc_estimate_from_line, read_V_from_data
 
 def prepare_data(path_to_data_file,
                  test_data=False,
                  number_of_trainfiles=-1,
                  use_estimate_for_v=False,
                  usage_per_trainfile = 0.2):
-    # todo consider multithreading here, as one CPU might be the bottleneck
-
     # load numpy file
     dataset = dict(np.load(path_to_data_file))  # should be a dictionary
 
     path_to_simulation_data = os.path.join(os.path.dirname(path_to_data_file), 'SIMULATION_DATA.pkl')  # get out one dir
     if not test_data:
-        V_range, load_range = read_V_load_from_simulationdata(path_to_simulation_data)
+        V_range= read_V_from_data(path_to_simulation_data)
     else:
         V_range = np.array([np.max(dataset['v_applied'])/np.sqrt(2)])
 
@@ -38,18 +43,11 @@ def prepare_data(path_to_data_file,
 
     # prepare v data, note that I and V should be in x_data as well
     if use_estimate_for_v:
-        v_stator = reference_abc_to_dq0(v_abc_estimate(dataset))
+        v_stator = reference_abc_to_dq0(v_abc_estimate_from_line(dataset))
         v_stator = v_stator[:-1]  # crop last datapoint (consistent with the else)
     else:
-        v_stator = reference_abc_to_dq0(v_abc_exact(dataset, path_to_motor_info=path_to_simulation_data))
+        v_stator = reference_abc_to_dq0(v_abc_calculation(dataset, path_to_motor_info=path_to_simulation_data))
         # v_stator is one shorter, so must the other data!
-
-    # remove last timestep from datafile
-    #for key_to_crop in ['time', 'omega_rot', 'gamma_rot', 'T_em']:  # note that v_stator is already cropped
-    #    dataset[key_to_crop] = dataset[key_to_crop][:-1]
-
-    #for key_to_crop in ['i_st', 'F_em']:
-    #    dataset[key_to_crop] = dataset[key_to_crop][:-1]
 
     i_st = reference_abc_to_dq0(dataset['i_st'])
 
@@ -144,14 +142,6 @@ def prepare_data(path_to_data_file,
     DATA['xdot_val'] = DATA['xdot'][cutidx:]
     DATA['T_em_val'] = DATA['T_em'][cutidx:]
     DATA['UMP_val'] = DATA['UMP'][cutidx:]
-
-    visualise_train_data = False
-    if visualise_train_data:
-        print(DATA["xdot"].shape)
-        plt.plot(DATA['xdot'])
-        plt.show()
-        # todo think about it
-        raise NotImplementedError('Visualisation of training data is not yet implemented')
 
     return DATA
 

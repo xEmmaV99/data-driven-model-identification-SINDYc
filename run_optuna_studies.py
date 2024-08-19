@@ -1,7 +1,9 @@
+"""
+Main file to generate the 16 optuna studies
+"""
 import os
 from optimize_parameters import optimize_parameters
 from optimize_parameters import plot_optuna_data
-# optimize_parameters(path_to_data_files:str, mode:str='torque', additional_name:str="", n_jobs:int = 1, n_trials:int = 100)
 
 if __name__ == "__main__":
     linear = True

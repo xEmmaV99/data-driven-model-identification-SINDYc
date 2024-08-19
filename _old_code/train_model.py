@@ -1,5 +1,7 @@
+"""
+REPLACED WITH JUPYTER NOTEBOOK
+"""
 import os
-
 from optimize_parameters import parameter_search, optimize_parameters, plot_optuna_data
 from source import *
 from train_model_source import make_model, simulate_model
@@ -10,22 +12,26 @@ do_part3 = True
 do_part4 = False
 
 ### DATA TRAINING FILES
-#path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
-#path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-31-ecc-50', 'IMMEC_50ecc_5.0sec.npz')
-path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-31-nonlin', 'IMMEC_nonlinear-0ecc_5.0sec.npz')
-#path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-31-nonlin50', 'IMMEC_nonlinear-50ecc_5.0sec.npz')
-#path_to_data_files = os.path.join(os.getcwd(), 'train-data', 'ecc_random_direction', 'IMMEC_lin_ecc_randomecc_5.0sec.npz')
-#path_to_data_files = os.path.join(os.getcwd(), 'train-data', '08-09', 'IMMEC_dynamic_50ecc_5.0sec.npz')
-#path_to_data_files = os.path.join(os.getcwd(), 'train-data', '08-13', 'IMMEC_default_linear_5.0sec.npz')
+# path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
+# path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-31-ecc-50', 'IMMEC_50ecc_5.0sec.npz')
+path_to_data_files = os.path.join(
+    os.getcwd(), "train-data", "07-31-nonlin", "IMMEC_nonlinear-0ecc_5.0sec.npz"
+)
+# path_to_data_files = os.path.join(os.getcwd(), 'train-data', '07-31-nonlin50', 'IMMEC_nonlinear-50ecc_5.0sec.npz')
+# path_to_data_files = os.path.join(os.getcwd(), 'train-data', 'ecc_random_direction', 'IMMEC_lin_ecc_randomecc_5.0sec.npz')
+# path_to_data_files = os.path.join(os.getcwd(), 'train-data', '08-09', 'IMMEC_dynamic_50ecc_5.0sec.npz')
+# path_to_data_files = os.path.join(os.getcwd(), 'train-data', '08-13', 'IMMEC_default_linear_5.0sec.npz')
 
 ### TEST FILES
-#path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-13', 'IMMEC_default_linear_5.0sec.npz')
-path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-09', 'IMMEC_dynamic_50ecc_5.0sec.npz')
-#path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-07', 'IMMEC_nonlin_0ecc_5.0sec.npz')
-#path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
-#path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-07', 'IMMEC_lin_ecc_randomecc_5.0sec.npz')
-#path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-05', 'IMMEC_50eccecc_5.0sec.npz')
-#path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-02', 'IMMEC_y50ecc_5.0sec.npz')
+# path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-13', 'IMMEC_default_linear_5.0sec.npz')
+path_to_test_file = os.path.join(
+    os.getcwd(), "test-data", "08-09", "IMMEC_dynamic_50ecc_5.0sec.npz"
+)
+# path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-07', 'IMMEC_nonlin_0ecc_5.0sec.npz')
+# path_to_test_file = os.path.join(os.getcwd(), 'test-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
+# path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-07', 'IMMEC_lin_ecc_randomecc_5.0sec.npz')
+# path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-05', 'IMMEC_50eccecc_5.0sec.npz')
+# path_to_test_file = os.path.join(os.getcwd(), 'test-data', '08-02', 'IMMEC_y50ecc_5.0sec.npz')
 
 plot_immec_data(path_to_test_file)
 
@@ -33,32 +39,34 @@ plot_immec_data(path_to_test_file)
 if do_part1:
     # mode is either "currents", "torque" or "ump" or "wcoe"
     # Creates an optuna study to optimize the parameters of the
-    optimize_parameters(path_to_data_files, mode="o", additional_name="o", n_trials = 3, n_jobs = 2)
+    optimize_parameters(
+        path_to_data_files, mode="o", additional_name="o", n_trials=3, n_jobs=2
+    )
 
 ### PART 2: plot the optuna study to choose the hyperparameters
 if do_part2:
-    #plot_optuna_data('currents-optuna-study', dirs = 'w3-presentation-0208//')
-    #plot_optuna_data('currentsLinear-specific-optuna-study')
-    #plot_optuna_data('ump_dynamic-optuna-study')
-    plot_optuna_data('W_linear-optuna-study')
+    # plot_optuna_data('currents-optuna-study', dirs = 'w3-presentation-0208//')
+    # plot_optuna_data('currentsLinear-specific-optuna-study')
+    # plot_optuna_data('ump_dynamic-optuna-study')
+    plot_optuna_data("W_linear-optuna-study")
 
 ### PART 3: TRAIN MODEL
 if do_part3:
-    '''
+    """
     name = make_model(path_to_data_files, modeltype='currents', optimizer='STLSQ',
                nmbr_of_train=-1, lib='linear-specific', alpha = 0.00056, threshold = 0.132,
                modelname='nonlinear_currents_tstlsq80')
     name = make_model(path_to_data_files, modeltype='currents', optimizer='STLSQ',
                nmbr_of_train=-1, lib='poly_2nd_order', alpha = 0.55, threshold = 0.4,
                modelname='nonlinear_currents_tstlsq150')
-    '''
-    #simulate_model(name, path_to_test_file, modeltype='torque')
+    """
+    # simulate_model(name, path_to_test_file, modeltype='torque')
 
-    '''
+    """
     make_model(path_to_data_files, modeltype='torque', optimizer='lasso',
                nmbr_of_train=-1, lib='linear-specific', alpha=1.23, modelname='torque_linear_4')
-    '''
-    '''
+    """
+    """
     make_model(path_to_data_files, modeltype='torque', optimizer='sr3',
                nmbr_of_train=-1, lib='torque', nu=0.00029, lamb=0.00578,
                modelname='torque_linear')
@@ -68,8 +76,8 @@ if do_part3:
     make_model(path_to_data_files, modeltype='torque', optimizer='sr3',
                nmbr_of_train=-1, lib='torque', nu=4.9e-7, lamb=9.8e-5,
                modelname='torque_linear_3')
-    '''
-    '''
+    """
+    """
     make_model(path_to_data_files, modeltype='currents', optimizer='lasso',
                nmbr_of_train=-1, lib='nonlinear_terms', alpha=86.47,
                modelname= 'currents_nonlinear_50ecc_60')
@@ -82,8 +90,8 @@ if do_part3:
     make_model(path_to_data_files, modeltype='currents', optimizer='sr3',
                nmbr_of_train=-1, lib='nonlinear_terms', nu=2e-9, lamb=3.4e-5,
                modelname='currents_nonlinear_50ecc_550')
-    '''
-    '''
+    """
+    """
     make_model(path_to_data_files, modeltype="torque", optimizer= "sr3",
                nmbr_of_train=-1, lib="poly_2nd_order",
                alpha=None, nu=5.043e-7, lamb=3.8157e-10, modelname="torque_nonlinear_100coef")
@@ -93,7 +101,7 @@ if do_part3:
     make_model(path_to_data_files, modeltype="torque", optimizer= "sr3",
                nmbr_of_train=-1, lib="nonlinear_terms",
                alpha=None, nu=0.002, lamb=1.36e-9, modelname="torque_nonlinear_280coef")
-    ''''''
+    """ """
     make_model(path_to_data_files, modeltype = "currents", optimizer = "sr3",
                nmbr_of_train=-1, lib="linear-specific",
                    alpha=None, nu=4.0115e-7, lamb=1.1038e-9, modelname="linear_example_new_1_currents")
@@ -122,11 +130,15 @@ if do_part3:
     make_model(path_to_data_files, modeltype = "currents", optimizer = "sr3",
                nmbr_of_train=-1, lib="poly_2nd_order",
                    alpha=None, nu=2.8e-12, lamb=6.8e-5, modelname="example_B_currents")
-    '''
+    """
 ### PART 4: SIMULATE MODEL
 if do_part4:
-    models = [ "example_A_currents"] #"example_A_currents",
-    models = ["linear_example_new_1_currents", "linear_example_2_currents", "linear_example_3_currents"]
+    models = ["example_A_currents"]  # "example_A_currents",
+    models = [
+        "linear_example_new_1_currents",
+        "linear_example_2_currents",
+        "linear_example_3_currents",
+    ]
     models = ["currents_nonlinear"]
     models = ["torque_linear", "torque_linear_2"]
     models = ["W_lin", "W_lin_sparser"]
@@ -136,8 +148,13 @@ if do_part4:
 
     for m in models:
         # simulate the model and plot the results
-        pr, test = simulate_model(pref+m+'_model', path_to_test_file, modeltype="wcoe", do_time_simulation=False, show=True)
-        plot_fourier(test, pr, dt = 1e-4, tmax = 5.0, show=False)
+        pr, test = simulate_model(
+            pref + m + "_model",
+            path_to_test_file,
+            modeltype="wcoe",
+            do_time_simulation=False,
+            show=True,
+        )
+        plot_fourier(test, pr, dt=1e-4, tmax=5.0, show=False)
 
     plt.show()
-

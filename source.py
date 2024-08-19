@@ -6,9 +6,9 @@ import numpy as np
 from scipy.interpolate import interp1d
 
 import pysindy as ps
+
 try:
     import seaborn as sns
-
 except ImportError:
     pass
 
@@ -46,31 +46,16 @@ def check_training_data(path_to_data_logger: str, keys_to_plot_list: list = None
     plt.show()
     return
 
-'''
-def read_V_from_directory(path_to_directory: str):
-    """
-    This function reads the voltage from the directory name, when multiple simulations are in seperate files. TO BE REMOVED
-    :param path_to_directory:
-    :return:
-    """
-    # most datafiles have the name IMMEC_history_{voltage}V_1.0sec.pkl, so this function reads the voltage from the
-    # directory name, return an array with all voltages from files in this directory
-    files = os.listdir(path_to_directory)
-    V = []
-    for file in files:
-        if file.endswith(".pkl") and file.startswith("IMMEC_history"):
-            V.append(int(file.split("_")[2][:-1]))
-    return np.array(V)
-'''
 
 def save_plot_data(
         save_name: str,
         xydata: list,
         title: str,
-        xlab: str, ylab,
-        legend: list =None,
-        plot_now: bool =False,
-        specs=None
+        xlab: str,
+        ylab,
+        legend: list = None,
+        plot_now: bool = False,
+        specs=None,
 ):
     """
     Saves the plot data in a .pkl file such that it can be plotted later
@@ -94,7 +79,7 @@ def save_plot_data(
         "ylab": ylab,
         "legend": legend,
         "plots": {},
-        "specs": specs
+        "specs": specs,
     }
     for i, xy_array in enumerate(xydata):
         pltdata["plots"][str(i)] = xy_array
@@ -118,9 +103,9 @@ def plot_data(path="plotdata.pkl", show=False, limits=None):
     :return:
     """
     suppres_title = False
-    if type(path) == str:
+    if type(path) == str:  # only one path
         paths = [path]
-    else:
+    else:  # multiple paths, suppress title otherwise multiple titles are shown in the same plot
         paths = path
         suppres_title = True
 
@@ -129,7 +114,8 @@ def plot_data(path="plotdata.pkl", show=False, limits=None):
         with open(path, "rb") as file:
             data = pkl.load(file)
 
-        # multiple axis, !!! This was mainly used for the MSE/SPAR plot before the pareto plots were added.
+        # multiple axis, !!! This was mainly used for the MSE/SPAR plot before the pareto plots were added
+        # This is probably not used anymore
         if type(data["ylab"]) != str:
             print("Multiple axis plot detected.")
             print("loglog ax1 and semilogx ax2.")
@@ -141,11 +127,15 @@ def plot_data(path="plotdata.pkl", show=False, limits=None):
             ax1.set_xlabel(data["xlab"])
 
             ax1.set_ylabel(data["ylab"][0], color="r")
-            ax1.loglog(data["plots"]["0"][:, 0], data["plots"]["0"][:, 1:], "r" + linetypes[j])
+            ax1.loglog(
+                data["plots"]["0"][:, 0], data["plots"]["0"][:, 1:], "r" + linetypes[j]
+            )
 
             ax2 = ax1.twinx()
             ax2.set_ylabel(data["ylab"][1], color="b")
-            ax2.semilogx(data["plots"]["1"][:, 0], data["plots"]["1"][:, 1:], "b" + linetypes[j])
+            ax2.semilogx(
+                data["plots"]["1"][:, 0], data["plots"]["1"][:, 1:], "b" + linetypes[j]
+            )
 
             if not suppres_title:
                 plt.title(data["title"])
@@ -160,26 +150,47 @@ def plot_data(path="plotdata.pkl", show=False, limits=None):
             plt.xlabel(data["xlab"]), plt.ylabel(data["ylab"])
             specs = data["specs"]
             # shape should be (2, t), where t is the number of time points and 2 number of solution
-            # it is saved as [x, y, reference] or for torque [x, ref, simplified model] or currents [di, ref]
-            # wcoe has [x,ref]
-            # Gather y-values for the fourier plot later
-            if data["plots"]['0'].shape[-1]==4: #currents
-                yvalues = np.hstack((data["plots"]['0'][:,1:],data["plots"]['1'][:,1:]))
+            # for ump, it is saved as [x, y, reference]
+            # or for torque [x, ref, simplified model]
+            # currents [di, ref]
+            # wcoe [x,ref]
+
+            # Gather y-values for the fourier plot later.
+            # yid is used to select 1,2 or 3 elements (for example, currents have 3 (dq0) and ump has 2 (xy))
+            if data["plots"]["0"].shape[-1] == 4:  # currents
+                yvalues = np.hstack(
+                    (data["plots"]["0"][:, 1:], data["plots"]["1"][:, 1:])
+                )
                 yid = 3
-            elif len(data["plots"].keys()) == 2: #this is currents or wcoe
-                yvalues =  np.hstack((data["plots"]['0'][:,1:],data["plots"]['1'][:,1:]))
+            elif len(data["plots"].keys()) == 2:  # this is currents or wcoe
+                yvalues = np.hstack(
+                    (data["plots"]["0"][:, 1:], data["plots"]["1"][:, 1:])
+                )
                 yid = 1
-            elif data["plots"]['2'].shape[-1] == 2: #torque
-                yvalues = np.hstack((data["plots"]['0'][:,1:],data["plots"]['1'][:,1:]))
+            elif data["plots"]["2"].shape[-1] == 2:  # torque
+                yvalues = np.hstack(
+                    (data["plots"]["0"][:, 1:], data["plots"]["1"][:, 1:])
+                )
                 yid = 1
             else:
-                yvalues = np.hstack((np.hstack((data["plots"]['0'][:,1:],data["plots"]['1'][:,1:])),data["plots"]['2'][:,1:]))
+                yvalues = np.hstack(
+                    (
+                        np.hstack(
+                            (data["plots"]["0"][:, 1:], data["plots"]["1"][:, 1:])
+                        ),
+                        data["plots"]["2"][:, 1:],
+                    )
+                )
                 yid = 2
 
             # plot the data
             for idx in data["plots"]:
                 if specs[int(idx)] is not None:
-                    plt.plot(data["plots"][idx][:, 0], data["plots"][idx][:, 1:], specs[int(idx)])
+                    plt.plot(
+                        data["plots"][idx][:, 0],
+                        data["plots"][idx][:, 1:],
+                        specs[int(idx)],
+                    )
                 else:
                     plt.plot(data["plots"][idx][:, 0], data["plots"][idx][:, 1:])
 
@@ -189,7 +200,13 @@ def plot_data(path="plotdata.pkl", show=False, limits=None):
                 plt.ylim(limits[0])
 
             # plot the fourier data, reference, predicted
-            plot_fourier(yvalues[:,yid:],yvalues[:,:yid], dt=1e-4, tmax = data["plots"]["0"][-1,0], show=False)
+            plot_fourier(
+                yvalues[:, yid:],
+                yvalues[:, :yid],
+                dt=1e-4,
+                tmax=data["plots"]["0"][-1, 0],
+                show=False,
+            )
     if show:
         plt.show()
     return
@@ -231,26 +248,41 @@ def plot_coefs(model):
     return
 
 
-def plot_coefs2(model, show=False, log=False):
+def plot_coefs2(model, show=False, log=False, type='currents'):
     """
-    Plot the coefficients of a model, but on an axis
+    Plot the coefficients of a model, but on an axis, based on
+    https://pysindy.readthedocs.io/en/latest/examples/1_feature_overview/example.html
     :param model: a model instance
     :param show: if True, plt.show() is called
     :param log: if True, uses logscale for the yscale
+    :param type: the type of model, either currents, torque, ump or wcoe
     :return:
     """
     model.print()
     print("Sparsity: ", np.count_nonzero(model.coefficients()))
-    xticknames = model.get_feature_names() # todo DEBUG for torque and UMP this is still i .... maybe pass the names?
+    xticknames = (
+        model.get_feature_names()
+    )
     for i in range(len(xticknames)):
         xticknames[i] = xticknames[i]
     plt.figure(figsize=(len(xticknames), 4))
     colors = ["b", "r", "k"]
-    coefs = copy.deepcopy(model.coefficients()) # copy such that they do not get overwritten
+    coefs = copy.deepcopy(
+        model.coefficients()
+    )  # copy such that they do not get overwritten
 
     if log:
         plt.yscale("log", base=10)
         coefs = np.abs(coefs)
+
+    if type.lower() == 'currents':
+        names = [r"$\dot{" + xticknames[i].strip("$") + "}$" for i in range(coefs.shape[0])]
+
+    elif type.lower() == 'torque':
+        names = [r"$T_{em}$"]
+
+    elif type.lower() == 'ump':
+        names = [r"$UMP_x$", r"$UMP_y$"]
 
     for i in range(coefs.shape[0]):
         values = coefs[i, :].T
@@ -259,11 +291,11 @@ def plot_coefs2(model, show=False, log=False):
             np.arange(0, len(xticknames), 1),
             values,
             color=colors[i],
-            label=r"Equation for $\dot{" + xticknames[i + 1].strip("$") + "}$",
+            label=r"Equation for " + names[i],
         )
 
     plt.grid(True)
-    plt.xticks(range(len(xticknames)), xticknames, rotation=90)
+    plt.xticks(range(len(xticknames)), [r'$'+n+'$' for n in xticknames], rotation=90)
 
     plt.legend()
     if show:
@@ -280,7 +312,7 @@ def get_date():
     return now.strftime("%m-%d_%H-%M-%S")
 
 
-def save_model(model, name:str, libstr:str):
+def save_model(model, name: str, libstr: str):
     """
     Function to save a model as pkl file. Note that a pysindy library cannot simply be pikled
     :param model: a model instance, to be saved
@@ -289,9 +321,10 @@ def save_model(model, name:str, libstr:str):
     :return:
     """
     print("Saving model")
-    print("No date added")  #  + get_date()
-    saving_name = name+".pkl"
-    path = os.path.join(os.getcwd(), "models", saving_name) # add date to avoid overwriting
+    saving_name = name + get_date() + ".pkl"
+    path = os.path.join(
+        os.getcwd(), "models", saving_name
+    )  # add date to avoid overwriting
 
     x = model.n_features_in_ - model.n_control_features_
     u = model.n_control_features_
@@ -306,6 +339,7 @@ def save_model(model, name:str, libstr:str):
         pkl.dump(lib, file)
     return saving_name
 
+
 def load_model(name: str):
     """
     Load the model from a .pkl file
@@ -319,11 +353,17 @@ def load_model(name: str):
 
     # initialize pysindy model
     x_shape, u_shape, xdot_shape = model_data["shapes"]
-    lib = get_custom_library_funcs(model_data["library"], u_shape[1]+x_shape[1] ) #debug
-    new_model = ps.SINDy(optimizer=None, feature_names=model_data["features"], feature_library=lib)
+    lib = get_custom_library_funcs(
+        model_data["library"], u_shape[1] + x_shape[1]
+    )
+    new_model = ps.SINDy(
+        optimizer=None, feature_names=model_data["features"], feature_library=lib
+    )
 
-    # Trick SINDy to fit a model
-    new_model.fit(np.zeros(x_shape), u=np.zeros(u_shape), t=None, x_dot=np.zeros(xdot_shape))
+    # trick SINDy to fit a model
+    new_model.fit(
+        np.zeros(x_shape), u=np.zeros(u_shape), t=None, x_dot=np.zeros(xdot_shape)
+    )
 
     # overwrite the coefficients of the 'fitted' model :)
     new_model.optimizer.coef_ = model_data["coefs"]
@@ -331,7 +371,7 @@ def load_model(name: str):
     return new_model
 
 
-def plot_immec_data(path: str, simulation_number: int=None, title:str=None):
+def plot_immec_data(path: str, simulation_number: int = None, title: str = None):
     """
     Plot the trainig or test data from a file
     :param path: path to the data
@@ -346,10 +386,11 @@ def plot_immec_data(path: str, simulation_number: int=None, title:str=None):
     else:
         dataset = dict(np.load(path))
 
-    d_air = 0.000477  # for the Cantoni motor, todo DEBUG hardcoded
+    print('d_air hardcoded for Cantoni')
+    d_air = 0.000477
 
-    rows, cols = 4,2
-    plt.subplots(4,2, figsize = (8,20))
+    rows, cols = 4, 2
+    plt.subplots(4, 2, figsize=(8, 20))
 
     if simulation_number is None:  # testfile
         plt.subplot(rows, cols, 1)
@@ -369,7 +410,7 @@ def plot_immec_data(path: str, simulation_number: int=None, title:str=None):
 
         plt.subplot(rows, cols, 5)
         plt.title("Applied line Voltages"), plt.xlabel("time (s)"), plt.ylabel("V")
-        plt.plot(dataset["time"], dataset['v_applied'])
+        plt.plot(dataset["time"], dataset["v_applied"])
 
         plt.subplot(rows, cols, 4)
         plt.title("UMP"), plt.xlabel("time (s)"), plt.ylabel("N")
@@ -379,6 +420,7 @@ def plot_immec_data(path: str, simulation_number: int=None, title:str=None):
         plt.title("Eccentricity"), plt.xlabel("time (s)"), plt.ylabel("% airgap")
         plt.plot(dataset["time"], dataset["ecc"] / d_air)
         # if wcoe not in keys, don't do the next plot
+
         if "wcoe" in dataset.keys():
             plt.subplot(rows, cols, 7)
             plt.title("Magnetic co-energy"), plt.xlabel("time (s)"), plt.ylabel("J")
@@ -386,50 +428,80 @@ def plot_immec_data(path: str, simulation_number: int=None, title:str=None):
 
         plt.subplot(rows, cols, 8)
         plt.title("Eccentricity"), plt.xlabel("r_x"), plt.ylabel("r_y")
-        plt.plot(dataset["ecc"][:, 0, simulation_number] / d_air, dataset["ecc"][:, 1, simulation_number] / d_air)
+        plt.plot(
+            dataset["ecc"][:, 0, simulation_number] / d_air,
+            dataset["ecc"][:, 1, simulation_number] / d_air,
+        )
 
     else:  # train file
         plt.subplot(rows, cols, 1)
         plt.title("omega_rot"), plt.xlabel("time (s)"), plt.ylabel("rad/s")
 
-        plt.plot(dataset["time"][:, 0, simulation_number], dataset["omega_rot"][:, 0, simulation_number])
+        plt.plot(
+            dataset["time"][:, 0, simulation_number],
+            dataset["omega_rot"][:, 0, simulation_number],
+        )
 
         plt.subplot(rows, cols, 2)
         plt.title("i_st in dq0"), plt.xlabel("time (s)"), plt.ylabel("A")
-        plt.plot(dataset["time"][:, 0, simulation_number],
-                 reference_abc_to_dq0(dataset["i_st"][:, :, simulation_number]))
+        plt.plot(
+            dataset["time"][:, 0, simulation_number],
+            reference_abc_to_dq0(dataset["i_st"][:, :, simulation_number]),
+        )
 
         plt.subplot(rows, cols, 3)
         plt.title("T_l and T_em"), plt.xlabel("time (s)"), plt.ylabel("Nm")
-        plt.plot(dataset["time"][:, 0, simulation_number], dataset["T_em"][:, 0, simulation_number])
-        plt.plot(dataset["time"][:, 0, simulation_number], dataset["T_l"][:, 0, simulation_number], 'k--')
+        plt.plot(
+            dataset["time"][:, 0, simulation_number],
+            dataset["T_em"][:, 0, simulation_number],
+        )
+        plt.plot(
+            dataset["time"][:, 0, simulation_number],
+            dataset["T_l"][:, 0, simulation_number],
+            "k--",
+        )
         plt.legend(["T_em", "T_l"])
 
         plt.subplot(rows, cols, 5)
         plt.title("Applied line Voltages"), plt.xlabel("time (s)"), plt.ylabel("V")
-        plt.plot(dataset["time"][:, 0, simulation_number], dataset["v_applied"][:, :, simulation_number])
+        plt.plot(
+            dataset["time"][:, 0, simulation_number],
+            dataset["v_applied"][:, :, simulation_number],
+        )
 
         plt.subplot(rows, cols, 4)
         plt.title("UMP"), plt.xlabel("time (s)"), plt.ylabel("N")
-        plt.plot(dataset["time"][:, 0, simulation_number], dataset["F_em"][:, :, simulation_number])
+        plt.plot(
+            dataset["time"][:, 0, simulation_number],
+            dataset["F_em"][:, :, simulation_number],
+        )
 
         plt.subplot(rows, cols, 6)
         plt.title("Eccentricity"), plt.xlabel("time (s)"), plt.ylabel("% airgap")
-        plt.plot(dataset["time"][:, 0, simulation_number], dataset["ecc"][:, :, simulation_number] / d_air)
+        plt.plot(
+            dataset["time"][:, 0, simulation_number],
+            dataset["ecc"][:, :, simulation_number] / d_air,
+        )
         plt.legend(["x", "y"])
 
         plt.subplot(rows, cols, 8)
         plt.title("Eccentricity"), plt.xlabel("r_x"), plt.ylabel("r_y")
-        plt.plot(dataset["ecc"][:, 0, simulation_number] / d_air, dataset["ecc"][:, 1, simulation_number] / d_air)
+        plt.plot(
+            dataset["ecc"][:, 0, simulation_number] / d_air,
+            dataset["ecc"][:, 1, simulation_number] / d_air,
+        )
 
         if "wcoe" in dataset.keys():
             plt.subplot(rows, cols, 7)
             plt.title("Magnetic coenergy"), plt.xlabel("time (s)"), plt.ylabel("J")
-            plt.plot(dataset["time"][:,0,simulation_number], dataset["wcoe"][:,:,simulation_number])
+            plt.plot(
+                dataset["time"][:, 0, simulation_number],
+                dataset["wcoe"][:, :, simulation_number],
+            )
 
     if title is not None:
         plt.suptitle(title)
-    # Add padding so title and labels dont overlap
+    # add padding so title and labels do not overlap
     plt.tight_layout()
     plt.show()
     return
@@ -462,10 +534,11 @@ def plot_fourier(reference, result, dt, tmax, leg=None, show=True):
     :param show: if True, plt.show() is called
     :return:
     """
+
     def transform_fft(w, n, s):
         # Perform FFT
         fft = np.fft.fft(w, axis=0)
-        p = np.abs(fft / n)[:int(n / 2 + 1)]
+        p = np.abs(fft / n)[: int(n / 2 + 1)]
         p[1:-1] = 2 * p[1:-1]
         freq = s * np.arange(0, p.shape[0]) / n
         if np.ndim(p) == 1:
@@ -473,7 +546,7 @@ def plot_fourier(reference, result, dt, tmax, leg=None, show=True):
         return p, freq
 
     # cols = [['tab:blue','tab:red','tab:green'], ['tab:cyan','tab:orange','tab:olive']]
-    cols = [['C0', 'C3', 'C2'], ['C9', 'C1', 'C8']] # line colors
+    cols = [["C0", "C3", "C2"], ["C9", "C1", "C8"]]  # line colors
 
     n_fft = tmax / dt
     sampling_freq = 1 / dt
@@ -484,8 +557,8 @@ def plot_fourier(reference, result, dt, tmax, leg=None, show=True):
     plt.figure(figsize=(10, 6))
     plt.subplot(2, 1, 1)
     for line in range(ref.shape[1]):
-        plt.semilogy(f1, ref[:, line], cols[0][line], label = "Reference")
-        plt.semilogy(f2, res[:, line], cols[1][line] + '--', label = "Predicted")
+        plt.semilogy(f1, ref[:, line], cols[0][line], label="Reference")
+        plt.semilogy(f2, res[:, line], cols[1][line] + "--", label="Predicted")
     plt.xlabel("Frequency (Hz)")
     plt.ylabel("Amplitude")
     plt.title("Reference Signal FFT")
@@ -498,7 +571,7 @@ def plot_fourier(reference, result, dt, tmax, leg=None, show=True):
     plt.subplot(2, 1, 2)
     d = np.abs(res - ref)
     for line in range(ref.shape[1]):
-        plt.semilogy(f2, d[:,line],  cols[0][line])
+        plt.semilogy(f2, d[:, line], cols[0][line])
     plt.xlabel("Frequency (Hz)")
     plt.ylabel("Amplitude")
     plt.title("Delta of FFT")
@@ -522,15 +595,10 @@ def test_plot_fourier():
     x = np.sin(2 * np.pi * 50 * t)
     y = np.sin(2 * 2000 * np.pi * t)
     plot_fourier(x, y, dt=dt, tmax=tmax)
-
     return
 
 
-def model_simulate(
-        x0: np.array,
-        u: np.array,
-        model,
-        t: np.array):
+def model_simulate(x0: np.array, u: np.array, model, t: np.array):
     """
     Implementation of model.simulate, or at least they should be identical
     :param x0: start value (1, k) with k the number of equations (usually 3)
@@ -541,9 +609,11 @@ def model_simulate(
     """
     x = np.zeros((u.shape[0], model.n_features_in_ - model.n_control_features_))
     x[0] = x0
-    u_fun = interp1d(
-        t, u, axis=0, kind="cubic", fill_value="extrapolate"
-    )
+    u_fun = interp1d(t, u, axis=0, kind="cubic", fill_value="extrapolate")
+
     def rhs(t, x):
         return model.predict(x[np.newaxis, :], u_fun(t))[0]
-    return solve_ivp(rhs, np.array([t[0], t[-1]]), np.array([0, 0, 0]), method='RK45', t_eval=t)
+
+    return solve_ivp(
+        rhs, np.array([t[0], t[-1]]), np.array([0, 0, 0]), method="RK45", t_eval=t
+    )
