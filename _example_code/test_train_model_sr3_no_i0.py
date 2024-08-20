@@ -1,5 +1,7 @@
 from prepare_data import *
 from libs import *
+from optimize_parameters import parameter_search
+from source import *
 
 def optimize_currents_simulation(path_to_data_files, nmbr_models=20, loglwrbnd=None, loguprbnd=None):
     """
@@ -42,6 +44,8 @@ def optimize_currents_simulation(path_to_data_files, nmbr_models=20, loglwrbnd=N
     return
 
 if __name__ == "__main__":
+    raise NotImplementedError('This code is outdated, it does not use optuna for hyperparameter selection and uses the old datafiles. '
+          'Either remove this testing code or adapt it to the new methods.')
 
     path_to_data_files = os.path.join(os.getcwd(), 'data\\07-24-default-5e-5')
 

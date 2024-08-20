@@ -33,7 +33,7 @@ for n in tqdm(range(steps_total)):
 
     # I.C Rotor eccentricity
     # In this demo, the rotor is placed in a centric position
-    ecc = np.zeros(2)
+    ecc = np.array([0, 0])*motordict['d_air']
 
     # I.D The inputs are concatenated to a single vector
     inputs = np.concatenate([v_line, [T_l], ecc])
@@ -60,4 +60,4 @@ for n in tqdm(range(steps_total)):
 
 data_logger.postprocess()
 
-data_logger.plot('all')
+data_logger.plot('F_em')

@@ -1,5 +1,7 @@
+"""
+This file was used for the PCA analysis, it adapts the function `prepare_data` to allow for coordinate transformation
+"""
 import random
-
 import pandas as pd
 import scipy
 import numpy as np
@@ -15,7 +17,6 @@ from sklearn.preprocessing import StandardScaler
 import pysindy as ps
 import libs
 plt.rcParams['text.usetex'] = True
-
 try:
     from pysindy import FiniteDifference
 except ImportError:
@@ -26,7 +27,7 @@ def prepare_data(path_to_data_file,
                  test_data=False,
                  number_of_trainfiles=-1,
                  use_estimate_for_v=False,
-                 usage_per_trainfile=0.25, pca = None, scaling = None):
+                 usage_per_trainfile=0.25, pca = None, scaling = None, useScaling = True):
     # load numpy file
     print("Loading data")
     dataset = dict(np.load(path_to_data_file))  # should be a dictionary
@@ -83,7 +84,6 @@ def prepare_data(path_to_data_file,
 
     # get x data
     x_data = reference_abc_to_dq0(dataset['i_st'])
-    ###  x_data = np.hstack((i_st, I.reshape(i_st.shape), V.reshape(i_st.shape))) #for data merged
     t_data = dataset['time']
     if np.ndim(x_data) <= 2:
         x_data = np.expand_dims(x_data, axis=2)
@@ -117,6 +117,8 @@ def prepare_data(path_to_data_file,
                         dataset['gamma_rot'].reshape(t_data.shape) % (2 * np.pi),
                         dataset['omega_rot'].reshape(t_data.shape),
                         np.repeat(freqs, dataset['omega_rot'].shape[0], axis=0)))
+
+
     # u_data contains ALL variables needed for prediction
     # principal component analysis on u_data
     # First, I need to reshape the data to be 2D
@@ -158,14 +160,19 @@ def prepare_data(path_to_data_file,
             plot_pca_variance_ratio(pca, title = "on Non-scaled data")
 
         pca = decomposition.PCA(n_components=10) #n_components=7
-
-        pca.fit(Scaled_data)
-        u_pca = pca.transform(Scaled_data)
+        if useScaling:
+            pca.fit(Scaled_data)
+            u_pca = pca.transform(Scaled_data)
+        else:
+            pca.fit(Non_Scaled_data)
+            u_pca = pca.transform(Non_Scaled_data)
     else: #pca is provided
         Scaled_data = scaling.transform(u_pca)
         Non_Scaled_data = u_pca
-
-        u_pca = pca.transform(Scaled_data)
+        if useScaling:
+            u_pca = pca.transform(Scaled_data)
+        else:
+            u_pca = pca.transform(Non_Scaled_data)
     DATA['u_pca'] = u_pca
 
     # Now, stack data on top of each other and shuffle! (Note that the transpose is needed otherwise the reshape is wrong)
@@ -242,20 +249,6 @@ def plot_pca_variance_ratio(pca, title=""):
     plt.show()
 
 
-
-def check_trapezoid_integration():
-    print("this doesn't work")
-    path = os.path.join(os.getcwd(), 'test-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
-    dataset = prepare_data(path, test_data=True)
-    I_end = dataset['u'][-1, 3:6]
-    V_end = dataset['u'][-1, 6:9]
-    i = dataset['x']
-    v = dataset['u'][:, 0:3]
-    print(np.sum(i, axis=0) * 5e-5, I_end)
-    print(np.sum(v, axis=0) * 5e-5, V_end)
-    return
-
-
 def reference_abc_to_dq0(coord_array: np.array):
     """
     Changes reference system from abc to dq0. Note that if dimension is (N, 3, k)
@@ -270,30 +263,6 @@ def reference_abc_to_dq0(coord_array: np.array):
          [1 / np.sqrt(2), 1 / np.sqrt(2), 1 / np.sqrt(2)]]
     )
     return np.tensordot(T, coord_array.swapaxes(0, 1), axes=([1], [0])).swapaxes(0, 1)
-
-
-@nb.njit(cache=True)
-def reference_abc_to_dq0_CP(coord_array: np.array, gamma):
-    nd = 3
-    if np.ndim(gamma) <= 2:
-        nd = 2
-        gamma = gamma.reshape((gamma.shape[0], 1, 1))
-        coord_array = coord_array.reshape((coord_array.shape[0], coord_array.shape[1], 1))
-
-    newcoord = np.ones_like(coord_array)
-    for simul in range(coord_array.shape[-1]):
-        for j in range(len(gamma[:, 0, simul])):
-            g = gamma[j, 0, simul]
-            # Clarck- Park transformation as a function of gamma
-            CP = np.sqrt(2 / 3) * np.array(
-                [[np.cos(g), np.cos(g - 2 / 3 * np.pi), np.cos(g + 2 / 3 * np.pi)],
-                 [-np.sin(g), -np.sin(g - 2 / 3 * np.pi / 3), -np.sin(g + 2 / 3 * np.pi)],
-                 [1 / np.sqrt(2), 1 / np.sqrt(2), 1 / np.sqrt(2)]]
-            )
-            newcoord[j, :, simul] = np.dot(CP, coord_array[j, :, simul].T).T
-
-    return newcoord[:, :, 0] if nd == 2 else newcoord
-
 
 def reference_dq0_to_abc(coord_array: np.array):
     """
@@ -381,17 +350,21 @@ def calculate_xdot(x: np.array, t: np.array):
 
 
 if __name__ == "__main__":
+    #Choose the datafiles
     #path = os.path.join(os.getcwd(), 'train-data', '07-29-default', 'IMMEC_0ecc_5.0sec.npz')
     path = os.path.join(os.getcwd(), 'train-data', '07-31-ecc-50', 'IMMEC_50ecc_5.0sec.npz')
     #testpath = os.path.join(os.getcwd(), 'test-data', '07-29', 'IMMEC_0ecc_5.0sec.npz')
     testpath = os.path.join(os.getcwd(), 'test-data', '08-05','IMMEC_50eccecc_5.0sec.npz')
 
+    # the scaling-transformation and pca-transformation needs to be saved -> the exact same transformation is needed for the training data
+    useScaling = True
     data,pca,scaling = prepare_data(path,
                         test_data=False,
                         number_of_trainfiles=-1,
-                        use_estimate_for_v=False)
+                        use_estimate_for_v=False, useScaling = useScaling)
     library = libs.get_custom_library_funcs("pca", nmbr_input_features=data['u_pca_train'].shape[1])
 
+    # Select the model type
     #train = data['T_em_train']
     #train = data['UMP_train']
     train = data['xdot_train']
@@ -401,18 +374,18 @@ if __name__ == "__main__":
     #opt = ps.SR3(thresholder="l1", threshold=0.01, nu=.01, unbias=True, normalize_columns = True)
     #opt = ps.WrappedOptimizer(Lasso(alpha=10, fit_intercept=False, precompute=True))
     model = ps.SINDy(optimizer=opt, feature_library=library)
-                     #feature_names=data['feature_names'])
+                     #feature_names=data['feature_names']) # Feature names don't make sense anymore
 
     print("Fitting model")
     model.fit(data['u_pca_train'], t=None, x_dot=train)
     model.print(precision=10)
 
-
     test = prepare_data(testpath,
                      test_data=True,
                      number_of_trainfiles=-1,
-                     use_estimate_for_v=False, pca=pca, scaling=scaling)
+                     use_estimate_for_v=False, pca=pca, scaling=scaling, useScaling=useScaling) #pass the pca and scaling from the model training
 
+    # Should be accordingly to the train values.
     #test_values = test['T_em'] # for the torque, it is a bad idea to tranform coordinates, don't need to show
     #test_values = test['UMP']
     test_values = test['xdot']

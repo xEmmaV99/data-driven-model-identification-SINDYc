@@ -185,7 +185,7 @@ def plot_data(path="plotdata.pkl", show=False, limits=None):
 
             # plot the data
             for idx in data["plots"]:
-                if specs[int(idx)] is not None:
+                if specs is not None and specs[int(idx)] is not None:
                     plt.plot(
                         data["plots"][idx][:, 0],
                         data["plots"][idx][:, 1:],
@@ -347,7 +347,9 @@ def load_model(name: str):
     :return: a model
     """
     # load .pkl file
-    path = os.path.join(os.getcwd(), "models", name + ".pkl")
+    if not name.endswith('.pkl'):
+        name = name  + '.pkl'
+    path = os.path.join(os.getcwd(), "models", name)
     with open(path, "rb") as file:
         model_data = pkl.load(file)
 
