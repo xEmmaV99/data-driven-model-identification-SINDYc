@@ -16,8 +16,9 @@ def prepare_data(
     test_data: bool = False,
     number_of_trainfiles: int = -1,
     use_estimate_for_v: bool = False,
-    usage_per_trainfile: float = 0.5,
+    usage_per_trainfile: float = .5,
     ecc_input: bool = False,
+    seed = None
 ):
     """
     Prepares the data for pysindy. If not test_data, the output is split and shuffeled into train and validation
@@ -27,6 +28,7 @@ def prepare_data(
     :param use_estimate_for_v: if True, use the approximation from line voltages to find v_abc, if False, use the more general form
     :param usage_per_trainfile: float between 0 and 1, trim the data in the time-domain to reduce samples
     :param ecc_input: if True, eccentricity is added as input for the control variables
+    :param seed: seed for random number generator used for time trimming
     :return:
     """
     # check if usage_per_trainfile is between 0 and 1
@@ -147,9 +149,11 @@ def prepare_data(
     if not test_data:  # trim times AFTER xdots calculation
         print("time trim: ", usage_per_trainfile)
         timepoints = len(dataset["time"][:, 0, 0])
+        random.seed(seed) # set seed, if seed == None, nothing will happen
         time_trim = random.sample(
             range(timepoints), int(usage_per_trainfile * timepoints)
         )
+        random.seed() # reset seed
 
         for key in dataset.keys():
             # # error for wcoe
