@@ -202,16 +202,16 @@ def prepare_data(
     # add eccentricity to the input data
     if ecc_input:
         if not np.all(dataset["ecc"] < 1e-10):
-            if not test_data:
-                print("Nonzero ecc, added to input data")
-                u_data = np.hstack((u_data, dataset["ecc"]))
-            else:
-                print("Nonzero ecc, added to input data")
-                u_data = np.hstack((u_data, dataset["ecc"][:, :, np.newaxis]))
-            [DATA["feature_names"].append(j) for j in [r"r_x", r"r_y"]]
+            print("Nonzero ecc, added to input data")
         else:
-            print("Zero ecc, not added to input data")
-            # todo add optionally for models trained with ecc
+            print("Zero ecc, added as zero to input data")
+
+        if not test_data:
+            u_data = np.hstack((u_data, dataset["ecc"]))
+        else:
+            u_data = np.hstack((u_data, dataset["ecc"][:, :, np.newaxis]))
+        [DATA["feature_names"].append(j) for j in [r"r_x", r"r_y"]]
+
 
     # now, stack data on top of each other and shuffle
     # (note that the transpose is needed otherwise the reshape is wrong)

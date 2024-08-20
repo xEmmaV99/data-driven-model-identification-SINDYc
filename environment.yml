@@ -194,7 +194,7 @@ dependencies:
       - derivative==0.6.2
       - ecos==2.0.14
       - frozenlist==1.4.1
-      #- immec==0.1.0 # Unsure how to install this package
+      #- immec==0.1.0 # Unsure how to install this package, probably = pip install git+https://gitlab.kuleuven.be/m-group-campus-brugge/wavecore_public/phd-philip-desenfans/immec-package.git
       - importlib-metadata==7.2.1
       - matplotlib==3.9.2
       - multidict==6.0.5
