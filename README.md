@@ -5,7 +5,6 @@
 * [Sparse Identification of Induction Motor Nonlinear Dynamics in Unbalanced Conditions](#sparse-identification-of-induction-motor-nonlinear-dynamics-in-unbalanced-conditions)
   * [Description](#description)
   * [Installation](#installation)
-    * [Prerequisites](#prerequisites)
     * [Dependencies](#dependencies)
 <!-- TOC -->
 
@@ -36,9 +35,6 @@ Static and dynamic eccentricities are considered.
 The data is obtained from simulations using the Python package IMMEC.
 
 ## Installation
-### Prerequisites
-
-
 ### Dependencies
 #### Using the .yml file
 After installing the package manager [Conda](https://docs.conda.io/en/latest/), the dependencies can be installed by running the following command in the command line:
