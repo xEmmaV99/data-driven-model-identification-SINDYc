@@ -194,7 +194,7 @@ dependencies:
       - derivative==0.6.2
       - ecos==2.0.14
       - frozenlist==1.4.1
-      #- immec==0.1.0
+      #- immec==0.1.0 # Unsure how to install this package
       - importlib-metadata==7.2.1
       - matplotlib==3.9.2
       - multidict==6.0.5

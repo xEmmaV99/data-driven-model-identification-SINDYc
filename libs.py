@@ -201,7 +201,7 @@ def get_custom_library_funcs(type, nmbr_input_features=15):
         library_functions2 = [lambda x, y: x * y]
         library_function_names2 = [lambda x, y: x + y]
         # i i i v v v I I I V V V gam om f
-        input_per_library = [[9, 10, 0, 1, 6, 7]]
+        input_per_library = np.array([[9, 10, 0, 1, 6, 7]])
         custom_lib = ps.GeneralizedLibrary(
             [
                 ps.CustomLibrary(
