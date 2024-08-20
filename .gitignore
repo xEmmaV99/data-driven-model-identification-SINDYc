@@ -1,7 +1,6 @@
 /pysindy/
-/old_data/
-/data/
-/test-data/
+/_old_data/
+/_old_code/
+/.ipynb_checkpoints/
 /train-data/
-/plot_data/
-/plots_2607_presentation/
+/plots/
