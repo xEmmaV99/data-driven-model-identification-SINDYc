@@ -40,13 +40,14 @@ The data is obtained from simulations using the Python package IMMEC.
 
 
 ### Dependencies
-#### Automatically
+#### Using the .yml file
 After installing the package manager [Conda](https://docs.conda.io/en/latest/), the dependencies can be installed by running the following command in the command line:
 ~~~
 conda env create -f environment.yml
 conda activate sindy_env
 ~~~
-#### Manual
+This will create a new virtual environment called `sindy_env` and install the necessary dependencies. Note that `cd` must contain the `environment.yml` file.
+#### Manually
 After installing the package manager [Conda](https://docs.conda.io/en/latest/), a new virtual environment can be created in the command line using:
 ~~~
 conda create -n environment_name
