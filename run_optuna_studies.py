@@ -11,14 +11,6 @@ if __name__ == "__main__":
     n_trials = 500
 
     if linear:
-        plot_optuna_data("currentslinear_dynamic_50ecc-optuna-study")
-
-        data = os.path.join("train-data", "08-13", "IMMEC_50ecc_linear_5.0sec.npz")
-        print("6") #433
-        optimize_parameters(data, mode='currents', additional_name="linear_dynamic_50ecc", n_jobs=n_cores,
-                            n_trials=n_trials, ecc_input=True)
-
-        '''
         data = os.path.join("train-data", "07-29-default", "IMMEC_0ecc_5.0sec.npz")
         # 1) linear currents
         print("1")
@@ -48,7 +40,7 @@ if __name__ == "__main__":
         # 8) linear ump dynamic ecc
         print("8")
         optimize_parameters(data, mode='ump', additional_name="linear_dynamic_50ecc", n_jobs=n_cores, n_trials=n_trials, ecc_input=True)
-        '''
+
     else:
         data = os.path.join("train-data", "07-31-nonlin", "IMMEC_nonlinear-0ecc_5.0sec.npz")
         # 9) nonlinear currents

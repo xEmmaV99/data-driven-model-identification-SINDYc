@@ -15,6 +15,9 @@ def prepare_data(path_to_data_file,
                  number_of_trainfiles=-1,
                  use_estimate_for_v=False,
                  usage_per_trainfile = 0.2):
+    """
+    See prepare_data.py for more info.
+    """
     # load numpy file
     dataset = dict(np.load(path_to_data_file))  # should be a dictionary
 

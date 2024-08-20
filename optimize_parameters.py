@@ -152,6 +152,11 @@ def optuna_search(
 
 
 def _study(studyname):
+    """
+    Initializes the optuna study
+    :param studyname: str with the name of the study
+    :return:
+    """
     study_name = (
         "optuna_studies//" + studyname + "-optuna-study"
     )  # Unique identifier of the study.
