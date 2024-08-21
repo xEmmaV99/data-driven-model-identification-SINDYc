@@ -17,6 +17,7 @@ def make_model(
     lamb: float = None,
     modelname: str = None,
     threshold: float = 0.1,
+    ecc_input = True,
 ):
     """
     Initialises and fits a SINDy model
@@ -42,9 +43,9 @@ def make_model(
     :return:
     """
     # load in training and validation data
-    print("ecc input: True")
+    print("ecc input ", ecc_input)
     DATA = prepare_data(
-        path_to_data_files, number_of_trainfiles=nmbr_of_train, ecc_input=True
+        path_to_data_files, number_of_trainfiles=nmbr_of_train, ecc_input=ecc_input
     )
     library = get_custom_library_funcs(
         lib, nmbr_input_features=DATA["u"].shape[1] + DATA["x"].shape[1]
