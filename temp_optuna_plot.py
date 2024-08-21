@@ -60,7 +60,7 @@ def plot_pareto(study, limits, target_names=None, logscale=False, save_name = 'd
     plt.xlim(limits[0])
     plt.ylim(limits[1])
 
-    #plot emtpy for legend
+    # add legend
     lines = []
     labels =  {"poly_2nd_order": r'A',
         "linear-specific": r'B',
@@ -73,18 +73,19 @@ def plot_pareto(study, limits, target_names=None, logscale=False, save_name = 'd
         if values[1] < limits[1][0] or values[1] > limits[1][1]:
             return False
         return True
+
     for key in libcolors:
         # check if trial is plotted inside the limits of the plots
         if key in [trial.params['lib_choice'] for trial in all_trials if in_scope(trial.values)]:
             lines.append(plt.Line2D([0], [0], marker='o', color='w', label=labels[key], markerfacecolor=libcolors[key], markersize=5))
 
-    leg1 = plt.legend(handles=lines, loc='upper right', fontsize=7, title= "Library", bbox_to_anchor = (1,1))
+    leg1 = plt.legend(handles=lines, loc='upper right', fontsize=7, title= r"Library", bbox_to_anchor = (1,1))
 
     # create second legend with markershapes
     lines = []
     for key in markershapes:
         lines.append(plt.Line2D([0], [0], marker=markershapes[key], color='k', label=key, markersize=5, linestyle=""))
-    leg2 = plt.legend(handles=lines, loc='upper right', fontsize=7, title= "Optimizer", bbox_to_anchor = (0.8,1))
+    leg2 = plt.legend(handles=lines, loc='upper right', fontsize=7, title= r"Optimizer", bbox_to_anchor = (0.8,1))
 
     # add legends
     ax.add_artist(leg1), ax.add_artist(leg2)
