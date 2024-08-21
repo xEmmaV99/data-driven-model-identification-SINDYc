@@ -10,7 +10,7 @@ from libs import get_library_names
 import tqdm
 import matplotlib.pyplot as plt
 from optuna.study._multi_objective import _get_pareto_front_trials_by_trials
-
+from source import set_plot_defaults
 
 
 def optimize_parameters(
@@ -206,12 +206,8 @@ def plot_pareto(study, limits, target_names=None, logscale=False,
         target_names = [r"Mean Squared Error", r"Nonzero elements"]
 
     print("Using new function for matplotlib plot.")
-    _, ax = plt.subplots(figsize=(3.5, 3.5))
-    plt.rcParams.update({'font.size': 7})
-    plt.yticks(fontsize=7)
-    plt.xticks(fontsize=7)
-    plt.rcParams['text.usetex'] = True
-    cmap = plt.get_cmap("tab10")  # Use tab10 colormap for similar outputs to plotly.
+    ax = set_plot_defaults()
+    cmap = plt.get_cmap("tab10")
 
     ax.set_xlabel(target_names[0], fontsize=7)
     ax.set_ylabel(target_names[1], fontsize=7)

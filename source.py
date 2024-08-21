@@ -295,7 +295,7 @@ def plot_coefs2(model, show=False, log=False, type='currents'):
         )
 
     plt.grid(True)
-    plt.xticks(range(len(xticknames)), [r'$'+n+'$' for n in xticknames], rotation=90)
+    plt.xticks(range(len(xticknames)), [r'$' + n + '$' for n in xticknames], rotation=90)
 
     plt.legend()
     if show:
@@ -348,7 +348,7 @@ def load_model(name: str):
     """
     # load .pkl file
     if not name.endswith('.pkl'):
-        name = name  + '.pkl'
+        name = name + '.pkl'
     path = os.path.join(os.getcwd(), "models", name)
     with open(path, "rb") as file:
         model_data = pkl.load(file)
@@ -371,6 +371,15 @@ def load_model(name: str):
     new_model.optimizer.coef_ = model_data["coefs"]
 
     return new_model
+
+
+def set_plot_defaults():
+    _, ax = plt.subplots(figsize=(3.5, 3.5))
+    plt.rcParams.update({'font.size': 7})
+    plt.yticks(fontsize=7)
+    plt.xticks(fontsize=7)
+    plt.rcParams['text.usetex'] = True
+    return ax
 
 
 def plot_immec_data(path: str, simulation_number: int = None, title: str = None):
@@ -598,6 +607,51 @@ def test_plot_fourier():
     y = np.sin(2 * 2000 * np.pi * t)
     plot_fourier(x, y, dt=dt, tmax=tmax)
     return
+
+
+def plot_tiled_curr(datalist):
+    # 7.16 inch for double column
+    set_plot_defaults()
+    _, ax = plt.subplots(2, 3, sharex=True,sharey = 'row',figsize=(7.16 , 7.16/2))
+    [ax[1,j].set_xlabel(r'$t$ ($s$)') for j in range(3)] # share label
+    ax[0,0].set_ylabel(r'$\partial_t i_d$ ($A/s$)')
+    ax[1, 0].set_ylabel(r'$i_d$ ($A$)')
+
+    for i, path in enumerate(datalist):
+        with open(path, "rb") as file:
+            data = pkl.load(file)
+
+        for idx_str in data["plots"]:
+            ax[i // 3, i%3].plot(data["plots"][idx_str][:, 0], data["plots"][idx_str][:, 1], linestyle = ['-',':'][int(idx_str)]) #only plot 1 component
+            ax[i // 3, i%3].legend([[r"$\partial_t i_d$ predicted", r"$\partial_t i_d$ reference"],[r'$i_d$ predicted',r'$i_d$ reference']][i//3])
+
+    plt.tight_layout()
+    plt.show()
+    return
+
+def plot_tiled_TF(datalist):
+    # 7.16 inch for double column
+    set_plot_defaults()
+    _, ax = plt.subplots(2, 3, sharex=True,sharey = 'row',figsize=(7.16 , 7.16/2))
+    [ax[1,j].set_xlabel(r'$t$ ($s$)') for j in range(3)] # share label
+    ax[0,0].set_ylabel(r'Torque ($Nm$)')
+    ax[1, 0].set_ylabel(r'Unbalanced magnetic pull ($N$)')
+
+    for i, path in enumerate(datalist[:3]): # TORQUE
+        with open(path, "rb") as file:
+            data = pkl.load(file)
+
+        for idx_str in data["plots"]: # Torque has 3; torque, ref and Alternative. For UMP x and y comp should be plotted
+            ax[i // 3, i%3].plot(data["plots"][idx_str][:, 0], data["plots"][idx_str][:, 1], linestyle = ['-',':', '--'][int(idx_str)]) #only plot 1 component
+            ax[i // 3, i%3].legend([r"$T$ predicted",r"$T$ reference",r"$T$ alternative"])
+
+    for i, path in enumerate(datalist[4:]): # UMP, skip 0 ecc for now
+        pass
+
+    plt.tight_layout()
+    plt.show()
+    return
+
 
 
 def model_simulate(x0: np.array, u: np.array, model, t: np.array):
