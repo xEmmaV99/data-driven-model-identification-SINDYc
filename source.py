@@ -617,38 +617,91 @@ def plot_tiled_curr(datalist):
     ax[0,0].set_ylabel(r'$\partial_t i_d$ ($A/s$)')
     ax[1, 0].set_ylabel(r'$i_d$ ($A$)')
 
+    xlim = (3.2375, 3.26)
+    plt.xlim(xlim)
+
     for i, path in enumerate(datalist):
         with open(path, "rb") as file:
             data = pkl.load(file)
+        # only plot for  the values from data['plots'][idx_str][:,0] in xlim0
+        # define time_indices as the indices of the values from data['plots'][idx_str][:,0] in xlim0
+        time_indices = np.where((data['plots']['0'][:, 0] >= xlim[0]) & (data['plots']['0'][:, 0] <= xlim[1]))[0]
 
         for idx_str in data["plots"]:
-            ax[i // 3, i%3].plot(data["plots"][idx_str][:, 0], data["plots"][idx_str][:, 1], linestyle = ['-',':'][int(idx_str)]) #only plot 1 component
-            ax[i // 3, i%3].legend([[r"$\partial_t i_d$ predicted", r"$\partial_t i_d$ reference"],[r'$i_d$ predicted',r'$i_d$ reference']][i//3])
+            ax[i // 3, i%3].plot(data["plots"][idx_str][time_indices, 0], data["plots"][idx_str][time_indices, 1], linestyle = ['-',':'][int(idx_str)]) #only plot 1 component
 
-    plt.tight_layout()
+
+
+    ax[0, 0].set_ylim((-1100.,1100.))
+    ax[1, 0].set_ylim((-4.,4))
+
+    # Put a legend below middle plot
+    # tight layout but leave space between the rows
+    plt.tight_layout(rect=(0., 0.05, 1., 1.))
+    plt.subplots_adjust(hspace=0.3)
+
+    ax[0, 1].legend([r"$\partial_t i_d$ predicted", r"$\partial_t i_d$ reference"],loc='upper center', bbox_to_anchor=(0.5, -.05), ncol=5)
+    ax[1, 1].legend([r"$i_d$ predicted", r"$i_d$ reference"],loc='upper center', bbox_to_anchor=(0.5, -.25), ncol=5)
+
     plt.show()
     return
 
 def plot_tiled_TF(datalist):
     # 7.16 inch for double column
     set_plot_defaults()
-    _, ax = plt.subplots(2, 3, sharex=True,sharey = 'row',figsize=(7.16 , 7.16/2))
+    fig, ax = plt.subplots(2, 3, sharex=True, figsize=(7.16 , 7.16/2))
     [ax[1,j].set_xlabel(r'$t$ ($s$)') for j in range(3)] # share label
     ax[0,0].set_ylabel(r'Torque ($Nm$)')
     ax[1, 0].set_ylabel(r'Unbalanced magnetic pull ($N$)')
+    xlim = (2.545, 2.570)
+    plt.xlim(xlim)
 
     for i, path in enumerate(datalist[:3]): # TORQUE
         with open(path, "rb") as file:
             data = pkl.load(file)
 
+        # only plot what is in xlim
+        time_indices = np.where((data['plots']['0'][:, 0] >= xlim[0]) & (data['plots']['0'][:, 0] <= xlim[1]))[0]
         for idx_str in data["plots"]: # Torque has 3; torque, ref and Alternative. For UMP x and y comp should be plotted
-            ax[i // 3, i%3].plot(data["plots"][idx_str][:, 0], data["plots"][idx_str][:, 1], linestyle = ['-',':', '--'][int(idx_str)]) #only plot 1 component
-            ax[i // 3, i%3].legend([r"$T$ predicted",r"$T$ reference",r"$T$ alternative"])
+            ax[0, i%3].plot(data["plots"][idx_str][time_indices, 0], data["plots"][idx_str][time_indices, 1], linestyle = ['-',':', '--'][int(idx_str)], c = ['#1f77b4','k','#2ca02c'][int(idx_str)])
 
-    for i, path in enumerate(datalist[4:]): # UMP, skip 0 ecc for now
-        pass
+    for i, path in enumerate(datalist[3:]): #UMP
+        with open(path, "rb") as file:
+            data = pkl.load(file)
+        for idx_str in data["plots"]: # fx fy ref
+            ax[1, i%3].plot(data["plots"][idx_str][time_indices, 0], data["plots"][idx_str][time_indices, 1:], linestyle = ['-','-',':'][int(idx_str)], c = ['#17becf','#ff7f0e', 'b'][int(idx_str)])
+        ax[1, i%3].lines[-1].set_color('r') # set last one to red
 
+    #plt.tight_layout()
+    ax[0, 0].set_ylim((1.25,1.5))
+    ax[0, 1].set_ylim((2.65,2.95))
+    ax[0, 2].set_ylim((0.0,.35))
+    ax[1, 0].set_ylim((-3.,3.))
+    ax[1, 1].set_ylim((0.,250.))
+    ax[1, 2].set_ylim((-400.,400.))
+
+
+    # tight layout but leave space between the rows
+    plt.tight_layout(rect=(0.,0.05,1.,1.))
+    plt.subplots_adjust(hspace=0.3)
+
+    # legend below middle plot
+    l1 = ax[0, 1].legend([r"$T_{\mathrm{pred}}$",r"$T_{\mathrm{ref}}$",r"$T_{\mathrm{approx}}$"],loc='upper center', bbox_to_anchor=(0.5, -.05), ncol=5)
+    l2 = ax[1, 1].legend([r"UMP$_{x, \mathrm{pred}}$",r"UMP$_{y, \mathrm{pred}}$",r"UMP$_{x, \mathrm{ref}}$", r"UMP$_{y, \mathrm{ref}}$"],
+                         loc='upper center', bbox_to_anchor=(0.5, -.3), ncol=5)
+
+    # draw empty colors, all legend below the plots
+    '''
     plt.tight_layout()
+    lab = [r"$T_{\mathrm{pred}}$",r"$T_{\mathrm{ref}}$",r"$T_{\mathrm{approx}}$", r"UMP$_{x, \mathrm{pred}}$",r"UMP$_{y, \mathrm{pred}}$",r"UMP$_{x, \mathrm{ref}}$", r"UMP$_{y, \mathrm{ref}}$"]
+    lines = []
+    cols = ['#1f77b4','k','#2ca02c', '#17becf','#ff7f0e', 'b', 'r']
+    for j, col in enumerate(cols):
+        lines.append(plt.Line2D([0], [0], color=col, label = lab[j]))
+
+    ax[1,1].legend(handles = lines, loc = 'upper center',
+                    bbox_to_anchor=(0.5, -0.2), ncol=8)
+    '''
     plt.show()
     return
 

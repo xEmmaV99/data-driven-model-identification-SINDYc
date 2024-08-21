@@ -30,16 +30,16 @@ path4 = os.path.join(os.getcwd(), 'plot_data','_w5','currents_nl','currents_simu
 path5 = os.path.join(os.getcwd(), 'plot_data','_w5','currents_50_nl','currents_simulation70.pkl')
 path6 = os.path.join(os.getcwd(), 'plot_data','_w5','currents_d_nl','currents_simulation60.pkl')
 datalist = [path1, path2, path3, path4, path5, path6]
-#plot_tiled_curr(datalist)
-
+plot_tiled_curr(datalist)
 
 path1 = os.path.join(os.getcwd(), 'plot_data','_w5','torque_nl','torque5.pkl')
 path2 = os.path.join(os.getcwd(), 'plot_data','_w5','torque_50_nl','torque10.pkl')
 path3 = os.path.join(os.getcwd(), 'plot_data','_w5','torque_d_nl','torque50.pkl')
-
+path4 = os.path.join(os.getcwd(), 'plot_data','_w5','ump_nl','ump0.pkl')
 path5 = os.path.join(os.getcwd(), 'plot_data','_w5','ump_50_nl','UMP100.pkl')
 path6 = os.path.join(os.getcwd(), 'plot_data','_w5','ump_d_nl','UMP150.pkl')
-datalist = [path1, path2, path3, None, path5, path6]
-
+datalist = [path1, path2, path3, path4, path5, path6]
 
 plot_tiled_TF(datalist)
+
+## to do: the optuna plots, and mark the selected models...
