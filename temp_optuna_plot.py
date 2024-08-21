@@ -1,6 +1,6 @@
 import optuna
 from optimize_parameters import plot_pareto, plot_optuna_data
-
+# todo write file to generate all pareto plots :)
 
 # plot pareto front
 
