@@ -201,7 +201,6 @@ def plot_optuna_data(name):
 
 def plot_pareto(study, limits = None, target_names=None, logscale=False,
                 save_name='dummy', show = False, mark_trials = None):  # uses matplotlib to plot the paretoplot
-    # todo default limits
     # todo speed up?
     # Set up the graph style.
     if target_names is None:
@@ -233,14 +232,14 @@ def plot_pareto(study, limits = None, target_names=None, logscale=False,
     opt2_trials = [trial for trial in all_trials if trial.params['optimizer'] == 'stlsq' if trial.values is not None]
     opt3_trials = [trial for trial in all_trials if trial.params['optimizer'] == 'lasso' if trial.values is not None]
 
-    # if all opt_trials are empty, throw error todo
     if not opt1_trials == []:
         ax.scatter(
             x=[trial.values[0] for trial in opt1_trials],
             y=[trial.values[1] for trial in opt1_trials],
             color=[libcolors[trial.params['lib_choice']] for trial in opt1_trials],
             label=[trial.params['lib_choice'] for trial in opt1_trials],
-            marker=markershapes['sr3'], alpha=[1 if trial in best_trials else 0.3 for trial in opt1_trials]
+            marker=markershapes['sr3'], alpha=[1 if trial in best_trials else 0.3 for trial in opt1_trials],
+            s = 13
         )
     if not opt2_trials == []:
         ax.scatter(
@@ -248,7 +247,8 @@ def plot_pareto(study, limits = None, target_names=None, logscale=False,
             y=[trial.values[1] for trial in opt2_trials],
             color=[libcolors[trial.params['lib_choice']] for trial in opt2_trials],
             label=[trial.params['lib_choice'] for trial in opt2_trials],
-            marker=markershapes['stlsq'], alpha=[1 if trial in best_trials else 0.3 for trial in opt2_trials]
+            marker=markershapes['stlsq'], alpha=[1 if trial in best_trials else 0.3 for trial in opt2_trials],
+            s=13
         )
     if not opt3_trials == []:
         ax.scatter(
@@ -256,7 +256,8 @@ def plot_pareto(study, limits = None, target_names=None, logscale=False,
             y=[trial.values[1] for trial in opt3_trials],
             color=[libcolors[trial.params['lib_choice']] for trial in opt3_trials],
             label=[trial.params['lib_choice'] for trial in opt3_trials],
-            marker=markershapes['lasso'], alpha=[1 if trial in best_trials else 0.3 for trial in opt3_trials]
+            marker=markershapes['lasso'], alpha=[1 if trial in best_trials else 0.3 for trial in opt3_trials],
+            s=13
         )
     if all ([opt1_trials == [], opt2_trials == [], opt3_trials == []]):
         print("No trials found inside the limits")
@@ -266,7 +267,7 @@ def plot_pareto(study, limits = None, target_names=None, logscale=False,
             x = [study.trials[trial_id].values[0] for trial_id in mark_trials],
             y = [study.trials[trial_id].values[1] for trial_id in mark_trials],
             color='black', marker='o', alpha=1,
-            s=80, facecolors='none'
+            s=70, facecolors='none'
         )
 
     if logscale:
@@ -314,7 +315,13 @@ def plot_pareto(study, limits = None, target_names=None, logscale=False,
     # add legends
     ax.add_artist(leg1), ax.add_artist(leg2)
 
-    plt.savefig('pdfs//' + save_name + '.pdf', dpi=600.0)
+    # # if delta lim is very small, only plot every 3rd other tick:
+    if limits[0][0] > 1 and limits[0][1] - limits[0][0] < 0.01:
+        for label in ax.xaxis.get_ticklabels()[::2-1]:
+            label.set_visible(False)
+
+    plt.savefig('pdfs//optuna//' + save_name + '.pdf', dpi=600.0)
+
     if show:
         plt.show()
     return ax

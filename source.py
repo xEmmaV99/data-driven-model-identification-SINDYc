@@ -374,11 +374,11 @@ def load_model(name: str):
 
 
 def set_plot_defaults():
-    _, ax = plt.subplots(figsize=(3.5, 3.5))
     plt.rcParams.update({'font.size': 7})
     plt.yticks(fontsize=7)
     plt.xticks(fontsize=7)
     plt.rcParams['text.usetex'] = True
+    _, ax = plt.subplots(figsize=(3.5, 3.5))
     return ax
 
 
@@ -609,7 +609,7 @@ def test_plot_fourier():
     return
 
 
-def plot_tiled_curr(datalist):
+def plot_tiled_curr(datalist, save_name="test_c"):
     # 7.16 inch for double column
     set_plot_defaults()
     _, ax = plt.subplots(2, 3, sharex=True,sharey = 'row',figsize=(7.16 , 7.16/2))
@@ -642,11 +642,11 @@ def plot_tiled_curr(datalist):
 
     ax[0, 1].legend([r"$\partial_t i_d$ predicted", r"$\partial_t i_d$ reference"],loc='upper center', bbox_to_anchor=(0.5, -.05), ncol=5)
     ax[1, 1].legend([r"$i_d$ predicted", r"$i_d$ reference"],loc='upper center', bbox_to_anchor=(0.5, -.25), ncol=5)
-
+    plt.savefig('pdfs//' + save_name + '.pdf', dpi=600.0)
     plt.show()
     return
 
-def plot_tiled_TF(datalist):
+def plot_tiled_TF(datalist, save_name = "test_TF"):
     # 7.16 inch for double column
     set_plot_defaults()
     fig, ax = plt.subplots(2, 3, sharex=True, figsize=(7.16 , 7.16/2))
@@ -702,6 +702,7 @@ def plot_tiled_TF(datalist):
     ax[1,1].legend(handles = lines, loc = 'upper center',
                     bbox_to_anchor=(0.5, -0.2), ncol=8)
     '''
+    plt.savefig('pdfs//' + save_name + '.pdf', dpi=600.0)
     plt.show()
     return
 

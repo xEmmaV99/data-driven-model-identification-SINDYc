@@ -3,10 +3,9 @@ from optimize_parameters import plot_pareto, plot_optuna_data
 from source import *
 import os
 
-# todo write file to generate all pareto plots :)
 # plot pareto front
-part1 = True
-part2 = False
+part1 = False
+part2 = True
 
 if part1:
     opt_study_names = ['currentsnonlinear',
@@ -20,12 +19,12 @@ if part1:
                        'umpnonlinear_dynamic_50ecc'
                        ]
     limit_list = [[[5e1, 2e3], [0, 300]],
-                  [[5e1, 2e3], [0, 300]], # maybe not good
-                  [[5e2, 2e3], [0, 300]], # this one is shifted
+                  [[5e1, 2e3], [0, 400]],
+                  [[5e2, 2e3], [0, 300]], # REDO PARETOPLOT -----------------
                   [[1e-5, 5e-4], [0, 100]],
                   [[4e-5, 5e-4], [0, 100]],
-                  [[5e-4, 15e-4], [0, 130]], #somethig is wrong here
-                  [[1.91, 1.9175], [0, 90]], # xlab is weird
+                  [[5e-4, 15e-4], [0, 130]],
+                  [[1.911, 1.915], [0, 90]],
                   [[3, 600], [0, 500]],
                   [[5e3, 4e4], [0, 800]]
                   ]
@@ -49,9 +48,9 @@ if part1:
         ### matplotlib figure
         plot_pareto(stud,
                     limits=limit_list[j],
-                    logscale=True,
+                    logscale=True if study != 'umpnonlinear' else False,
                     target_names=[r'Mean Squared Error '+ ['($A^2$)','($N^2 m^2$)','($N^2$)'][j//3], r'Nonzero elements'],
-                    show=True, mark_trials=marks[j],
+                    show=False, mark_trials=marks[j],
                     save_name = study)
         # for torque MSE : ($N^2 m^2$) but for UMP it is in N^2 and for currents in A^2
 
