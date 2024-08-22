@@ -375,10 +375,10 @@ def load_model(name: str):
 
 def set_plot_defaults():
     plt.rcParams.update({'font.size': 7})
-    plt.yticks(fontsize=7)
-    plt.xticks(fontsize=7)
     plt.rcParams['text.usetex'] = True
     _, ax = plt.subplots(figsize=(3.5, 3.5))
+    plt.yticks(fontsize=7)
+    plt.xticks(fontsize=7)
     return ax
 
 
@@ -609,15 +609,16 @@ def test_plot_fourier():
     return
 
 
-def plot_tiled_curr(datalist, save_name="test_c"):
+def plot_tiled_curr(datalist, save_name="test_c", show =False):
     # 7.16 inch for double column
     set_plot_defaults()
-    _, ax = plt.subplots(2, 3, sharex=True,sharey = 'row',figsize=(7.16 , 7.16/2))
+    plt.close()
+    _, ax = plt.subplots(2, 3, sharex=True,sharey = 'row',figsize=(7.16 , 7.16/2)) #0.1 for legend
     [ax[1,j].set_xlabel(r'$t$ ($s$)') for j in range(3)] # share label
-    ax[0,0].set_ylabel(r'$\partial_t i_d$ ($A/s$)')
+    ax[0,0].set_ylabel(r'$\frac{\partial i_d}{\partial t}$ ($A/s$)')
     ax[1, 0].set_ylabel(r'$i_d$ ($A$)')
 
-    xlim = (3.2375, 3.26)
+    xlim = (3.2375, 3.2525)
     plt.xlim(xlim)
 
     for i, path in enumerate(datalist):
@@ -628,33 +629,42 @@ def plot_tiled_curr(datalist, save_name="test_c"):
         time_indices = np.where((data['plots']['0'][:, 0] >= xlim[0]) & (data['plots']['0'][:, 0] <= xlim[1]))[0]
 
         for idx_str in data["plots"]:
-            ax[i // 3, i%3].plot(data["plots"][idx_str][time_indices, 0], data["plots"][idx_str][time_indices, 1], linestyle = ['-',':'][int(idx_str)]) #only plot 1 component
+            ax[i // 3, i%3].plot(data["plots"][idx_str][time_indices, 0],
+                                 data["plots"][idx_str][time_indices, 1],
+                                 linestyle = ['-',':'][int(idx_str)],
+                                 c = ['#1f77b4','k'][int(idx_str)]) #only plot 1 component
+    ax[0, 0].set_ylim((-.1,1100.))
+    ax[1, 0].set_ylim((-4,4))
 
-
-
-    ax[0, 0].set_ylim((-1100.,1100.))
-    ax[1, 0].set_ylim((-4.,4))
+    #plot every other x label
+    for i in range(3):
+        ax[1,i].xaxis.set_major_locator(plt.MaxNLocator(4))
 
     # Put a legend below middle plot
     # tight layout but leave space between the rows
-    plt.tight_layout(rect=(0., 0.05, 1., 1.))
-    plt.subplots_adjust(hspace=0.3)
+    plt.tight_layout(rect=(0., 0.04, 1., 1.))
+    #plt.subplots_adjust(hspace=0.3)
 
-    ax[0, 1].legend([r"$\partial_t i_d$ predicted", r"$\partial_t i_d$ reference"],loc='upper center', bbox_to_anchor=(0.5, -.05), ncol=5)
-    ax[1, 1].legend([r"$i_d$ predicted", r"$i_d$ reference"],loc='upper center', bbox_to_anchor=(0.5, -.25), ncol=5)
+    #ax[0, 1].legend([r"$\frac{\partial i_d}{\partial t}$ predicted", r"$\frac{\partial i_d}{\partial t}$ reference"],loc='upper center', bbox_to_anchor=(0.5, -.05), ncol=5)
+    #ax[1, 1].legend([r"$i_d$ predicted", r"$i_d$ reference"],loc='upper center', bbox_to_anchor=(0.5, -.25), ncol=5)
+    ax[1, 1].legend([r"Predicted", r"Reference"], loc='upper center', bbox_to_anchor=(0.5, -.25), ncol=5)
+
     plt.savefig('pdfs//' + save_name + '.pdf', dpi=600.0)
-    plt.show()
+    if show:
+        plt.show()
     return
 
-def plot_tiled_TF(datalist, save_name = "test_TF"):
+def plot_tiled_TF(datalist, save_name = "test_TF", show=False):
     # 7.16 inch for double column
     set_plot_defaults()
-    fig, ax = plt.subplots(2, 3, sharex=True, figsize=(7.16 , 7.16/2))
-    [ax[1,j].set_xlabel(r'$t$ ($s$)') for j in range(3)] # share label
+    plt.close()
+    fig, ax = plt.subplots(2, 3,sharex='row', figsize=(7.16 , 7.16/2+0.6))
+    [ax[1,j].set_xlabel(r'$t$ ($s$)') for j in range(3)]
+    [ax[0,j].set_xlabel(r'$t$ ($s$)') for j in range(3)]
     ax[0,0].set_ylabel(r'Torque ($Nm$)')
     ax[1, 0].set_ylabel(r'Unbalanced magnetic pull ($N$)')
-    xlim = (2.545, 2.570)
-    plt.xlim(xlim)
+    xlim = (2.550, 2.565)
+    ax[0,0].set_xlim(xlim)
 
     for i, path in enumerate(datalist[:3]): # TORQUE
         with open(path, "rb") as file:
@@ -665,9 +675,14 @@ def plot_tiled_TF(datalist, save_name = "test_TF"):
         for idx_str in data["plots"]: # Torque has 3; torque, ref and Alternative. For UMP x and y comp should be plotted
             ax[0, i%3].plot(data["plots"][idx_str][time_indices, 0], data["plots"][idx_str][time_indices, 1], linestyle = ['-',':', '--'][int(idx_str)], c = ['#1f77b4','k','#2ca02c'][int(idx_str)])
 
+    xlim = (2.545, 2.570)
+    ax[1, 0].set_xlim(xlim)
     for i, path in enumerate(datalist[3:]): #UMP
         with open(path, "rb") as file:
             data = pkl.load(file)
+
+        # only plot what is in xlim
+        time_indices = np.where((data['plots']['0'][:, 0] >= xlim[0]) & (data['plots']['0'][:, 0] <= xlim[1]))[0]
         for idx_str in data["plots"]: # fx fy ref
             ax[1, i%3].plot(data["plots"][idx_str][time_indices, 0], data["plots"][idx_str][time_indices, 1:], linestyle = ['-','-',':'][int(idx_str)], c = ['#17becf','#ff7f0e', 'b'][int(idx_str)])
         ax[1, i%3].lines[-1].set_color('r') # set last one to red
@@ -682,13 +697,13 @@ def plot_tiled_TF(datalist, save_name = "test_TF"):
 
 
     # tight layout but leave space between the rows
-    plt.tight_layout(rect=(0.,0.05,1.,1.))
-    plt.subplots_adjust(hspace=0.3)
+    plt.tight_layout(rect=(0.,0.04,1.,1.))
+    plt.subplots_adjust(hspace=0.5)
 
     # legend below middle plot
-    l1 = ax[0, 1].legend([r"$T_{\mathrm{pred}}$",r"$T_{\mathrm{ref}}$",r"$T_{\mathrm{approx}}$"],loc='upper center', bbox_to_anchor=(0.5, -.05), ncol=5)
+    l1 = ax[0, 1].legend([r"$T_{\mathrm{pred}}$",r"$T_{\mathrm{ref}}$",r"$T_{\mathrm{approx}}$"],loc='upper center', bbox_to_anchor=(0.5, -.25), ncol=5)
     l2 = ax[1, 1].legend([r"UMP$_{x, \mathrm{pred}}$",r"UMP$_{y, \mathrm{pred}}$",r"UMP$_{x, \mathrm{ref}}$", r"UMP$_{y, \mathrm{ref}}$"],
-                         loc='upper center', bbox_to_anchor=(0.5, -.3), ncol=5)
+                         loc='upper center', bbox_to_anchor=(0.5, -.25), ncol=5)
 
     # draw empty colors, all legend below the plots
     '''
@@ -703,7 +718,8 @@ def plot_tiled_TF(datalist, save_name = "test_TF"):
                     bbox_to_anchor=(0.5, -0.2), ncol=8)
     '''
     plt.savefig('pdfs//' + save_name + '.pdf', dpi=600.0)
-    plt.show()
+    if show:
+        plt.show()
     return
 
 
