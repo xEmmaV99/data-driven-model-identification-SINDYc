@@ -234,34 +234,37 @@ def plot_pareto(study, limits = None, target_names=None, logscale=False,
     opt3_trials = [trial for trial in all_trials if trial.params['optimizer'] == 'lasso' if trial.values is not None]
 
     # if all opt_trials are empty, throw error todo
-
-    ax.scatter(
-        x=[trial.values[0] for trial in opt1_trials],
-        y=[trial.values[1] for trial in opt1_trials],
-        color=[libcolors[trial.params['lib_choice']] for trial in opt1_trials],
-        label=[trial.params['lib_choice'] for trial in opt1_trials],
-        marker=markershapes['sr3'], alpha=[1 if trial in best_trials else 0.3 for trial in opt1_trials]
-    )
-    ax.scatter(
-        x=[trial.values[0] for trial in opt2_trials],
-        y=[trial.values[1] for trial in opt2_trials],
-        color=[libcolors[trial.params['lib_choice']] for trial in opt2_trials],
-        label=[trial.params['lib_choice'] for trial in opt2_trials],
-        marker=markershapes['stlsq'], alpha=[1 if trial in best_trials else 0.3 for trial in opt2_trials]
-    )
-    ax.scatter(
-        x=[trial.values[0] for trial in opt3_trials],
-        y=[trial.values[1] for trial in opt3_trials],
-        color=[libcolors[trial.params['lib_choice']] for trial in opt3_trials],
-        label=[trial.params['lib_choice'] for trial in opt3_trials],
-        marker=markershapes['lasso'], alpha=[1 if trial in best_trials else 0.3 for trial in opt3_trials]
-    )
-
+    if not opt1_trials == []:
+        ax.scatter(
+            x=[trial.values[0] for trial in opt1_trials],
+            y=[trial.values[1] for trial in opt1_trials],
+            color=[libcolors[trial.params['lib_choice']] for trial in opt1_trials],
+            label=[trial.params['lib_choice'] for trial in opt1_trials],
+            marker=markershapes['sr3'], alpha=[1 if trial in best_trials else 0.3 for trial in opt1_trials]
+        )
+    if not opt2_trials == []:
+        ax.scatter(
+            x=[trial.values[0] for trial in opt2_trials],
+            y=[trial.values[1] for trial in opt2_trials],
+            color=[libcolors[trial.params['lib_choice']] for trial in opt2_trials],
+            label=[trial.params['lib_choice'] for trial in opt2_trials],
+            marker=markershapes['stlsq'], alpha=[1 if trial in best_trials else 0.3 for trial in opt2_trials]
+        )
+    if not opt3_trials == []:
+        ax.scatter(
+            x=[trial.values[0] for trial in opt3_trials],
+            y=[trial.values[1] for trial in opt3_trials],
+            color=[libcolors[trial.params['lib_choice']] for trial in opt3_trials],
+            label=[trial.params['lib_choice'] for trial in opt3_trials],
+            marker=markershapes['lasso'], alpha=[1 if trial in best_trials else 0.3 for trial in opt3_trials]
+        )
+    if all ([opt1_trials == [], opt2_trials == [], opt3_trials == []]):
+        print("No trials found inside the limits")
     # extra mark the special trials
     if mark_trials is not None:
         ax.scatter(
-            x = [all_trials[trial_id].values[0] for trial_id in mark_trials],
-            y = [all_trials[trial_id].values[1] for trial_id in mark_trials],
+            x = [study.trials[trial_id].values[0] for trial_id in mark_trials],
+            y = [study.trials[trial_id].values[1] for trial_id in mark_trials],
             color='black', marker='o', alpha=1,
             s=80, facecolors='none'
         )

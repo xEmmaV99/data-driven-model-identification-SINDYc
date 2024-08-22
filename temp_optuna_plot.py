@@ -19,31 +19,41 @@ if part1:
                        'umpnonlinear_50ecc',
                        'umpnonlinear_dynamic_50ecc'
                        ]
-    limit_list = [[[5e1, 3e3], [0, 400]],
-                  [[5e1, 3e3], [0, 400]],
-                  [[5e2, 3e3], [0, 400]],
-                  [[1e-5, 1e-3], [0, 150]],
-                  [[4e-5, 1e-3], [0, 150]],
-                  [[5e-4, 2e-2], [0, 80]],
-                  [[1.91, 1.9175], [0, 90]],
-                  [[3, 1e4], [0, 500]],
-                  [[5e3, 5e5], [0, 800]]
+    limit_list = [[[5e1, 2e3], [0, 300]],
+                  [[5e1, 2e3], [0, 300]], # maybe not good
+                  [[5e2, 2e3], [0, 300]], # this one is shifted
+                  [[1e-5, 5e-4], [0, 100]],
+                  [[4e-5, 5e-4], [0, 100]],
+                  [[5e-4, 15e-4], [0, 130]], #somethig is wrong here
+                  [[1.91, 1.9175], [0, 90]], # xlab is weird
+                  [[3, 600], [0, 500]],
+                  [[5e3, 4e4], [0, 800]]
                   ]
-    #mark_idx = [0, 0, 0, 0, 0, 0, 0, 0, 0] # todo
+    marks = [[528,320,491],
+             [857,626,928],
+             [463, 985],
+             [1557,1045],
+             [936,849],
+             [703,109],
+             [306],
+             [634, 988],
+             [1077,1171]]
+
 
     for j, study in enumerate(opt_study_names):
         stud = optuna.load_study(study_name=None,
                                  storage="sqlite:///" + "optuna_studies/_w5/" + study + "-optuna-study.db")
         ### html interactive figure
-        plot_optuna_data(study+'-optuna-study')
+        #plot_optuna_data("_w5/"+study+'-optuna-study')
 
         ### matplotlib figure
         plot_pareto(stud,
                     limits=limit_list[j],
                     logscale=True,
-                    save_name='test',
-                    target_names=[r'Mean Squared Error ($N^2 m^2$)', r'Nonzero elements'],
-                    show=True, mark_trials=None)
+                    target_names=[r'Mean Squared Error '+ ['($A^2$)','($N^2 m^2$)','($N^2$)'][j//3], r'Nonzero elements'],
+                    show=True, mark_trials=marks[j],
+                    save_name = study)
+        # for torque MSE : ($N^2 m^2$) but for UMP it is in N^2 and for currents in A^2
 
 if part2:
     # Now, I want to plot a plot of the currents
