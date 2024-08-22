@@ -199,8 +199,10 @@ def plot_optuna_data(name):
     return
 
 
-def plot_pareto(study, limits, target_names=None, logscale=False,
+def plot_pareto(study, limits = None, target_names=None, logscale=False,
                 save_name='dummy', show = False, mark_trials = None):  # uses matplotlib to plot the paretoplot
+    # todo default limits
+    # todo speed up?
     # Set up the graph style.
     if target_names is None:
         target_names = [r"Mean Squared Error", r"Nonzero elements"]
@@ -220,11 +222,18 @@ def plot_pareto(study, limits, target_names=None, logscale=False,
                  "nonlinear_terms": cmap(3),
                  "interaction_only": cmap(4)}
     all_trials = study.trials
+
+    # reduce all_trials to trials with values in limits
+    if limits is not None:
+        all_trials = [trial for trial in all_trials if trial.values is not None and all([limits[i][0] <= trial.values[i] <= limits[i][1] for i in range(len(limits))])]
+
     best_trials = _get_pareto_front_trials_by_trials(all_trials, study.directions)
 
-    opt1_trials = [trial for trial in all_trials if trial.params['optimizer'] == 'sr3']
-    opt2_trials = [trial for trial in all_trials if trial.params['optimizer'] == 'stlsq']
-    opt3_trials = [trial for trial in all_trials if trial.params['optimizer'] == 'lasso']
+    opt1_trials = [trial for trial in all_trials if trial.params['optimizer'] == 'sr3' if trial.values is not None]
+    opt2_trials = [trial for trial in all_trials if trial.params['optimizer'] == 'stlsq' if trial.values is not None]
+    opt3_trials = [trial for trial in all_trials if trial.params['optimizer'] == 'lasso' if trial.values is not None]
+
+    # if all opt_trials are empty, throw error todo
 
     ax.scatter(
         x=[trial.values[0] for trial in opt1_trials],
@@ -249,20 +258,22 @@ def plot_pareto(study, limits, target_names=None, logscale=False,
     )
 
     # extra mark the special trials
-    ax.scatter(
-        x = [all_trials[trial_id].values[0] for trial_id in mark_trials],
-        y=[all_trials[trial_id].values[1] for trial_id in mark_trials],
-        color='black', marker='o', alpha=1,
-        s=80, facecolors='none'
-    )
+    if mark_trials is not None:
+        ax.scatter(
+            x = [all_trials[trial_id].values[0] for trial_id in mark_trials],
+            y = [all_trials[trial_id].values[1] for trial_id in mark_trials],
+            color='black', marker='o', alpha=1,
+            s=80, facecolors='none'
+        )
 
     if logscale:
         plt.xscale("log")
     plt.tight_layout()
     ax.set_axisbelow(True)
     plt.grid(True, which="both")
-    plt.xlim(limits[0])
-    plt.ylim(limits[1])
+    if limits is not None:
+        plt.xlim(limits[0])
+        plt.ylim(limits[1])
 
     # add legend
     lines = []
@@ -273,6 +284,10 @@ def plot_pareto(study, limits, target_names=None, logscale=False,
               "interaction_only": r'E'}
 
     def in_scope(values):
+        if values is None: # failed trial iguess
+            return False
+        if limits is None:
+            return True
         if values[0] < limits[0][0] or values[0] > limits[0][1]:
             return False
         if values[1] < limits[1][0] or values[1] > limits[1][1]:
