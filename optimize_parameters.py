@@ -317,7 +317,7 @@ def plot_pareto(study, limits = None, target_names=None, logscale=False,
 
     # # if delta lim is very small, only plot every 3rd other tick:
     if limits[0][0] > 1 and limits[0][1] - limits[0][0] < 0.01:
-        for label in ax.xaxis.get_ticklabels()[::2-1]:
+        for label in ax.xaxis.get_ticklabels()[::2]:
             label.set_visible(False)
 
     plt.savefig('pdfs//optuna//' + save_name + '.pdf', dpi=600.0)

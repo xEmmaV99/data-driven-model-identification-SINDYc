@@ -7,7 +7,7 @@ from tabulate import tabulate
 
 # plot pareto front
 part1 = False
-part2 = True
+part2 = False
 part3 = True
 
 p = os.path.join(os.getcwd(), "plot_data", "_w5")
@@ -142,4 +142,14 @@ if part3:
     combined = np.array([[f"{MAE[i, j]:.3e} ({int(V[i, j])})" if i not in [3,4,5,7] else f"{MAE[i,j]:.3e}" for j in range(MAE.shape[1])] for i in range(MAE.shape[0])])
 
     print(tabulate(combined, headers=["MAE", "no ecc", "50 ecc", "dynamic ecc"], showindex=[
-            r"did (A/s)", r"diq (A/s)", r"di0 (A/s)", r"id (A)", r"iq (A)", r"i0 (A)", r"T (Nm)", r"Tc (Nm)", r"umpx (N)", r"umpy (N)"]))
+        r"$\frac{\partial i_d}{\partial t} (A/s)$",
+        r"$\frac{\partial i_q}{\partial t} (A/s)$",
+        r"$\frac{\partial i_0}{\partial t} (A/s)$",
+        r"$i_d (A)$",
+        r"$i_q (A)$",
+        r"$i_0 (A)$",
+        r"$T (Nm)$",
+        r"$T_c (Nm)$",
+        r"$\text{UMP}_x (N)$",
+        r"$\text{UMP}_x (N)$"],
+        tablefmt = 'latex_raw'))
