@@ -1,77 +1,145 @@
 import optuna
 from optimize_parameters import plot_pareto, plot_optuna_data
 from source import *
+import numpy as np
 import os
+from tabulate import tabulate
 
 # plot pareto front
 part1 = False
 part2 = True
+part3 = True
 
+p = os.path.join(os.getcwd(), "plot_data", "_w5")
+path1 = os.path.join(p, "currents_nl", "currents70.pkl")
+path2 = os.path.join(p, "currents_50_nl", "currents70.pkl")
+path3 = os.path.join(p, "currents_d_nl", "currents60.pkl")  # WHY DOES THIS ONE HAVE LESS COEFFICIENTS
+path4 = os.path.join(p, "currents_nl", "currents_simulation70.pkl")
+path5 = os.path.join(p, "currents_50_nl", "currents_simulation70.pkl")
+path6 = os.path.join(p, "currents_d_nl", "currents_simulation60.pkl")
+
+path7 = os.path.join(p, "torque_nl", "torque5.pkl")  # good enough? 1 term different from the reference
+path8 = os.path.join(p, "torque_50_nl", "torque10.pkl")  # torque10 also possible but worse or 40
+path9 = os.path.join(p, "torque_d_nl", "torque50.pkl") # 50 also possible or 100
+path10 = os.path.join(p, "ump_nl", "ump0.pkl")
+path11 = os.path.join(p, "ump_50_nl", "UMP100.pkl")
+path12 = os.path.join(p, "ump_d_nl", "UMP150.pkl")
+datalist = [path1, path2, path3, path4, path5, path6, path7, path8, path9, path10, path11, path12]
+
+modellist = ['currents_nonlinear_70', 'currents_nonlinear_50ecc_70', 'currents_nonlinear_dynamic_50ecc_60',
+                'torque_nonlinear_5', 'torque_nonlinear_50ecc_10', 'torque_nonlinear_dynamic_50ecc_50',
+                'ump_nonlinear_0', 'ump_nonlinear_50ecc_100', 'ump_nonlinear_dynamic_50ecc_150']
+
+# todo selected method with red indicated, other methods black.
 if part1:
-    opt_study_names = ['currentsnonlinear',
-                       'currentsnonlinear_50ecc',
-                       'currentsnonlinear_dynamic_50ecc',
-                       'torquenonlinear',
-                       'torquenonlinear_50ecc',
-                       'torquenonlinear_dynamic_50ecc',
-                       'umpnonlinear',
-                       'umpnonlinear_50ecc',
-                       'umpnonlinear_dynamic_50ecc'
-                       ]
-    limit_list = [[[5e1, 2e3], [0, 300]],
-                  [[5e1, 2e3], [0, 400]],
-                  [[5e2, 2e3], [0, 300]], # REDO PARETOPLOT -----------------
-                  [[1e-5, 5e-4], [0, 100]],
-                  [[4e-5, 5e-4], [0, 100]],
-                  [[5e-4, 15e-4], [0, 130]],
-                  [[1.911, 1.915], [0, 90]],
-                  [[3, 600], [0, 500]],
-                  [[5e3, 4e4], [0, 800]]
-                  ]
-    marks = [[528,320,491],
-             [857,626,928],
-             [463, 985],
-             [1557,1045],
-             [936,849],
-             [703,109],
-             [306],
-             [634, 988],
-             [1077,1171]]
-
+    opt_study_names = [
+        "currentsnonlinear",
+        "currentsnonlinear_50ecc",
+        "currentsnonlinear_dynamic_50ecc",
+        "torquenonlinear",
+        "torquenonlinear_50ecc",
+        "torquenonlinear_dynamic_50ecc",
+        "umpnonlinear",
+        "umpnonlinear_50ecc",
+        "umpnonlinear_dynamic_50ecc",
+    ]
+    limit_list = [
+        [[5e1, 2e3], [0, 300]],
+        [[5e1, 2e3], [0, 400]],
+        [[5e2, 2e3], [0, 300]],  # REDO PARETOPLOT -----------------
+        [[1e-5, 5e-4], [0, 100]],
+        [[4e-5, 5e-4], [0, 100]],
+        [[5e-4, 15e-4], [0, 130]],
+        [[1.911, 1.915], [0, 90]],
+        [[3, 600], [0, 500]],
+        [[5e3, 4e4], [0, 800]],
+    ]
+    marks = [
+        [528, 320, 491],
+        [857, 626, 928],
+        [463, 985],
+        [1557, 1045],
+        [936, 849],
+        [703, 109],
+        [306],
+        [634, 988],
+        [1077, 1171],
+    ]
 
     for j, study in enumerate(opt_study_names):
-        stud = optuna.load_study(study_name=None,
-                                 storage="sqlite:///" + "optuna_studies/_w5/" + study + "-optuna-study.db")
+        stud = optuna.load_study(
+            study_name=None,
+            storage="sqlite:///" + "optuna_studies/_w5/" + study + "-optuna-study.db",
+        )
         ### html interactive figure
-        #plot_optuna_data("_w5/"+study+'-optuna-study')
+        # plot_optuna_data("_w5/"+study+'-optuna-study')
 
         ### matplotlib figure
-        plot_pareto(stud,
-                    limits=limit_list[j],
-                    logscale=True if study != 'umpnonlinear' else False,
-                    target_names=[r'Mean Squared Error '+ ['($A^2$)','($N^2 m^2$)','($N^2$)'][j//3], r'Nonzero elements'],
-                    show=False, mark_trials=marks[j],
-                    save_name = study)
+        plot_pareto(
+            stud,
+            limits=limit_list[j],
+            logscale=True if study != "umpnonlinear" else False,
+            target_names=[
+                r"Mean Squared Error " + ["($A^2$)", "($N^2 m^2$)", "($N^2$)"][j // 3],
+                r"Nonzero elements",
+            ],
+            show=False,
+            mark_trials=marks[j],
+            save_name=study,
+        )
         # for torque MSE : ($N^2 m^2$) but for UMP it is in N^2 and for currents in A^2
 
 if part2:
-    # Now, I want to plot a plot of the currents
-    path1 = os.path.join(os.getcwd(), 'plot_data', '_w5', 'currents_nl', 'currents70.pkl')
-    path2 = os.path.join(os.getcwd(), 'plot_data', '_w5', 'currents_50_nl', 'currents70.pkl')
-    path3 = os.path.join(os.getcwd(), 'plot_data', '_w5', 'currents_d_nl', 'currents60.pkl') # WHY DOES THIS ONE HAVE LESS COEFFICIENTS
-    path4 = os.path.join(os.getcwd(), 'plot_data', '_w5', 'currents_nl', 'currents_simulation70.pkl')
-    path5 = os.path.join(os.getcwd(), 'plot_data', '_w5', 'currents_50_nl', 'currents_simulation70.pkl')
-    path6 = os.path.join(os.getcwd(), 'plot_data', '_w5', 'currents_d_nl', 'currents_simulation60.pkl')
-    datalist = [path1, path2, path3, path4, path5, path6]
-    plot_tiled_curr(datalist, show = False)
+    plot_tiled_curr(datalist[:6], show=False)
+    plot_tiled_TF(datalist[-6:], show=True)
 
-    path1 = os.path.join(os.getcwd(), 'plot_data', '_w5', 'torque_nl', 'torque5.pkl')
-    path2 = os.path.join(os.getcwd(), 'plot_data', '_w5', 'torque_50_nl', 'torque10.pkl')
-    path3 = os.path.join(os.getcwd(), 'plot_data', '_w5', 'torque_d_nl', 'torque50.pkl')
-    path4 = os.path.join(os.getcwd(), 'plot_data', '_w5', 'ump_nl', 'ump0.pkl')
-    path5 = os.path.join(os.getcwd(), 'plot_data', '_w5', 'ump_50_nl', 'UMP100.pkl')
-    path6 = os.path.join(os.getcwd(), 'plot_data', '_w5', 'ump_d_nl', 'UMP150.pkl')
-    datalist = [path1, path2, path3, path4, path5, path6]
-    plot_tiled_TF(datalist, show = True)
+if part3:
+    def get_sparsity(models):
+        spar = np.zeros((6,3))
+        for j,model in enumerate(models):
+            model = load_model('_w5/'+model + '_model')
+            if j < 3:
+                spar[:3, j] = np.count_nonzero(model.coefficients(), axis = 1)
+            elif j < 6:
+                spar[3, j%3] = np.count_nonzero(model.coefficients())
+            else:
+                spar[4:, j%3] = np.count_nonzero(model.coefficients(), axis = 1)
+        return spar
+    # Calculate the mean ABSOLUTE error for all the models compared to their reference
+    # save it in a big matrix with shape (10,3)
+    MAE = np.zeros((10, 3))
+    for i, path in enumerate(datalist[:6]):
+        # datalist contains the plotdata -> So result and the reference of the models
+        with open(path, "rb") as file:
+            data = pkl.load(file)
+            # data['plots'] has '0' and '1' corresponding to the currents and the reference
+        m = np.mean(np.abs(data['plots']['0'][:, 1:] - data['plots']['1'][:, 1:]), axis=0)
+        MAE[(0 + 3 * (i // 3)):3 + 3 * (i // 3), i % 3] = m
 
-## to do: the optuna plots, and mark the selected models...
+    for i, path in enumerate(datalist[-6:-3]): # torque
+        with open(path, "rb") as file:
+            data = pkl.load(file) # '0' '1' and '2' where 1 is the reference
+        m1 = np.mean(np.abs(data['plots']['0'][:, 1:] - data['plots']['1'][:, 1:]), axis=0) # MAE sindy
+        m2 = np.mean(np.abs(data['plots']['2'][:, 1:] - data['plots']['1'][:, 1:]), axis=0) # MAE clarke model
+        MAE[6:8, i % 3] = np.vstack((m1, m2)).T.flatten()
+
+    for i, path in enumerate(datalist[-3:]): # ump
+        with open(path, "rb") as file:
+            data = pkl.load(file) # x; y, xy
+        m1 = np.mean(np.abs(data['plots']['0'][:, 1] - data['plots']['2'][:, 1]), axis=0) # umpx
+        m2 = np.mean(np.abs(data['plots']['1'][:, 1] - data['plots']['2'][:, 2]), axis=0) # umpy
+        MAE[8:10, i % 3] = np.vstack((m1, m2)).T.flatten()
+    # print a table with the MAE, column names are 'no ecc', '50 ecc', 'dynamic 50 ecc'
+    # and rownames are did, diq, di0, id, iq, i0, T, Tc, umpx, umpy
+    # the MAE contains the values in the correct order
+
+    v = get_sparsity(modellist)
+    V = np.zeros((10, 3))
+    V[:3, :] = v[:3, :]
+    V[3:6, :] = v[:3, :] # copy
+    V[6] = v[3,:]
+    V[8:] = v[-2:,:]
+    combined = np.array([[f"{MAE[i, j]:.3e} ({int(V[i, j])})" if i not in [3,4,5,7] else f"{MAE[i,j]:.3e}" for j in range(MAE.shape[1])] for i in range(MAE.shape[0])])
+
+    print(tabulate(combined, headers=["MAE", "no ecc", "50 ecc", "dynamic ecc"], showindex=[
+            r"did (A/s)", r"diq (A/s)", r"di0 (A/s)", r"id (A)", r"iq (A)", r"i0 (A)", r"T (Nm)", r"Tc (Nm)", r"umpx (N)", r"umpy (N)"]))
