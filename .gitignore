@@ -7,6 +7,5 @@
 /plot_data/_w4/
 
 .idea
-__pycache__/
 *.py[cod]
 *$py.class
