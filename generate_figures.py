@@ -7,8 +7,9 @@ from tabulate import tabulate
 
 # plot pareto front
 part1 = False
-part2 = True
+part2 = False
 part3 = False
+part4 = True
 #todo add coefficient plot
 
 p = os.path.join(os.getcwd(), "plot_data", "_w5")
@@ -145,15 +146,22 @@ if part3:
     V[8:] = v[-2:,:]
     combined = np.array([[f"{MAE[i, j]:.3e} ({int(V[i, j])})" if i not in [3,4,5,7] else f"{MAE[i,j]:.3e}" for j in range(MAE.shape[1])] for i in range(MAE.shape[0])])
 
-print(tabulate(combined, headers=["MAE", "no ecc", "50 ecc", "dynamic ecc"], showindex=[
-    r"$\frac{\partial i_d}{\partial t} [A/s]$",
-    r"$\frac{\partial i_q}{\partial t} [A/s]$",
-    r"$\frac{\partial i_0}{\partial t} [A/s]$",
-    r"$i_d [A]$",
-    r"$i_q [A]$",
-    r"$i_0 [A]$",
-    r"$T [Nm]$",
-    r"$T_c [Nm]$",
-    r"$F_x [N]$",
-    r"$F_y [N]$"],
-               tablefmt = 'latex_raw'))
+    print(tabulate(combined, headers=["MAE", "no ecc", "50 ecc", "dynamic ecc"], showindex=[
+        r"$\frac{\partial i_d}{\partial t} [A/s]$",
+        r"$\frac{\partial i_q}{\partial t} [A/s]$",
+        r"$\frac{\partial i_0}{\partial t} [A/s]$",
+        r"$i_d [A]$",
+        r"$i_q [A]$",
+        r"$i_0 [A]$",
+        r"$T [Nm]$",
+        r"$T_c [Nm]$",
+        r"$F_x [N]$",
+        r"$F_y [N]$"],
+                   tablefmt = 'latex_raw'))
+
+
+if part4:
+    #plot the coefficients of the models
+    for i, model in enumerate(modellist):
+        model = load_model('_w5/'+model + '_model')
+        plot_coefs2(model, show=False, save_name="test"+str(i))
