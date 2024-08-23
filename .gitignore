@@ -5,7 +5,7 @@
 /train-data/
 /plot_data/_w2/
 /plot_data/_w4/
-
+/__pycache__/
 .idea
 *.py[cod]
 *$py.class
