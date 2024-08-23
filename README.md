@@ -78,5 +78,10 @@ and running
 jupyter notebook
 ~~~
 in the command line.
+
+Lastly, for visualising the MAE table, the package `tabulate` is used:
+~~~
+pip install tabulate
+~~~
 ### User Manual
 The user manual is available as a Jupyter Notebook called `User_Manual.ipynb`.
