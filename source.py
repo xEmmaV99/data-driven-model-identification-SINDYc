@@ -247,7 +247,7 @@ def plot_coefs(model):
     return
 
 
-def plot_coefs2(model, show=False, log=False, type='currents', save_name = None):
+def plot_coefs2(model, show=False, log=False, type='currents', save_name=None):
     """
     Plot the coefficients of a model, but on an axis, based on
     https://pysindy.readthedocs.io/en/latest/examples/1_feature_overview/example.html
@@ -262,7 +262,7 @@ def plot_coefs2(model, show=False, log=False, type='currents', save_name = None)
     xticknames = (
         model.get_feature_names()
     )
-    #for i in range(len(xticknames)):
+    # for i in range(len(xticknames)):
     #    xticknames[i] = xticknames[i]
 
     colors = ["b", "r", "k"]
@@ -279,33 +279,24 @@ def plot_coefs2(model, show=False, log=False, type='currents', save_name = None)
     elif type.lower() == 'ump':
         names = [r"$UMP_x$", r"$UMP_y$"]
 
-
-    # reduced xticks
-    #xticknames_r = []
-    # todo
-
-    plt.figure(figsize=(len(xticknames), 4)) # FIGURESIZE
+    plt.figure(figsize=(len(xticknames), 4))  # FIGURESIZE
     if log:
         plt.yscale("log", base=10)
         coefs = np.abs(coefs)
 
-
-
-    plt.xticks(range(len(xticknames)), [r'$' + n + '$' for n in xticknames], rotation=90) # if coefs[n,:].T != 0
-
+    plt.xticks(range(len(xticknames)), [r'$' + n + '$' for n in xticknames], rotation=90)  # if coefs[n,:].T != 0
 
     for i in range(coefs.shape[0]):
         values = coefs[i, :].T
-        values[values == 0] = np.nan  # don't plot zero
-
+        values[values==0] = np.nan
         plt.scatter(
-            np.arange(0, len(xticknames), 1), # fixed distance
+            np.arange(0, len(xticknames), 1),  # fixed distance
             values,
             color=colors[i],
             label=r"Equation for " + names[i],
         )
 
-    plt.gca().set_axisbelow(True) # grid behind the points
+    plt.gca().set_axisbelow(True)  # grid behind the points
     plt.grid(True, which="both")
 
     plt.legend()
@@ -313,7 +304,7 @@ def plot_coefs2(model, show=False, log=False, type='currents', save_name = None)
         plt.show()
 
     if save_name is not None:
-        plt.savefig('pdfs/'+save_name+'.pdf', dpi = 600)
+        plt.savefig('pdfs/' + save_name + '.pdf', dpi=600)
     return
 
 
@@ -623,7 +614,7 @@ def test_plot_fourier():
     return
 
 
-def plot_tiled_curr(datalist:list, save_name:str="test_c", show:bool =False):
+def plot_tiled_curr(datalist: list, save_name: str = "test_c", show: bool = False):
     """
     Plots for the current and its derivative in a 2x3 grid
     :param datalist: list of all plot_data. Assume it is in the correct order already -> [di, di50, did50, i, i50, id50]
@@ -634,12 +625,12 @@ def plot_tiled_curr(datalist:list, save_name:str="test_c", show:bool =False):
     # 7.16 inch for double column
     set_plot_defaults()
     plt.close()
-    _, ax = plt.subplots(2, 3, sharex=True,sharey = 'row',figsize=(7.16 , 7.16/2)) #0.1 for legend
-    #_, ax = plt.subplots(2, 3, sharex=False, sharey=False, figsize=(7.16, 7.16 / 2))  # 0.1 for legend
-    [ax[1,j].set_xlabel(r'$t$ ($s$)') for j in range(3)] # share label
-    ax[0,0].set_ylabel(r'$\frac{\partial i_d}{\partial t}$ ($A/s$)')
+    _, ax = plt.subplots(2, 3, sharex=True, sharey='row', figsize=(7.16, 7.16 / 2))  # 0.1 for legend
+    # _, ax = plt.subplots(2, 3, sharex=False, sharey=False, figsize=(7.16, 7.16 / 2))  # 0.1 for legend
+    [ax[1, j].set_xlabel(r'$t$ ($s$)') for j in range(3)]  # share label
+    ax[0, 0].set_ylabel(r'$\frac{\partial i_d}{\partial t}$ ($A/s$)')
     ax[1, 0].set_ylabel(r'$i_d$ ($A$)')
-    #xlim = (0,5)
+    # xlim = (0,5)
     xlim = (3.2375, 3.2525)
     plt.xlim(xlim)
 
@@ -651,24 +642,24 @@ def plot_tiled_curr(datalist:list, save_name:str="test_c", show:bool =False):
         time_indices = np.where((data['plots']['0'][:, 0] >= xlim[0]) & (data['plots']['0'][:, 0] <= xlim[1]))[0]
 
         for idx_str in data["plots"]:
-            ax[i // 3, i%3].plot(data["plots"][idx_str][time_indices, 0],
-                                 data["plots"][idx_str][time_indices, 1],
-                                 linestyle = ['-',':'][int(idx_str)],
-                                 c = ['#1f77b4','k'][int(idx_str)]) #only plot 1 component
-    ax[0, 0].set_ylim((-.1,1100.))
-    ax[1, 0].set_ylim((-4,4))
+            ax[i // 3, i % 3].plot(data["plots"][idx_str][time_indices, 0],
+                                   data["plots"][idx_str][time_indices, 1],
+                                   linestyle=['-', ':'][int(idx_str)],
+                                   c=['#1f77b4', 'k'][int(idx_str)])  # only plot 1 component
+    ax[0, 0].set_ylim((-.1, 1100.))
+    ax[1, 0].set_ylim((-4, 4))
 
-    #plot every other x label
+    # plot every other x label
     for i in range(3):
-        ax[1,i].xaxis.set_major_locator(plt.MaxNLocator(4))
+        ax[1, i].xaxis.set_major_locator(plt.MaxNLocator(4))
 
     # Put a legend below middle plot
     # tight layout but leave space between the rows
     plt.tight_layout(rect=(0., 0.04, 1., 1.))
-    #plt.subplots_adjust(hspace=0.3)
+    # plt.subplots_adjust(hspace=0.3)
 
-    #ax[0, 1].legend([r"$\frac{\partial i_d}{\partial t}$ predicted", r"$\frac{\partial i_d}{\partial t}$ reference"],loc='upper center', bbox_to_anchor=(0.5, -.05), ncol=5)
-    #ax[1, 1].legend([r"$i_d$ predicted", r"$i_d$ reference"],loc='upper center', bbox_to_anchor=(0.5, -.25), ncol=5)
+    # ax[0, 1].legend([r"$\frac{\partial i_d}{\partial t}$ predicted", r"$\frac{\partial i_d}{\partial t}$ reference"],loc='upper center', bbox_to_anchor=(0.5, -.05), ncol=5)
+    # ax[1, 1].legend([r"$i_d$ predicted", r"$i_d$ reference"],loc='upper center', bbox_to_anchor=(0.5, -.25), ncol=5)
     ax[1, 1].legend([r"Predicted", r"Reference"], loc='upper center', bbox_to_anchor=(0.5, -.25), ncol=5)
 
     plt.savefig('pdfs//' + save_name + '.pdf', dpi=600.0)
@@ -676,7 +667,8 @@ def plot_tiled_curr(datalist:list, save_name:str="test_c", show:bool =False):
         plt.show()
     return
 
-def plot_tiled_TF(datalist:list, save_name:str = "test_TF", show:bool=False):
+
+def plot_tiled_TF(datalist: list, save_name: str = "test_TF", show: bool = False):
     """
     Plots for the torque and UMP in a 2x3 grid
     :param datalist: list of all plot_data. Assume it is in the correct order already -> [T, T50, Td50, UMP, UMP50, UMPd50]
@@ -687,53 +679,57 @@ def plot_tiled_TF(datalist:list, save_name:str = "test_TF", show:bool=False):
     # 7.16 inch for double column
     set_plot_defaults()
     plt.close()
-    fig, ax = plt.subplots(2, 3,sharex='row', figsize=(7.16 , 7.16/2+0.6))
-    #fig, ax = plt.subplots(2, 3, sharex=False, figsize=(7.16, 7.16 / 2 + 0.6))
-    [ax[1,j].set_xlabel(r'$t$ ($s$)') for j in range(3)]
-    [ax[0,j].set_xlabel(r'$t$ ($s$)') for j in range(3)]
-    ax[0,0].set_ylabel(r'Torque ($Nm$)')
+    fig, ax = plt.subplots(2, 3, sharex='row', figsize=(7.16, 7.16 / 2 + 0.6))
+    # fig, ax = plt.subplots(2, 3, sharex=False, figsize=(7.16, 7.16 / 2 + 0.6))
+    [ax[1, j].set_xlabel(r'$t$ ($s$)') for j in range(3)]
+    [ax[0, j].set_xlabel(r'$t$ ($s$)') for j in range(3)]
+    ax[0, 0].set_ylabel(r'Torque ($Nm$)')
     ax[1, 0].set_ylabel(r'Unbalanced magnetic pull ($N$)')
-    #xlim = (0,5)
+    # xlim = (0,5)
     xlim = (2.550, 2.565)
-    ax[0,0].set_xlim(xlim)
+    ax[0, 0].set_xlim(xlim)
 
-    for i, path in enumerate(datalist[:3]): # TORQUE
+    for i, path in enumerate(datalist[:3]):  # TORQUE
         with open(path, "rb") as file:
             data = pkl.load(file)
 
         # only plot what is in xlim
         time_indices = np.where((data['plots']['0'][:, 0] >= xlim[0]) & (data['plots']['0'][:, 0] <= xlim[1]))[0]
-        for idx_str in data["plots"]: # Torque has 3; torque, ref and Alternative. For UMP x and y comp should be plotted
-            ax[0, i%3].plot(data["plots"][idx_str][time_indices, 0], data["plots"][idx_str][time_indices, 1], linestyle = ['-',':', '--'][int(idx_str)], c = ['#1f77b4','k','#2ca02c'][int(idx_str)])
+        for idx_str in data[
+            "plots"]:  # Torque has 3; torque, ref and Alternative. For UMP x and y comp should be plotted
+            ax[0, i % 3].plot(data["plots"][idx_str][time_indices, 0], data["plots"][idx_str][time_indices, 1],
+                              linestyle=['-', ':', '--'][int(idx_str)], c=['#1f77b4', 'k', '#2ca02c'][int(idx_str)])
 
     xlim = (2.545, 2.570)
     ax[1, 0].set_xlim(xlim)
-    for i, path in enumerate(datalist[3:]): #UMP
+    for i, path in enumerate(datalist[3:]):  # UMP
         with open(path, "rb") as file:
             data = pkl.load(file)
 
         # only plot what is in xlim
         time_indices = np.where((data['plots']['0'][:, 0] >= xlim[0]) & (data['plots']['0'][:, 0] <= xlim[1]))[0]
-        for idx_str in data["plots"]: # fx fy ref
-            ax[1, i%3].plot(data["plots"][idx_str][time_indices, 0], data["plots"][idx_str][time_indices, 1:], linestyle = ['-','-',':'][int(idx_str)], c = ['#17becf','#ff7f0e', 'b'][int(idx_str)])
-        ax[1, i%3].lines[-1].set_color('r') # set last one to red
+        for idx_str in data["plots"]:  # fx fy ref
+            ax[1, i % 3].plot(data["plots"][idx_str][time_indices, 0], data["plots"][idx_str][time_indices, 1:],
+                              linestyle=['-', '-', ':'][int(idx_str)], c=['#17becf', '#ff7f0e', 'b'][int(idx_str)])
+        ax[1, i % 3].lines[-1].set_color('r')  # set last one to red
 
     ####plt.tight_layout()
-    ax[0, 0].set_ylim((1.25,1.5))
-    ax[0, 1].set_ylim((2.65,2.95))
-    ax[0, 2].set_ylim((0.0,.35))
-    ax[1, 0].set_ylim((-3.,3.))
-    ax[1, 1].set_ylim((0.,250.))
-    ax[1, 2].set_ylim((-400.,400.))
-
+    ax[0, 0].set_ylim((1.25, 1.5))
+    ax[0, 1].set_ylim((2.65, 2.95))
+    ax[0, 2].set_ylim((0.0, .35))
+    ax[1, 0].set_ylim((-3., 3.))
+    ax[1, 1].set_ylim((0., 250.))
+    ax[1, 2].set_ylim((-400., 400.))
 
     # tight layout but leave space between the rows
-    plt.tight_layout(rect=(0.,0.04,1.,1.))
+    plt.tight_layout(rect=(0., 0.04, 1., 1.))
     plt.subplots_adjust(hspace=0.5)
 
     # legend below middle plot
-    l1 = ax[0, 1].legend([r"$T_{\mathrm{pred}}$",r"$T_{\mathrm{ref}}$",r"$T_{\mathrm{approx}}$"],loc='upper center', bbox_to_anchor=(0.5, -.25), ncol=5)
-    l2 = ax[1, 1].legend([r"UMP$_{x, \mathrm{pred}}$",r"UMP$_{y, \mathrm{pred}}$",r"UMP$_{x, \mathrm{ref}}$", r"UMP$_{y, \mathrm{ref}}$"],
+    l1 = ax[0, 1].legend([r"$T_{\mathrm{pred}}$", r"$T_{\mathrm{ref}}$", r"$T_{\mathrm{approx}}$"], loc='upper center',
+                         bbox_to_anchor=(0.5, -.25), ncol=5)
+    l2 = ax[1, 1].legend([r"UMP$_{x, \mathrm{pred}}$", r"UMP$_{y, \mathrm{pred}}$", r"UMP$_{x, \mathrm{ref}}$",
+                          r"UMP$_{y, \mathrm{ref}}$"],
                          loc='upper center', bbox_to_anchor=(0.5, -.25), ncol=5)
 
     # draw empty colors, all legend below the plots
@@ -752,7 +748,6 @@ def plot_tiled_TF(datalist:list, save_name:str = "test_TF", show:bool=False):
     if show:
         plt.show()
     return
-
 
 
 def model_simulate(x0: np.array, u: np.array, model, t: np.array):
