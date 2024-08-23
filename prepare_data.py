@@ -42,7 +42,8 @@ def prepare_data(
 
     if "wcoe" not in dataset.keys(): # wcoe is only added in recent datasets
         dataset["wcoe"] = np.zeros_like(dataset["T_em"])
-    if dataset["wcoe"].shape != dataset["T_em"].shape:
+
+    if dataset["wcoe"].shape != dataset["T_em"].shape and test_data: # for test sets
         dataset["wcoe"] = np.expand_dims(
             dataset["wcoe"], axis=1
         )  # make sure wcoe is same shape as T-em
@@ -157,8 +158,8 @@ def prepare_data(
 
         for key in dataset.keys():
             # # error for wcoe
-            # if key == "wcoe" and dataset[key].shape[0] == 1:
-            #     dataset[key] = np.swapaxes(dataset[key], 0, 1)  # debug TO BE REMOVED...
+            if key == "wcoe" and dataset[key].shape[0] == 1:
+                 dataset[key] = np.swapaxes(dataset[key], 0, 1)  # debug TO BE REMOVED...
             dataset[key] = dataset[key][time_trim]
 
         v_stator = v_stator[time_trim]

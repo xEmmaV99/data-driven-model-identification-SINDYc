@@ -6,17 +6,17 @@ import os
 from tabulate import tabulate
 
 # plot pareto front
-part1 = False
-part2 = False
+part1 = True
+part2 = True
 part3 = True
 
 p = os.path.join(os.getcwd(), "plot_data", "_w5")
 path1 = os.path.join(p, "currents_nl", "currents70.pkl")
 path2 = os.path.join(p, "currents_50_nl", "currents70.pkl")
-path3 = os.path.join(p, "currents_d_nl", "currents60.pkl")  # WHY DOES THIS ONE HAVE LESS COEFFICIENTS
+path3 = os.path.join(p, "currents_d_nl", "currents70.pkl")  # WHY DOES THIS ONE HAVE LESS COEFFICIENTS
 path4 = os.path.join(p, "currents_nl", "currents_simulation70.pkl")
 path5 = os.path.join(p, "currents_50_nl", "currents_simulation70.pkl")
-path6 = os.path.join(p, "currents_d_nl", "currents_simulation60.pkl")
+path6 = os.path.join(p, "currents_d_nl", "currents_simulation70.pkl")
 
 path7 = os.path.join(p, "torque_nl", "torque5.pkl")  # good enough? 1 term different from the reference
 path8 = os.path.join(p, "torque_50_nl", "torque10.pkl")  # torque10 also possible but worse or 40
@@ -26,7 +26,7 @@ path11 = os.path.join(p, "ump_50_nl", "UMP100.pkl")
 path12 = os.path.join(p, "ump_d_nl", "UMP150.pkl")
 datalist = [path1, path2, path3, path4, path5, path6, path7, path8, path9, path10, path11, path12]
 
-modellist = ['currents_nonlinear_70', 'currents_nonlinear_50ecc_70', 'currents_nonlinear_dynamic_50ecc_60',
+modellist = ['currents_nonlinear_70', 'currents_nonlinear_50ecc_70', 'currents_nonlinear_dynamic_70',
                 'torque_nonlinear_5', 'torque_nonlinear_50ecc_10', 'torque_nonlinear_dynamic_50ecc_50',
                 'ump_nonlinear_0', 'ump_nonlinear_50ecc_100', 'ump_nonlinear_dynamic_50ecc_150']
 
@@ -57,7 +57,7 @@ if part1:
     marks = [
         [528, 320, 491],
         [857, 626, 928],
-        [463, 985],
+        [946], # new pareto#[463, 985],
         [1557, 1045],
         [936, 849],
         [703, 109],
