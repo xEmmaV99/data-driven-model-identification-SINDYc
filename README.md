@@ -42,7 +42,11 @@ After installing the package manager [Conda](https://docs.conda.io/en/latest/), 
 conda env create -f environment.yml
 conda activate sindy_env
 ~~~
-This will create a new virtual environment called `sindy_env` and install the necessary dependencies. Note that `cd` must contain the `environment.yml` file.
+and 
+~~~
+pip install git+https://gitlab.kuleuven.be/m-group-campus-brugge/wavecore_public/phd-philip-desenfans/immec-package.git
+~~~
+Note that this currently refers to a newer version of immec. This will create a new virtual environment called `sindy_env` and install the necessary dependencies. Note that `cd` must contain the `environment.yml` file.
 #### Manually
 After installing the package manager [Conda](https://docs.conda.io/en/latest/), a new virtual environment can be created in the command line using:
 ~~~
@@ -76,6 +80,3 @@ jupyter notebook
 in the command line.
 ### User Manual
 The user manual is available as a Jupyter Notebook called `User_Manual.ipynb`.
-
-
-
