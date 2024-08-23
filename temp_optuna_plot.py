@@ -79,7 +79,7 @@ if part1:
             limits=limit_list[j],
             logscale=True if study != "umpnonlinear" else False,
             target_names=[
-                r"Mean Squared Error " + ["($A^2$)", "($N^2 m^2$)", "($N^2$)"][j // 3],
+                r"Mean Squared Error " + ["($\frac{A^2}{s^2}$)", "($N^2 m^2$)", "($N^2$)"][j // 3],
                 r"Nonzero elements",
             ],
             show=False,
@@ -139,16 +139,15 @@ if part3:
     V[6] = v[3,:]
     V[8:] = v[-2:,:]
     combined = np.array([[f"{MAE[i, j]:.3e} ({int(V[i, j])})" if i not in [3,4,5,7] else f"{MAE[i,j]:.3e}" for j in range(MAE.shape[1])] for i in range(MAE.shape[0])])
-
-    print(tabulate(combined, headers=["MAE", "no ecc", "50 ecc", "dynamic ecc"], showindex=[
-        r"$\frac{\partial i_d}{\partial t} (A/s)$",
-        r"$\frac{\partial i_q}{\partial t} (A/s)$",
-        r"$\frac{\partial i_0}{\partial t} (A/s)$",
-        r"$i_d (A)$",
-        r"$i_q (A)$",
-        r"$i_0 (A)$",
-        r"$T (Nm)$",
-        r"$T_c (Nm)$",
-        r"$F_x (N)$",
-        r"$F_y (N)$"],
-        tablefmt = 'latex_raw'))
+print(tabulate(combined, headers=["MAE", "no ecc", "50 ecc", "dynamic ecc"], showindex=[
+    r"$\frac{\partial i_d}{\partial t} [A/s]$",
+    r"$\frac{\partial i_q}{\partial t} [A/s]$",
+    r"$\frac{\partial i_0}{\partial t} [A/s]$",
+    r"$i_d [A]$",
+    r"$i_q [A]$",
+    r"$i_0 [A]$",
+    r"$T [Nm]$",
+    r"$T_c [Nm]$",
+    r"$F_x [N]$",
+    r"$F_y [N]$"],
+               tablefmt = 'latex_raw'))

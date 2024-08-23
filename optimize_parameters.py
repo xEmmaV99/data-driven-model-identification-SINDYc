@@ -3,7 +3,7 @@ import joblib
 from prepare_data import *
 import optuna
 from sklearn.linear_model import Lasso
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, mean_absolute_error, root_mean_squared_error
 import pysindy as ps
 from libs import get_custom_library_funcs
 from libs import get_library_names
@@ -106,6 +106,7 @@ def optuna_search(
     library_list = get_library_names()
 
     def objective(trial):
+        # this is the objective function that optuna will try to optimize
         lib_choice = trial.suggest_categorical("lib_choice", library_list)
         lib = get_custom_library_funcs(
             lib_choice, DATA["u"].shape[1] + DATA["x"].shape[1]
@@ -139,6 +140,23 @@ def optuna_search(
             print("Exception in model fitting:", e)
             raise optuna.TrialPruned()
 
+        # Alternatively, use RMSE or MAE as metric
+        '''
+        MAE = model.score(
+            DATA["x_val"],
+            u=DATA["u_val"],
+            x_dot=XDOT[1],
+            t=None,
+            metric=mean_absolute_error,
+        )
+        RMSE = model.score(
+            DATA["x_val"],
+            u=DATA["u_val"],
+            x_dot=XDOT[1],
+            t=None,
+            metric=mean_squared_error,
+        )
+        '''
         MSE = model.score(
             DATA["x_val"],
             u=DATA["u_val"],
