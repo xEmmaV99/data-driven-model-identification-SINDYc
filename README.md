@@ -23,14 +23,10 @@ $`\Xi`$ to be identified, such that
 ```
 In this project, the l1 regularization is used to enforce sparsity in the solution.
 We aim to find a dynamical model of the stator current $`i_{dq0,s}`$ by using $`x = [i_{dq0,s}]`$ 
-and $`u = [v_{dq0,s}, \int_0^t i_{dq0,s}(\tau)d\tau, \int_0^t v_{dq0,s}(\tau)d\tau, \gamma^r, \omega^r]`$ as
-the state and input vectors, respectively.
-Here, $`v_{dq0,s}`$ is the stator voltage, $`\gamma^r`$ is the rotor angle 
-and $`\omega^r`$ is the rotor angular speed.
+and $`u = [v_{dq0,s}, \int_0^t i_{dq0,s}(\tau)d\tau, \int_0^t v_{dq0,s}(\tau)d\tau, \gamma^r, \omega^r, f_s]`$ as
+the state and input vectors, respectively. Here, $`v_{dq0,s}`$ is the stator voltage, $`\gamma^r`$ is the rotor angle, $`\omega^r`$ is the rotor angular speed and $`f_s`$ is the supply frequency. Additionally, Torque and UMP are also identified via little manipulation to the SINDYc model.
 
-Additionally, Torque and UMP are also identified through little manipulation to the SINDYc model.
-
-Static and dynamic eccentricities are considered.
+The following situations were considered: centric rotor position, static (or fixed) rotor position and dynamic rotor position, for both linear and nonlinear motor modelling. For the dynamic rotor position, the eccentricity is fixed on 50% of the air gap length, but the rotor position varies according to the rotor angular speed $`\omega^r`$.
 
 The data is obtained from simulations using the Python package IMMEC.
 
