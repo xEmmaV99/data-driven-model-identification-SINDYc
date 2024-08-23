@@ -6,9 +6,9 @@ import os
 from tabulate import tabulate
 
 # plot pareto front
-part1 = True
+part1 = False
 part2 = True
-part3 = True
+part3 = False
 
 p = os.path.join(os.getcwd(), "plot_data", "_w5")
 path1 = os.path.join(p, "currents_nl", "currents70.pkl")
@@ -19,7 +19,7 @@ path5 = os.path.join(p, "currents_50_nl", "currents_simulation70.pkl")
 path6 = os.path.join(p, "currents_d_nl", "currents_simulation70.pkl")
 
 path7 = os.path.join(p, "torque_nl", "torque5.pkl")  # good enough? 1 term different from the reference
-path8 = os.path.join(p, "torque_50_nl", "torque10.pkl")  # torque10 also possible but worse or 40
+path8 = os.path.join(p, "torque_50_nl", "torque40.pkl")  # torque10 also possible but worse or 40
 path9 = os.path.join(p, "torque_d_nl", "torque50.pkl") # 50 also possible or 100
 path10 = os.path.join(p, "ump_nl", "ump0.pkl")
 path11 = os.path.join(p, "ump_50_nl", "UMP100.pkl")
@@ -27,10 +27,9 @@ path12 = os.path.join(p, "ump_d_nl", "UMP150.pkl")
 datalist = [path1, path2, path3, path4, path5, path6, path7, path8, path9, path10, path11, path12]
 
 modellist = ['currents_nonlinear_70', 'currents_nonlinear_50ecc_70', 'currents_nonlinear_dynamic_70',
-                'torque_nonlinear_5', 'torque_nonlinear_50ecc_10', 'torque_nonlinear_dynamic_50ecc_50',
+                'torque_nonlinear_5', 'torque_nonlinear_50ecc_40', 'torque_nonlinear_dynamic_50ecc_50',
                 'ump_nonlinear_0', 'ump_nonlinear_50ecc_100', 'ump_nonlinear_dynamic_50ecc_150']
 
-# todo selected method with red indicated, other methods black.
 if part1:
     opt_study_names = [
         "currentsnonlinear",
@@ -55,15 +54,15 @@ if part1:
         [[5e3, 4e4], [0, 800]],
     ]
     marks = [
-        [528, 320, 491],
-        [857, 626, 928],
+        [528],#, 320, 491],
+        [857],#, 626, 928],
         [946], # new pareto#[463, 985],
-        [1557, 1045],
-        [936, 849],
-        [703, 109],
+        [1557],#, 1045],
+        [849],#[936],#, 849],
+        [703],#, 109],
         [306],
-        [634, 988],
-        [1077, 1171],
+        [988],#[634],#, 988],
+        [1077],#, 1171],
     ]
 
     for j, study in enumerate(opt_study_names):
@@ -125,7 +124,7 @@ if part3:
 
     for i, path in enumerate(datalist[-3:]): # ump
         with open(path, "rb") as file:
-            data = pkl.load(file) # x; y, xy
+            data = pkl.load(file) # x, y, xy
         m1 = np.mean(np.abs(data['plots']['0'][:, 1] - data['plots']['2'][:, 1]), axis=0) # umpx
         m2 = np.mean(np.abs(data['plots']['1'][:, 1] - data['plots']['2'][:, 2]), axis=0) # umpy
         MAE[8:10, i % 3] = np.vstack((m1, m2)).T.flatten()
@@ -150,6 +149,6 @@ if part3:
         r"$i_0 (A)$",
         r"$T (Nm)$",
         r"$T_c (Nm)$",
-        r"$\text{UMP}_x (N)$",
-        r"$\text{UMP}_x (N)$"],
+        r"$F_x (N)$",
+        r"$F_y (N)$"],
         tablefmt = 'latex_raw'))

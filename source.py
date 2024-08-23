@@ -4,7 +4,6 @@ import pickle as pkl
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.interpolate import interp1d
-
 import pysindy as ps
 
 try:
@@ -613,13 +612,14 @@ def plot_tiled_curr(datalist, save_name="test_c", show =False):
     # 7.16 inch for double column
     set_plot_defaults()
     plt.close()
-    _, ax = plt.subplots(2, 3, sharex=True,sharey = 'row',figsize=(7.16 , 7.16/2)) #0.1 for legend
+    #_, ax = plt.subplots(2, 3, sharex=True,sharey = 'row',figsize=(7.16 , 7.16/2)) #0.1 for legend
+    _, ax = plt.subplots(2, 3, sharex=False, sharey=False, figsize=(7.16, 7.16 / 2))  # 0.1 for legend
     [ax[1,j].set_xlabel(r'$t$ ($s$)') for j in range(3)] # share label
     ax[0,0].set_ylabel(r'$\frac{\partial i_d}{\partial t}$ ($A/s$)')
     ax[1, 0].set_ylabel(r'$i_d$ ($A$)')
-
-    xlim = (3.2375, 3.2525)
-    plt.xlim(xlim)
+    xlim = (0,5)
+    #xlim = (3.2375, 3.2525)
+    #plt.xlim(xlim)
 
     for i, path in enumerate(datalist):
         with open(path, "rb") as file:
@@ -633,8 +633,8 @@ def plot_tiled_curr(datalist, save_name="test_c", show =False):
                                  data["plots"][idx_str][time_indices, 1],
                                  linestyle = ['-',':'][int(idx_str)],
                                  c = ['#1f77b4','k'][int(idx_str)]) #only plot 1 component
-    ax[0, 0].set_ylim((-.1,1100.))
-    ax[1, 0].set_ylim((-4,4))
+    #ax[0, 0].set_ylim((-.1,1100.))
+    #ax[1, 0].set_ylim((-4,4))
 
     #plot every other x label
     for i in range(3):
@@ -655,16 +655,19 @@ def plot_tiled_curr(datalist, save_name="test_c", show =False):
     return
 
 def plot_tiled_TF(datalist, save_name = "test_TF", show=False):
+
     # 7.16 inch for double column
     set_plot_defaults()
     plt.close()
-    fig, ax = plt.subplots(2, 3,sharex='row', figsize=(7.16 , 7.16/2+0.6))
+    #fig, ax = plt.subplots(2, 3,sharex='row', figsize=(7.16 , 7.16/2+0.6))
+    fig, ax = plt.subplots(2, 3, sharex=False, figsize=(7.16, 7.16 / 2 + 0.6))
     [ax[1,j].set_xlabel(r'$t$ ($s$)') for j in range(3)]
     [ax[0,j].set_xlabel(r'$t$ ($s$)') for j in range(3)]
     ax[0,0].set_ylabel(r'Torque ($Nm$)')
     ax[1, 0].set_ylabel(r'Unbalanced magnetic pull ($N$)')
-    xlim = (2.550, 2.565)
-    ax[0,0].set_xlim(xlim)
+    xlim = (0,5)
+    #xlim = (2.550, 2.565)
+    #ax[0,0].set_xlim(xlim)
 
     for i, path in enumerate(datalist[:3]): # TORQUE
         with open(path, "rb") as file:
@@ -675,8 +678,8 @@ def plot_tiled_TF(datalist, save_name = "test_TF", show=False):
         for idx_str in data["plots"]: # Torque has 3; torque, ref and Alternative. For UMP x and y comp should be plotted
             ax[0, i%3].plot(data["plots"][idx_str][time_indices, 0], data["plots"][idx_str][time_indices, 1], linestyle = ['-',':', '--'][int(idx_str)], c = ['#1f77b4','k','#2ca02c'][int(idx_str)])
 
-    xlim = (2.545, 2.570)
-    ax[1, 0].set_xlim(xlim)
+    #xlim = (2.545, 2.570)
+    #ax[1, 0].set_xlim(xlim)
     for i, path in enumerate(datalist[3:]): #UMP
         with open(path, "rb") as file:
             data = pkl.load(file)
@@ -687,13 +690,13 @@ def plot_tiled_TF(datalist, save_name = "test_TF", show=False):
             ax[1, i%3].plot(data["plots"][idx_str][time_indices, 0], data["plots"][idx_str][time_indices, 1:], linestyle = ['-','-',':'][int(idx_str)], c = ['#17becf','#ff7f0e', 'b'][int(idx_str)])
         ax[1, i%3].lines[-1].set_color('r') # set last one to red
 
-    #plt.tight_layout()
-    ax[0, 0].set_ylim((1.25,1.5))
-    ax[0, 1].set_ylim((2.65,2.95))
-    ax[0, 2].set_ylim((0.0,.35))
-    ax[1, 0].set_ylim((-3.,3.))
-    ax[1, 1].set_ylim((0.,250.))
-    ax[1, 2].set_ylim((-400.,400.))
+    ####plt.tight_layout()
+    # ax[0, 0].set_ylim((1.25,1.5))
+    # ax[0, 1].set_ylim((2.65,2.95))
+    # ax[0, 2].set_ylim((0.0,.35))
+    # ax[1, 0].set_ylim((-3.,3.))
+    # ax[1, 1].set_ylim((0.,250.))
+    # ax[1, 2].set_ylim((-400.,400.))
 
 
     # tight layout but leave space between the rows
