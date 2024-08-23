@@ -13,7 +13,7 @@ part3 = False
 p = os.path.join(os.getcwd(), "plot_data", "_w5")
 path1 = os.path.join(p, "currents_nl", "currents70.pkl")
 path2 = os.path.join(p, "currents_50_nl", "currents70.pkl")
-path3 = os.path.join(p, "currents_d_nl", "currents70.pkl")  # WHY DOES THIS ONE HAVE LESS COEFFICIENTS
+path3 = os.path.join(p, "currents_d_nl", "currents70.pkl")
 path4 = os.path.join(p, "currents_nl", "currents_simulation70.pkl")
 path5 = os.path.join(p, "currents_50_nl", "currents_simulation70.pkl")
 path6 = os.path.join(p, "currents_d_nl", "currents_simulation70.pkl")
@@ -45,7 +45,7 @@ if part1:
     limit_list = [
         [[5e1, 2e3], [0, 300]],
         [[5e1, 2e3], [0, 400]],
-        [[5e2, 2e3], [0, 300]],  # REDO PARETOPLOT -----------------
+        [[5e2, 2e3], [0, 300]],
         [[1e-5, 5e-4], [0, 100]],
         [[4e-5, 5e-4], [0, 100]],
         [[5e-4, 15e-4], [0, 130]],

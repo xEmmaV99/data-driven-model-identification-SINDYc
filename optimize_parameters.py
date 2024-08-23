@@ -199,10 +199,19 @@ def plot_optuna_data(name):
     return
 
 
-def plot_pareto(study, limits = None, target_names=None, logscale=False,
-                save_name='dummy', show = False, mark_trials = None):  # uses matplotlib to plot the paretoplot
-    # todo speed up?
-    # Set up the graph style.
+def plot_pareto(study, limits:list = None, target_names:list=None, logscale:bool=False,
+                save_name:str='dummy', show:bool = False, mark_trials:list = None):  # uses matplotlib to plot the paretoplot
+    '''
+    This function plots the optuna study by using matplotlib
+    :param study: a optuna study object
+    :param limits: limits of the plot, [[xm, xM], [ym, yM]]
+    :param target_names: Names for the x and y axis
+    :param logscale: boolean, if True, logscale is used
+    :param save_name: str, used for saving the pdf file
+    :param show: if true, plt.show() is called
+    :param mark_trials: list with trial indices to mark with a circle
+    :return:
+    '''
     if target_names is None:
         target_names = [r"Mean Squared Error", r"Nonzero elements"]
 
@@ -226,13 +235,14 @@ def plot_pareto(study, limits = None, target_names=None, logscale=False,
     if limits is not None:
         all_trials = [trial for trial in all_trials if trial.values is not None and all([limits[i][0] <= trial.values[i] <= limits[i][1] for i in range(len(limits))])]
 
-    best_trials = _get_pareto_front_trials_by_trials(all_trials, study.directions)
+    best_trials = _get_pareto_front_trials_by_trials(all_trials, study.directions) # use optuna to select the best trials
 
+    # split per optimizer, because each has a different marker
     opt1_trials = [trial for trial in all_trials if trial.params['optimizer'] == 'sr3' if trial.values is not None]
     opt2_trials = [trial for trial in all_trials if trial.params['optimizer'] == 'stlsq' if trial.values is not None]
     opt3_trials = [trial for trial in all_trials if trial.params['optimizer'] == 'lasso' if trial.values is not None]
 
-    if not opt1_trials == []:
+    if not opt1_trials == []: # if no trials, then skip
         ax.scatter(
             x=[trial.values[0] for trial in opt1_trials],
             y=[trial.values[1] for trial in opt1_trials],
@@ -261,6 +271,7 @@ def plot_pareto(study, limits = None, target_names=None, logscale=False,
         )
     if all ([opt1_trials == [], opt2_trials == [], opt3_trials == []]):
         print("No trials found inside the limits")
+
     # extra mark the special trials
     if mark_trials is not None:
         ax.scatter(
@@ -272,8 +283,9 @@ def plot_pareto(study, limits = None, target_names=None, logscale=False,
 
     if logscale:
         plt.xscale("log")
+
     plt.tight_layout()
-    ax.set_axisbelow(True)
+    ax.set_axisbelow(True) # grid behind the points
     plt.grid(True, which="both")
     if limits is not None:
         plt.xlim(limits[0])
@@ -288,7 +300,8 @@ def plot_pareto(study, limits = None, target_names=None, logscale=False,
               "interaction_only": r'E'}
 
     def in_scope(values):
-        if values is None: # failed trial iguess
+        # inscope checks if a trial is inside the limits, to make sure the legend does not contain things that are not plotted
+        if values is None: # failed trial iguess ?
             return False
         if limits is None:
             return True
@@ -320,7 +333,7 @@ def plot_pareto(study, limits = None, target_names=None, logscale=False,
         for label in ax.xaxis.get_ticklabels()[::2]:
             label.set_visible(False)
 
-    plt.savefig('pdfs//optuna//' + save_name + '.pdf', dpi=600.0)
+    plt.savefig('pdfs//optuna//' + save_name + '.pdf', dpi=600.0) # save as pdf
 
     if show:
         plt.show()
