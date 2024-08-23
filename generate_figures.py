@@ -9,6 +9,7 @@ from tabulate import tabulate
 part1 = False
 part2 = True
 part3 = False
+#todo add coefficient plot
 
 p = os.path.join(os.getcwd(), "plot_data", "_w5")
 path1 = os.path.join(p, "currents_nl", "currents70.pkl")
@@ -53,6 +54,10 @@ if part1:
         [[3, 600], [0, 500]],
         [[5e3, 4e4], [0, 800]],
     ]
+
+    # the marks correspond to the trials indices that will be marked
+    # in de pareto plot. In order to find an index, open the paretoplot
+    # via the buildin optuna plot function, in html format
     marks = [
         [528],#, 320, 491],
         [857],#, 626, 928],
@@ -89,8 +94,8 @@ if part1:
         # for torque MSE : ($N^2 m^2$) but for UMP it is in N^2 and for currents in A^2
 
 if part2:
-    plot_tiled_curr(datalist[:6], show=False)
-    plot_tiled_TF(datalist[-6:], show=True)
+    plot_tiled_curr(datalist[:6], show=False, save_name='currents')
+    plot_tiled_TF(datalist[-6:], show=True, save_name='torque_ump')
 
 if part3:
     def get_sparsity(models):
@@ -139,6 +144,7 @@ if part3:
     V[6] = v[3,:]
     V[8:] = v[-2:,:]
     combined = np.array([[f"{MAE[i, j]:.3e} ({int(V[i, j])})" if i not in [3,4,5,7] else f"{MAE[i,j]:.3e}" for j in range(MAE.shape[1])] for i in range(MAE.shape[0])])
+
 print(tabulate(combined, headers=["MAE", "no ecc", "50 ecc", "dynamic ecc"], showindex=[
     r"$\frac{\partial i_d}{\partial t} [A/s]$",
     r"$\frac{\partial i_q}{\partial t} [A/s]$",
