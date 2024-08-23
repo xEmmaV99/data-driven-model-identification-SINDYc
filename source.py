@@ -608,7 +608,14 @@ def test_plot_fourier():
     return
 
 
-def plot_tiled_curr(datalist, save_name="test_c", show =False):
+def plot_tiled_curr(datalist:list, save_name:str="test_c", show:bool =False):
+    """
+    Plots for the current and its derivative in a 2x3 grid
+    :param datalist: list of all plot_data. Assume it is in the correct order already -> [di, di50, did50, i, i50, id50]
+    :param save_name: name for the pdf to be saved with
+    :param show: if True, plt.show() is called
+    :return:
+    """
     # 7.16 inch for double column
     set_plot_defaults()
     plt.close()
@@ -654,8 +661,14 @@ def plot_tiled_curr(datalist, save_name="test_c", show =False):
         plt.show()
     return
 
-def plot_tiled_TF(datalist, save_name = "test_TF", show=False):
-
+def plot_tiled_TF(datalist:list, save_name:str = "test_TF", show:bool=False):
+    """
+    Plots for the torque and UMP in a 2x3 grid
+    :param datalist: list of all plot_data. Assume it is in the correct order already -> [T, T50, Td50, UMP, UMP50, UMPd50]
+    :param save_name: name for the pdf to be saved with
+    :param show: if True, plt.show() is called
+    :return:
+    """
     # 7.16 inch for double column
     set_plot_defaults()
     plt.close()
