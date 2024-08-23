@@ -262,18 +262,13 @@ def plot_coefs2(model, show=False, log=False, type='currents', save_name = None)
     xticknames = (
         model.get_feature_names()
     )
-    for i in range(len(xticknames)):
-        xticknames[i] = xticknames[i]
-    plt.figure(figsize=(len(xticknames), 4))
+    #for i in range(len(xticknames)):
+    #    xticknames[i] = xticknames[i]
 
     colors = ["b", "r", "k"]
     coefs = copy.deepcopy(
         model.coefficients()
     )  # copy such that they do not get overwritten
-
-    if log:
-        plt.yscale("log", base=10)
-        coefs = np.abs(coefs)
 
     if type.lower() == 'currents':
         names = [r"$\dot{" + xticknames[i].strip("$") + "}$" for i in range(coefs.shape[0])]
@@ -284,11 +279,27 @@ def plot_coefs2(model, show=False, log=False, type='currents', save_name = None)
     elif type.lower() == 'ump':
         names = [r"$UMP_x$", r"$UMP_y$"]
 
+
+    # reduced xticks
+    #xticknames_r = []
+    # todo
+
+    plt.figure(figsize=(len(xticknames), 4)) # FIGURESIZE
+    if log:
+        plt.yscale("log", base=10)
+        coefs = np.abs(coefs)
+
+
+
+    plt.xticks(range(len(xticknames)), [r'$' + n + '$' for n in xticknames], rotation=90) # if coefs[n,:].T != 0
+
+
     for i in range(coefs.shape[0]):
         values = coefs[i, :].T
         values[values == 0] = np.nan  # don't plot zero
+
         plt.scatter(
-            np.arange(0, len(xticknames), 1),
+            np.arange(0, len(xticknames), 1), # fixed distance
             values,
             color=colors[i],
             label=r"Equation for " + names[i],
@@ -296,8 +307,6 @@ def plot_coefs2(model, show=False, log=False, type='currents', save_name = None)
 
     plt.gca().set_axisbelow(True) # grid behind the points
     plt.grid(True, which="both")
-
-    plt.xticks(range(len(xticknames)), [r'$' + n + '$' for n in xticknames], rotation=90)
 
     plt.legend()
     if show:
