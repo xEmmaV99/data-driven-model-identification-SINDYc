@@ -32,10 +32,11 @@ def optimize_parameters(
     :return:
     """
 
-    print("ecc_input =", ecc_input)
+    #print("ecc_input =", ecc_input)
+
     DATA = prepare_data(
         path_to_data_files,
-        number_of_trainfiles=30,
+        number_of_trainfiles=50,
         usage_per_trainfile=0.50,
         ecc_input=ecc_input,
     )

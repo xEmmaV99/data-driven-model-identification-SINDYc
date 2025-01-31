@@ -278,7 +278,7 @@ def prepare_data(
     DATA["xdot_train"] = DATA["xdot"][:cutidx]
     DATA["T_em_train"] = DATA["T_em"][:cutidx]
     DATA["UMP_train"] = DATA["UMP"][:cutidx]
-    DATA["wcoe_train"] = DATA["wcoe"][:cutidx]
+    #DATA["wcoe_train"] = DATA["wcoe"][:cutidx]
     DATA["x_val"] = DATA["x"][cutidx:]
     DATA["u_val"] = DATA["u"][cutidx:]
     DATA["xdot_val"] = DATA["xdot"][cutidx:]

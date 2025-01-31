@@ -6,11 +6,16 @@ from optimize_parameters import optimize_parameters
 from optimize_parameters import plot_optuna_data
 
 if __name__ == "__main__":
-    linear = True
+    linear = 'test_run'
     n_cores = 1
     n_trials = 500
 
-    if linear:
+    if linear == 'test_run':
+        data = os.path.join("train-data", "07-31-nonlin", "IMMEC_nonlinear-0ecc_5.0sec.npz")
+        print("test run for nonlinear currents")
+        optimize_parameters(data, mode='currents', additional_name="nonlinear", n_jobs=n_cores, n_trials=n_trials,
+                            ecc_input=False)
+    elif linear:
         data = os.path.join("train-data", "07-29-default", "IMMEC_0ecc_5.0sec.npz")
         # 1) linear currents
         print("1")
