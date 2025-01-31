@@ -8,8 +8,8 @@ from tabulate import tabulate
 # plot pareto front
 part1 = False
 part2 = False
-part3 = False
-part4 = True
+part3 = True
+part4 = False
 #todo add coefficient plot
 
 p = os.path.join(os.getcwd(), "plot_data", "_w5")
@@ -113,6 +113,7 @@ if part3:
     # Calculate the mean ABSOLUTE error for all the models compared to their reference
     # save it in a big matrix with shape (10,3)
     MAE = np.zeros((10, 3))
+    RMSE = np.zeros((10, 3))
     for i, path in enumerate(datalist[:6]):
         # datalist contains the plotdata -> So result and the reference of the models
         with open(path, "rb") as file:
@@ -120,6 +121,8 @@ if part3:
             # data['plots'] has '0' and '1' corresponding to the currents and the reference
         m = np.mean(np.abs(data['plots']['0'][:, 1:] - data['plots']['1'][:, 1:]), axis=0)
         MAE[(0 + 3 * (i // 3)):3 + 3 * (i // 3), i % 3] = m
+        rms = np.sqrt(np.mean((data['plots']['0'][:, 1:] - data['plots']['1'][:, 1:])**2, axis=0))
+        RMSE[(0 + 3 * (i // 3)):3 + 3 * (i // 3), i % 3] = rms
 
     for i, path in enumerate(datalist[-6:-3]): # torque
         with open(path, "rb") as file:
@@ -127,6 +130,9 @@ if part3:
         m1 = np.mean(np.abs(data['plots']['0'][:, 1:] - data['plots']['1'][:, 1:]), axis=0) # MAE sindy
         m2 = np.mean(np.abs(data['plots']['2'][:, 1:] - data['plots']['1'][:, 1:]), axis=0) # MAE clarke model
         MAE[6:8, i % 3] = np.vstack((m1, m2)).T.flatten()
+        rms1 = np.sqrt(np.mean((data['plots']['0'][:, 1:] - data['plots']['1'][:, 1:])**2, axis=0))
+        rms2 = np.sqrt(np.mean((data['plots']['2'][:, 1:] - data['plots']['1'][:, 1:])**2, axis=0))
+        RMSE[6:8, i % 3] = np.vstack((rms1, rms2)).T.flatten()
 
     for i, path in enumerate(datalist[-3:]): # ump
         with open(path, "rb") as file:
@@ -134,6 +140,10 @@ if part3:
         m1 = np.mean(np.abs(data['plots']['0'][:, 1] - data['plots']['2'][:, 1]), axis=0) # umpx
         m2 = np.mean(np.abs(data['plots']['1'][:, 1] - data['plots']['2'][:, 2]), axis=0) # umpy
         MAE[8:10, i % 3] = np.vstack((m1, m2)).T.flatten()
+        rms1 = np.sqrt(np.mean((data['plots']['0'][:, 1] - data['plots']['2'][:, 1])**2, axis=0))
+        rms2 = np.sqrt(np.mean((data['plots']['1'][:, 1] - data['plots']['2'][:, 2])**2, axis=0))
+        RMSE[8:10, i % 3] = np.vstack((rms1, rms2)).T.flatten()
+
     # print a table with the MAE, column names are 'no ecc', '50 ecc', 'dynamic 50 ecc'
     # and rownames are did, diq, di0, id, iq, i0, T, Tc, umpx, umpy
     # the MAE contains the values in the correct order
@@ -145,6 +155,7 @@ if part3:
     V[6] = v[3,:]
     V[8:] = v[-2:,:]
     combined = np.array([[f"{MAE[i, j]:.3e} ({int(V[i, j])})" if i not in [3,4,5,7] else f"{MAE[i,j]:.3e}" for j in range(MAE.shape[1])] for i in range(MAE.shape[0])])
+    combined_rms = np.array([[f"{RMSE[i, j]:.3e} ({int(V[i, j])})" if i not in [3,4,5,7] else f"{RMSE[i,j]:.3e}" for j in range(RMSE.shape[1])] for i in range(RMSE.shape[0])])
 
     print(tabulate(combined, headers=["MAE", "no ecc", "50 ecc", "dynamic ecc"], showindex=[
         r"$\frac{\partial i_d}{\partial t} [A/s]$",
@@ -158,7 +169,6 @@ if part3:
         r"$F_x [N]$",
         r"$F_y [N]$"],
                    tablefmt = 'latex_raw'))
-
 
 if part4:
     #plot the coefficients of the models

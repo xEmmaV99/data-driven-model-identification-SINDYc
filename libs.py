@@ -29,7 +29,8 @@ def get_custom_library_funcs(type, nmbr_input_features=15):
     gamma = [12]
     fr = [14]
     i0_idx = [2, 6]
-
+    print("Remove f from the features in libs")
+    nmbr_input_features = nmbr_input_features-1 # remove f from the features
     # some pre-defined input lists
     all = [i for i in range(nmbr_input_features)]
     all_but_gamma = [i for i in range(nmbr_input_features) if i not in gamma]

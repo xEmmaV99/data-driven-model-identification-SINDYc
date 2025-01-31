@@ -91,8 +91,8 @@ def make_model(
             raise ValueError(
                 "The values lamb and nu should be passed when using sr3 optimisation"
             )
-        opt = ps.SR3(thresholder="l1", threshold=lamb, nu=nu)
-
+        #DEBUG opt = ps.SR3(thresholder="l1", threshold=lamb, nu=nu)
+        opt = ps.SR3(regularizer="l1", reg_weight_lam=lamb, relax_coeff_nu=nu)
     elif optimizer == "lasso":
         print("Lasso optimisation")
         if alpha is None:
@@ -226,9 +226,9 @@ def simulate_model(
         )
 
         if do_time_simulation:
-            simulation_time = 5.0
+            simulation_time = 0.7
             plt.figure()
-            print("Starting time simulation")
+            print("Starting time simulation, max", simulation_time)
             t_value = t[t < simulation_time]
 
             # x_sim = model.simulate(x_test[0, :],
@@ -243,6 +243,9 @@ def simulate_model(
                 model=model,
             ).y.T
             print("Finished simulation")
+            print(x_sim.shape)
+            print(x_test[: len(t_value), :].shape)
+
             print(
                 "MSE on simulation: ",
                 mean_squared_error(x_sim, x_test[: len(t_value), :]),
@@ -252,7 +255,7 @@ def simulate_model(
                 "currents_simulation",
                 [
                     np.hstack((t_value[:].reshape(len(t_value), 1), x_sim)),
-                    np.hstack((t, x_test)),
+                    np.hstack((t_value[:].reshape(len(t_value), 1), x_test[: len(t_value), :])),
                 ],
                 "Simulated currents on test set V = " + str(TEST["V"]),
                 r"$t$",
