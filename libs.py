@@ -27,16 +27,16 @@ def get_custom_library_funcs(type, nmbr_input_features=15):
     """
     # Generalized library, sine and cos functions for gamma
     gamma = [12]
-    fr = [14]
+    #fr = [14]
     i0_idx = [2, 6]
-    print("Remove f from the features in libs")
-    nmbr_input_features = nmbr_input_features-1 # remove f from the features
+
     # some pre-defined input lists
+
     all = [i for i in range(nmbr_input_features)]
     all_but_gamma = [i for i in range(nmbr_input_features) if i not in gamma]
-    all_but_gammafr = [
-        i for i in range(nmbr_input_features) if i not in gamma and i not in fr
-    ]
+    #all_but_gammafr = [
+    #    i for i in range(nmbr_input_features) if i not in gamma and i not in fr
+    #]
     all_but_i0 = [i for i in range(nmbr_input_features) if i not in i0_idx]
 
     if type == "poly_2nd_order":
@@ -53,6 +53,7 @@ def get_custom_library_funcs(type, nmbr_input_features=15):
             inputs_per_library=inputs_per_library,
         )
 
+        '''
     elif type == "w_co":
         """
         contains all the features (but gamma, rx, ry and f) up to 2nd order and their crossterms, tensored with gamma, rx and ry
@@ -94,6 +95,7 @@ def get_custom_library_funcs(type, nmbr_input_features=15):
         Contains all features up to 2nd order and crossterms (without the quadratic terms)
         """
         custom_lib = ps.PolynomialLibrary(degree=2, interaction_only=True)
+    '''
 
     elif type == "interaction_only":
         """
@@ -201,7 +203,7 @@ def get_custom_library_funcs(type, nmbr_input_features=15):
         """
         library_functions2 = [lambda x, y: x * y]
         library_function_names2 = [lambda x, y: x + y]
-        # i i i v v v I I I V V V gam om f
+        # i i i v v v I I I V V V gam om
         input_per_library = np.array([[9, 10, 0, 1, 6, 7]])
         custom_lib = ps.GeneralizedLibrary(
             [
