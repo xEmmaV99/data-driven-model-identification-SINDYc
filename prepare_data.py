@@ -40,13 +40,19 @@ def prepare_data(
     dataset = dict(np.load(path_to_data_file))  # should be a dictionary
     print("Done loading data")
 
+    # remove "wcoe" from dataset if it was present
+    if "wcoe" in dataset.keys():
+        dataset.pop("wcoe")
+    '''
     if "wcoe" not in dataset.keys(): # wcoe is only added in recent datasets
         dataset["wcoe"] = np.zeros_like(dataset["T_em"])
+        # by default set to zero. 
 
     if dataset["wcoe"].shape != dataset["T_em"].shape and test_data: # for test sets
         dataset["wcoe"] = np.expand_dims(
             dataset["wcoe"], axis=1
         )  # make sure wcoe is same shape as T-em
+    '''
 
     if not test_data:
         V_range = read_V_from_data(path_to_data_file)
@@ -75,7 +81,7 @@ def prepare_data(
         "T_em": np.array([]),
         "UMP": np.array([]),
         "feature_names": np.array([]),
-        "wcoe": np.array([]),
+        #"wcoe": np.array([]),
     }
 
     # crop dataset to desired amount of simulations (random_idx)
@@ -103,7 +109,7 @@ def prepare_data(
         dataset["time"] = np.expand_dims(dataset["time"], axis=2)
         dataset["T_em"] = np.expand_dims(dataset["T_em"], axis=2)
         dataset["F_em"] = np.expand_dims(dataset["F_em"], axis=2)
-        dataset["wcoe"] = np.expand_dims(dataset["wcoe"], axis=2)
+        #dataset["wcoe"] = np.expand_dims(dataset["wcoe"], axis=2)
 
     # get u data: potentials_st, i_st, omega_rot, gamma_rot, and the integrals.
     for simul in range(number_of_trainfiles):
@@ -158,8 +164,8 @@ def prepare_data(
 
         for key in dataset.keys():
             # # error for wcoe
-            if key == "wcoe" and dataset[key].shape[0] == 1:
-                 dataset[key] = np.swapaxes(dataset[key], 0, 1)  # debug TO BE REMOVED...
+            #if key == "wcoe" and dataset[key].shape[0] == 1:
+            #     dataset[key] = np.swapaxes(dataset[key], 0, 1)  # debug TO BE REMOVED...
             dataset[key] = dataset[key][time_trim]
 
         v_stator = v_stator[time_trim]
@@ -170,11 +176,11 @@ def prepare_data(
         V = V[time_trim]
 
     # u_data add supply frequency to the input data
-    freqs = (
-        V_range * 50 / 400
-    )
+    #freqs = (
+    #    V_range * 50 / 400
+    #)
 
-    freqs = freqs.reshape(1, 1, len(freqs))  # along third axis
+    #freqs = freqs.reshape(1, 1, len(freqs))  # along third axis
     u_data = np.hstack(
         (
             v_stator,
@@ -182,7 +188,7 @@ def prepare_data(
             V.reshape(v_stator.shape),
             dataset["gamma_rot"].reshape(t_data.shape) % (2 * np.pi),
             dataset["omega_rot"].reshape(t_data.shape),
-            np.repeat(freqs, dataset["omega_rot"].shape[0], axis=0),
+            #np.repeat(freqs, dataset["omega_rot"].shape[0], axis=0),
         )
     )
 
@@ -201,10 +207,11 @@ def prepare_data(
         r"V_0",
         r"\gamma",
         r"\omega",
-        r"f",
+        #r"f",
     ]
 
     # add eccentricity to the input data
+    '''
     if ecc_input:
         if not np.all(dataset["ecc"] < 1e-10):
             print("Nonzero ecc, added to input data")
@@ -216,7 +223,7 @@ def prepare_data(
         else:
             u_data = np.hstack((u_data, dataset["ecc"][:, :, np.newaxis]))
         [DATA["feature_names"].append(j) for j in [r"r_x", r"r_y"]]
-
+    '''
 
     # now, stack data on top of each other and shuffle
     # (note that the transpose is needed otherwise the reshape is wrong)
@@ -242,11 +249,11 @@ def prepare_data(
             dataset["F_em"].shape[1],
         )
     )
-    DATA["wcoe"] = (
-        dataset["wcoe"]
-        .transpose(0, 2, 1)
-        .reshape(dataset["wcoe"].shape[0] * dataset["wcoe"].shape[-1])
-    )
+    #DATA["wcoe"] = (
+    #    dataset["wcoe"]
+    #    .transpose(0, 2, 1)
+    #    .reshape(dataset["wcoe"].shape[0] * dataset["wcoe"].shape[-1])
+    #)
 
     if test_data:
         DATA["V"] = V_range
@@ -260,7 +267,7 @@ def prepare_data(
     DATA["xdot"] = DATA["xdot"][shuffled_indices]
     DATA["T_em"] = DATA["T_em"][shuffled_indices]
     DATA["UMP"] = DATA["UMP"][shuffled_indices]
-    DATA["wcoe"] = DATA["wcoe"][shuffled_indices]
+    #DATA["wcoe"] = DATA["wcoe"][shuffled_indices]
 
     # split the data into train and validation data
     p = 0.8  # percentage of data to be used for training, 0.2 is used for parameter tuning
@@ -277,7 +284,7 @@ def prepare_data(
     DATA["xdot_val"] = DATA["xdot"][cutidx:]
     DATA["T_em_val"] = DATA["T_em"][cutidx:]
     DATA["UMP_val"] = DATA["UMP"][cutidx:]
-    DATA["wcoe_val"] = DATA["wcoe"][cutidx:]
+    #DATA["wcoe_val"] = DATA["wcoe"][cutidx:]
 
     return DATA
 
