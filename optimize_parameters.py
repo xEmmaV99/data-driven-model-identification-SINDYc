@@ -20,6 +20,7 @@ def optimize_parameters(
     n_jobs: int = 1,
     n_trials: int = 100,
     ecc_input=False,
+    seed = None,
 ):
     """
     This function is used to optimize the parameters of the SINDy model. It uses the Optuna package to select the libaray, optimizer and the hyperparameters of the optimizer.
@@ -36,9 +37,10 @@ def optimize_parameters(
 
     DATA = prepare_data(
         path_to_data_files,
-        number_of_trainfiles=50,
+        number_of_trainfiles=30,
         usage_per_trainfile=0.50,
         ecc_input=ecc_input,
+        seed = seed
     )
 
     # select the desired mode
