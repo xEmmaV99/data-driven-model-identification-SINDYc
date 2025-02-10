@@ -8,9 +8,10 @@ from optimize_parameters import plot_optuna_data
 if __name__ == "__main__":
     print("Note that ecc input is off. If results are worse, this might be the reason.")
     linear = 'test_run'
-    n_cores = 2
+    n_cores = 1
     n_trials = 500
-    seed = 42
+
+    seed = 64
 
     if linear == 'test_run':
         data = os.path.join("train-data", "07-31-nonlin", "IMMEC_nonlinear-0ecc_5.0sec.npz")

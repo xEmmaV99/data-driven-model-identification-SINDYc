@@ -125,7 +125,8 @@ def optuna_search(
         elif optimizer_name == "sr3":
             lambdas = trial.suggest_float("lambdas", lminmax[0], lminmax[1], log=True)
             nus = trial.suggest_float("nus", nminmax[0], nminmax[1], log=True)
-            optimizer = ps.SR3(thresholder="l1", nu=nus, threshold=lambdas)
+            #DEBUG optimizer = ps.SR3(thresholder="l1", nu=nus, threshold=lambdas)
+            optimizer = ps.SR3(regularizer="l1", reg_weight_lam=lambdas, relax_coeff_nu=nus)
 
         elif optimizer_name == "stlsq":
             alphas = trial.suggest_float("alphas", aminmax[0], aminmax[1], log=True)
