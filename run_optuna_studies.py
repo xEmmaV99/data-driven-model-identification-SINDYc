@@ -9,9 +9,9 @@ if __name__ == "__main__":
     print("Note that ecc input is off. If results are worse, this might be the reason.")
     linear = 'test_run'
     n_cores = 1
-    n_trials = 500
+    n_trials = int(500/n_cores)
 
-    seed = 64
+    seed = 68
 
     if linear == 'test_run':
         data = os.path.join("train-data", "07-31-nonlin", "IMMEC_nonlinear-0ecc_5.0sec.npz")
