@@ -10,7 +10,6 @@ part1 = False
 part2 = False
 part3 = True
 part4 = False
-#todo add coefficient plot
 
 p = os.path.join(os.getcwd(), "plot_data", "_w5")
 path1 = os.path.join(p, "currents_nl", "currents70.pkl")

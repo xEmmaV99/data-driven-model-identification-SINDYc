@@ -15,8 +15,11 @@ if __name__ == "__main__":
 
     if linear == 'test_run':
         data = os.path.join("train-data", "07-31-nonlin", "IMMEC_nonlinear-0ecc_5.0sec.npz")
-        print("test run for nonlinear currents")
-        optimize_parameters(data, mode='currents', additional_name="nonlinear", n_jobs=n_cores, n_trials=n_trials, seed=seed)
+        # 9) nonlinear UMP
+        print("test run for nonlinear data, trivial UMP")
+        optimize_parameters(data, mode='currents', additional_name="nonlinear", n_jobs=n_cores, n_trials=n_trials,
+                            seed=seed)
+
     elif linear:
         data = os.path.join("train-data", "07-29-default", "IMMEC_0ecc_5.0sec.npz")
         # 1) linear currents

@@ -17,7 +17,7 @@ def make_model(
     lamb: float = None,
     modelname: str = None,
     threshold: float = 0.1,
-    ecc_input = True,
+    ecc_input = False,
 ):
     """
     Initialises and fits a SINDy model
