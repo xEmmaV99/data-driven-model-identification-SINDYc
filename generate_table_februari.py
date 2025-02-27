@@ -5,27 +5,28 @@ import numpy as np
 import os
 from tabulate import tabulate
 
+print("Double check files and plotdata....!")
 p = os.path.join(os.getcwd(), "plot_data", "_feb")
-path1 = os.path.join(p, "currents70.pkl")
-path2 = os.path.join(p, "currents_e_70.pkl")
+path1 = os.path.join(p, "currents70a.pkl")
+path2 = os.path.join(p, "currents_e_70a.pkl")
 path3 = os.path.join(p, "currents_ed_70.pkl")
-path4 = os.path.join(p, "currents_simulation70.pkl")
-path5 = os.path.join(p, "currents_e_simulation70.pkl")
+path4 = os.path.join(p, "currents_simulation70a.pkl")
+path5 = os.path.join(p, "currents_e_simulation70a.pkl")
 path6 = os.path.join(p, "currents_ed_simulation70.pkl")
 
 path7 = os.path.join(p,  "Torque5.pkl")
 path8 = os.path.join(p,  "Torque_e_40.pkl")
 path9 = os.path.join(p,  "Torque_ed_40.pkl")
 
-path10 = os.path.join(p, "UMP0.pkl")
+path10 = os.path.join(p, "UMP_0.pkl")
 path11 = os.path.join(p, "UMP100.pkl")
 path12 = os.path.join(p, "UMP_bad_160.pkl")
 datalist = [path1, path2, path3, path4, path5, path6, path7, path8, path9, path10, path11, path12]
 
-modellist = ['currents_70', 'currents_e_70', 'currents_ed_70',
-                'torque_5', 'torque_e_40', 'torque_ed_50',
-                'ump_0', 'ump_e_100', 'ump_ed_150']
-##todo: change model names to correct model names!
+modellist = ['currents_70a', 'currents_e_70a', 'currents_ed_70',
+                'torque_5', 'torque_e_40', 'torque_ed_40',
+                'ump_0', 'ump_e_100', 'ump_ed_160']
+
 
 def get_sparsity(models):
     spar = np.zeros((6,3))
@@ -82,18 +83,20 @@ V[:3, :] = v[:3, :]
 V[3:6, :] = v[:3, :] # copy
 V[6] = v[3,:]
 V[8:] = v[-2:,:]
-combined = np.array([[f"{MAE[i, j]:.3e} ({int(V[i, j])})" if i not in [3,4,5,7] else f"{MAE[i,j]:.3e}" for j in range(MAE.shape[1])] for i in range(MAE.shape[0])])
-combined_rms = np.array([[f"{RMSE[i, j]:.3e} ({int(V[i, j])})" if i not in [3,4,5,7] else f"{RMSE[i,j]:.3e}" for j in range(RMSE.shape[1])] for i in range(RMSE.shape[0])])
+
+combined = np.array([[f"{MAE[i, j]:.2e} ({int(V[i, j])})" if i not in [7] else f"{MAE[i,j]:.2e}" for j in range(MAE.shape[1])] for i in range(MAE.shape[0])])
+combined_rms = np.array([[f"{RMSE[i, j]:.2e} ({int(V[i, j])})" if i not in [7] else f"{RMSE[i,j]:.2e}" for j in range(RMSE.shape[1])] for i in range(RMSE.shape[0])])
+
 
 print(tabulate(combined, headers=["MAE", "no ecc", "50 ecc", "dynamic ecc"], showindex=[
     r"$\frac{\partial i_d}{\partial t} [A/s]$",
     r"$\frac{\partial i_q}{\partial t} [A/s]$",
     r"$\frac{\partial i_0}{\partial t} [A/s]$",
-    r"$i_d [A]$",
-    r"$i_q [A]$",
-    r"$i_0 [A]$",
-    r"$T [Nm]$",
-    r"$T_c [Nm]$",
-    r"$F_x [N]$",
-    r"$F_y [N]$"],
+    r"$i_d^s $(A)",
+    r"$i_q^s $(A)",
+    r"$i_0^s $(A)",
+    r"$T_e$ (Nm)",
+    r"$T_{e, \mathrm{comp}} $(Nm)",
+    r"$F_{e,x} $ (N)",
+    r"$F_{e,y} $(N)"],
                tablefmt = 'latex_raw'))
