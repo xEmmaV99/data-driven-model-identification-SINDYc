@@ -1,0 +1,3 @@
+[submodule "src/pysindy"]
+	path = src/pysindy
+	url = https://github.com/dynamicslab/pysindy

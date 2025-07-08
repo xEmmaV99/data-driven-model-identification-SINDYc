@@ -1,0 +1,16 @@
+/pysindy_AUGUST/
+/ECCE/
+/plot_data/
+/__pycache__/
+/src/models/_w4/
+.idea
+*.py[cod]
+*$py.class
+/src/models/_w5old/
+/src/models/_w5/
+/src/models/_feb/
+/src/optuna_studies/_w3-presentation-0208/
+/src/optuna_studies/_w4/
+/src/optuna_studies/_w5/
+/testing/
+/src/pysindy/*
